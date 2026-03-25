@@ -6,9 +6,10 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CampaignRepository } from '../../infrastructure/repositories/campaign.repository';
 import { WhatsAppSessionRepository } from '@/modules/whatsapp/infrastructure/repositories/whatsapp-session.repository';
+import { QueueService } from '@/infrastructure/queue/queue.service';
 import { AuditService } from '@/modules/audit/domain/services/audit.service';
 import { CreateCampaignDto } from '../dto/create-campaign.dto';
-import { EVENT_NAMES } from '@/common/constants';
+import { EVENT_NAMES, QUEUE_NAMES } from '@/common/constants';
 import { AuditAction, CampaignStatus } from '@prisma/client';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class CreateCampaignUseCase {
   constructor(
     private readonly campaignRepo: CampaignRepository,
     private readonly sessionRepo: WhatsAppSessionRepository,
+    private readonly queueService: QueueService,
     private readonly auditService: AuditService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -108,6 +110,55 @@ export class CreateCampaignUseCase {
     });
 
     this.logger.log(`Campaign ${campaign.id} created by user ${userId}`);
+
+    // 8. Auto-schedule if scheduledAt is provided and in the future
+    if (dto.scheduledAt) {
+      const scheduledDate = new Date(dto.scheduledAt);
+      if (scheduledDate.getTime() > Date.now() - 60_000) {
+        // Transition DRAFT → SCHEDULED
+        await this.campaignRepo.transitionStatus(
+          campaign.id,
+          CampaignStatus.DRAFT,
+          CampaignStatus.SCHEDULED,
+          { scheduledAt: scheduledDate, timezone: dto.timezone || 'UTC' },
+        );
+
+        // Publish delayed execution job
+        const delaySeconds = Math.max(
+          0,
+          Math.floor((scheduledDate.getTime() - Date.now()) / 1000),
+        );
+        await this.queueService.publishDelayed(
+          QUEUE_NAMES.CAMPAIGN_EXECUTE,
+          {
+            campaignId: campaign.id,
+            orgId,
+            sessionId: dto.sessionId,
+            scheduled: true,
+          },
+          delaySeconds,
+          { singletonKey: `campaign-scheduled-${campaign.id}` },
+        );
+
+        // Record event
+        await this.campaignRepo.recordEvent({
+          campaignId: campaign.id,
+          orgId,
+          previousStatus: CampaignStatus.DRAFT,
+          newStatus: CampaignStatus.SCHEDULED,
+          triggeredById: userId,
+          metadata: { scheduledAt: dto.scheduledAt, timezone: dto.timezone },
+        });
+
+        this.logger.log(
+          `Campaign ${campaign.id} auto-scheduled for ${dto.scheduledAt} (delay: ${delaySeconds}s)`,
+        );
+
+        // Return the updated campaign
+        const updated = await this.campaignRepo.findById(campaign.id);
+        return { campaign: updated ?? campaign, deduplicated: false };
+      }
+    }
 
     return { campaign, deduplicated: false };
   }

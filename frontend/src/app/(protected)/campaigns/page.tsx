@@ -7,7 +7,8 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { useCampaigns } from "@/hooks/use-campaigns";
 import { useCampaignSocket } from "@/hooks/use-campaign-socket";
 import { useCampaignsStore } from "@/stores/campaigns-store";
-import { useWhatsAppSession } from "@/hooks/use-whatsapp";
+import { useWhatsAppSession, useAdminSessions } from "@/hooks/use-whatsapp";
+import { useAuthStore } from "@/stores/auth-store";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -36,15 +37,17 @@ export default function CampaignsPage() {
   const [statusTab, setStatusTab] = useState("ALL");
 
   const { searchQuery, page, setSearchQuery, setPage } = useCampaignsStore();
+  const userRole = useAuthStore((s) => s.user?.role);
   const { data: session } = useWhatsAppSession();
+  const { data: adminSessionsData } = useAdminSessions();
 
   const effectiveStatus: CampaignStatus | undefined =
     statusTab !== "ALL" ? (statusTab as CampaignStatus) : undefined;
 
   const params = useMemo<ListCampaignsParams>(
     () => ({
-      take: TAKE,
-      skip: page * TAKE,
+      page: page + 1,
+      limit: TAKE,
       status: effectiveStatus,
       sortBy: "createdAt",
       sortOrder: "desc",
@@ -69,15 +72,23 @@ export default function CampaignsPage() {
   }
 
   // Build sessions list for the create modal
-  const sessions = session
-    ? [
-        {
-          id: session.id,
-          name: session.phoneNumber || "WhatsApp Session",
-          status: session.status,
-        },
-      ]
-    : [];
+  // Admin/Manager: show all org sessions; Employee: show own session only
+  const sessions = useMemo(() => {
+    if (userRole === "ADMIN" || userRole === "MANAGER") {
+      const allSessions = adminSessionsData?.sessions ?? [];
+      return allSessions
+        .filter((s) => s.status === "CONNECTED")
+        .map((s) => ({
+          id: s.id,
+          name: `${s.phoneNumber || "Unknown"} (${(s as { user?: { firstName?: string; lastName?: string } }).user?.firstName ?? "User"})`,
+          status: s.status,
+        }));
+    }
+    // Employee: own session only
+    return session
+      ? [{ id: session.id, name: session.phoneNumber || "WhatsApp Session", status: session.status }]
+      : [];
+  }, [userRole, adminSessionsData, session]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-var(--header-height))]">
@@ -120,7 +131,7 @@ export default function CampaignsPage() {
       {/* Table */}
       <div className="flex-1 overflow-y-auto">
         <CampaignsTable
-          campaigns={data?.campaigns ?? []}
+          campaigns={data?.data ?? []}
           total={data?.total ?? 0}
           take={TAKE}
           skip={page * TAKE}

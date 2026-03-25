@@ -47,6 +47,14 @@ export function useContact(contactId: string | null) {
   });
 }
 
+export function useContactByPhone(phone: string | null) {
+  return useQuery({
+    queryKey: ["contacts", "byPhone", phone],
+    queryFn: () => contactsApi.findByPhone(phone!),
+    enabled: !!phone,
+  });
+}
+
 export function useContactNotes(contactId: string | null) {
   return useQuery({
     queryKey: contactKeys.notes(contactId!),

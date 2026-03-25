@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsUUID,
   Matches,
   Max,
   MaxLength,
@@ -52,4 +53,14 @@ export class SendMessageDto {
   @Min(0)
   @Max(10)
   priority?: number;
+
+  /** Admin/Manager: send through another user's WhatsApp session */
+  @IsOptional()
+  @IsUUID()
+  viaSessionUserId?: string;
+
+  /** Send within an existing conversation (uses the conversation's session) */
+  @IsOptional()
+  @IsUUID()
+  conversationId?: string;
 }

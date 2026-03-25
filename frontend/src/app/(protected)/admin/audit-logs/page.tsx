@@ -52,8 +52,8 @@ export default function AuditLogsPage() {
   const limit = 20;
 
   const params: QueryAuditLogsParams = {
-    page,
-    limit,
+    take: limit,
+    skip: (page - 1) * limit,
     ...(actionFilter && { action: actionFilter }),
     ...(startDate && { startDate }),
     ...(endDate && { endDate }),
@@ -61,7 +61,7 @@ export default function AuditLogsPage() {
 
   const { data, isLoading } = useAuditLogs(params);
 
-  const logs = data?.data ?? [];
+  const logs = data?.logs ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / limit);
 

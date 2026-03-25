@@ -1,5 +1,5 @@
 import { IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class ListConversationsQueryDto {
   @IsOptional()
@@ -13,6 +13,16 @@ export class ListConversationsQueryDto {
   @IsOptional()
   @IsUUID()
   sessionId?: string;
+
+  /** Admin/Manager drill-down: view conversations for a specific user's session */
+  @IsOptional()
+  @IsUUID()
+  targetUserId?: string;
+
+  /** Manager team view: show all team members' conversations */
+  @IsOptional()
+  @Transform(({ value }) => value === 'true')
+  teamView?: boolean;
 
   @IsOptional()
   @Type(() => Number)

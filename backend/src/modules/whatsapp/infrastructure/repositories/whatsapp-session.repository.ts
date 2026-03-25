@@ -187,6 +187,23 @@ export class WhatsAppSessionRepository {
     });
   }
 
+  async findByUserIds(userIds: string[], orgId: string) {
+    return this.prisma.whatsAppSession.findMany({
+      where: {
+        userId: { in: userIds },
+        orgId,
+        deletedAt: null,
+        status: { not: WhatsAppSessionStatus.DISCONNECTED },
+      },
+      select: {
+        id: true,
+        userId: true,
+        phoneNumber: true,
+        status: true,
+      },
+    });
+  }
+
   async findAllActive() {
     return this.prisma.whatsAppSession.findMany({
       where: {

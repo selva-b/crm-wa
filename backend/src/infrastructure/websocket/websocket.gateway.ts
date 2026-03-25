@@ -92,12 +92,32 @@ export class AppWebSocketGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
+  /**
+   * Join a session-specific room (for targeted message events).
+   * Called when a WhatsApp session is created/connected.
+   */
+  joinSessionRoom(userId: string, sessionId: string): void {
+    const socketIds = this.userSockets.get(userId);
+    if (socketIds) {
+      for (const socketId of socketIds) {
+        const socket = this.server.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.join(`session:${sessionId}`);
+        }
+      }
+    }
+  }
+
   emitToUser(userId: string, event: string, data: unknown): void {
     this.server.to(`user:${userId}`).emit(event, data);
   }
 
   emitToOrg(orgId: string, event: string, data: unknown): void {
     this.server.to(`org:${orgId}`).emit(event, data);
+  }
+
+  emitToSession(sessionId: string, event: string, data: unknown): void {
+    this.server.to(`session:${sessionId}`).emit(event, data);
   }
 
   isUserOnline(userId: string): boolean {

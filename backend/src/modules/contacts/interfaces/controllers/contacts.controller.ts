@@ -90,7 +90,7 @@ export class ContactsController {
     @CurrentUser() user: JwtPayload,
     @Query() query: ListContactsQueryDto,
   ) {
-    return this.listContactsUseCase.execute(user.orgId, query);
+    return this.listContactsUseCase.execute(user.orgId, user.sub, user.role, query);
   }
 
   @Get(':contactId')

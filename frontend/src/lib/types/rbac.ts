@@ -61,10 +61,10 @@ export interface AuditLog {
 }
 
 export interface AuditLogsResponse {
-  data: AuditLog[];
+  logs: AuditLog[];
   total: number;
-  page: number;
-  limit: number;
+  take: number;
+  skip: number;
 }
 
 export interface QueryAuditLogsParams {
@@ -73,8 +73,8 @@ export interface QueryAuditLogsParams {
   targetType?: string;
   startDate?: string;
   endDate?: string;
-  page?: number;
-  limit?: number;
+  take?: number;
+  skip?: number;
 }
 
 // ─── Permission Grouping (for UI) ────────────

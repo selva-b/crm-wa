@@ -22,8 +22,12 @@ export function useWhatsAppSession() {
         setSession(session);
         return session;
       } catch (err: unknown) {
-        const apiErr = err as { statusCode?: number };
-        if (apiErr.statusCode === 404) {
+        // Axios wraps the status in err.response.status; ApiError uses err.statusCode
+        const httpStatus =
+          (err as { response?: { status?: number } })?.response?.status ??
+          (err as { statusCode?: number })?.statusCode;
+        // 404 = no session exists, 403 = permissions not seeded yet — both mean "no session"
+        if (httpStatus === 404 || httpStatus === 403) {
           setSession(null);
           return null;
         }

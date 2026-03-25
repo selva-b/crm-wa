@@ -99,7 +99,12 @@ export class MessagesController {
     @CurrentUser() user: JwtPayload,
     @Query() query: ListConversationsQueryDto,
   ) {
-    return this.listConversationsUseCase.execute(user.orgId, query);
+    return this.listConversationsUseCase.execute(
+      user.orgId,
+      user.sub,
+      user.role,
+      query,
+    );
   }
 
   @Post('conversations/:conversationId/read')

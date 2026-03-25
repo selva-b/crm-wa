@@ -64,18 +64,18 @@ export class CampaignExecutorWorker implements OnModuleInit {
         { startedAt: new Date() },
       );
 
-      if (!transitioned) {
-        this.logger.log(`Campaign ${campaignId} already transitioned from SCHEDULED`);
-        return;
+      if (transitioned) {
+        await this.campaignRepo.recordEvent({
+          campaignId,
+          orgId,
+          previousStatus: CampaignStatus.SCHEDULED,
+          newStatus: CampaignStatus.RUNNING,
+          metadata: { triggeredBy: 'delayed-job' },
+        });
+      } else {
+        // Already transitioned (by scheduler worker) — continue execution
+        this.logger.log(`Campaign ${campaignId} already transitioned from SCHEDULED, continuing execution`);
       }
-
-      await this.campaignRepo.recordEvent({
-        campaignId,
-        orgId,
-        previousStatus: CampaignStatus.SCHEDULED,
-        newStatus: CampaignStatus.RUNNING,
-        metadata: { triggeredBy: 'scheduler' },
-      });
     }
 
     // Must be RUNNING to proceed

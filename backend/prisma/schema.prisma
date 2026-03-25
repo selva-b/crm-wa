@@ -371,6 +371,7 @@ model Organization {
   featureFlags            FeatureFlag[]
   integrationConfigs      IntegrationConfig[]
   webhooks                Webhook[]
+  teams                   Team[]
 
   @@index([slug])
   @@index([deletedAt])
@@ -407,6 +408,8 @@ model User {
   createdCampaigns        Campaign[]               @relation("CampaignCreator")
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
+  managedTeams            Team[]                   @relation("TeamManager")
+  teamMembers             TeamMember[]
 
   @@unique([email, deletedAt], name: "unique_email_active")
   @@index([orgId])
@@ -736,7 +739,8 @@ model Contact {
   notes              ContactNote[]
   campaignRecipients CampaignRecipient[]
 
-  @@unique([orgId, phoneNumber, deletedAt], name: "unique_phone_per_org")
+  // Partial unique index managed via raw SQL migration:
+  // CREATE UNIQUE INDEX contacts_org_phone_active_unique ON contacts (org_id, phone_number) WHERE deleted_at IS NULL
   @@index([orgId])
   @@index([phoneNumber])
   @@index([orgId, phoneNumber])
@@ -1726,4 +1730,43 @@ model WebhookDelivery {
   @@index([createdAt])
   @@index([orgId, createdAt])
   @@map("webhook_deliveries")
+}
+
+// ─────────────────────────────────────────────
+// TEAMS
+// ─────────────────────────────────────────────
+
+model Team {
+  id        String    @id @default(uuid()) @db.Uuid
+  orgId     String    @map("org_id") @db.Uuid
+  name      String    @db.VarChar(255)
+  managerId String    @map("manager_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  manager      User         @relation("TeamManager", fields: [managerId], references: [id])
+  members      TeamMember[]
+
+  @@unique([orgId, name, deletedAt], name: "unique_team_name_per_org")
+  @@index([orgId])
+  @@index([managerId])
+  @@index([deletedAt])
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  teamId    String   @map("team_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation(fields: [teamId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId], name: "unique_member_per_team")
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_members")
 }

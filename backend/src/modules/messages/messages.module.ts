@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { AuditModule } from '@/modules/audit/audit.module';
 import { WhatsAppModule } from '@/modules/whatsapp/whatsapp.module';
+import { TeamsModule } from '@/modules/teams/teams.module';
 
 // Repositories
 import { MessageRepository } from './infrastructure/repositories/message.repository';
@@ -26,7 +27,7 @@ import {
 import { MessagesController } from './interfaces/controllers/messages.controller';
 
 @Module({
-  imports: [AuditModule, forwardRef(() => WhatsAppModule)],
+  imports: [AuditModule, forwardRef(() => WhatsAppModule), forwardRef(() => TeamsModule)],
   controllers: [MessagesController],
   providers: [
     // Repositories

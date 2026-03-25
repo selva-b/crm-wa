@@ -50,18 +50,25 @@ export function CreateCampaignModal({
   const messageType = watch("messageType") as MessageType;
   const audienceType = watch("audienceType") as CampaignAudienceType;
   const messageBody = watch("messageBody") || "";
+  const audienceFilters = watch("audienceFilters");
+
+  function toggleFilter(key: "leadStatuses" | "sources", value: string) {
+    const current = audienceFilters?.[key] ?? [];
+    const next = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    setValue("audienceFilters", { ...audienceFilters, [key]: next.length ? next : undefined });
+  }
 
   function onSubmit(data: CreateCampaignFormData) {
+    const isScheduled = scheduleMode === "scheduled" && !!data.scheduledAt;
     const payload = {
       ...data,
       description: data.description || undefined,
       messageBody: data.messageBody || undefined,
       mediaUrl: data.mediaUrl || undefined,
       mediaMimeType: data.mediaMimeType || undefined,
-      scheduledAt:
-        scheduleMode === "scheduled" && data.scheduledAt
-          ? data.scheduledAt
-          : undefined,
+      scheduledAt: isScheduled ? data.scheduledAt : undefined,
     };
 
     createCampaign.mutate(payload, {
@@ -76,7 +83,7 @@ export function CreateCampaignModal({
   function handlePreviewAudience() {
     previewAudience.mutate({
       audienceType,
-      audienceFilters: undefined,
+      audienceFilters: audienceType === "FILTERED" ? audienceFilters : undefined,
     });
   }
 
@@ -240,11 +247,73 @@ export function CreateCampaignModal({
               ))}
             </div>
 
+            {audienceType === "FILTERED" && (
+              <div className="space-y-3 p-3 rounded-lg border border-outline-variant/15 bg-surface-container-low">
+                {/* Lead Status Filter */}
+                <div>
+                  <p className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wide mb-2">
+                    Lead Status
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(["NEW", "CONTACTED", "INTERESTED", "CONVERTED", "CLOSED"] as const).map((s) => {
+                      const active = audienceFilters?.leadStatuses?.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => toggleFilter("leadStatuses", s)}
+                          className={`px-2.5 py-1 rounded-md text-[12px] font-medium border transition-colors ${
+                            active
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-outline-variant/20 text-on-surface-variant hover:bg-surface-container"
+                          }`}
+                        >
+                          {s.charAt(0) + s.slice(1).toLowerCase()}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Source Filter */}
+                <div>
+                  <p className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wide mb-2">
+                    Source
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(["WHATSAPP", "MANUAL", "IMPORT", "API"] as const).map((s) => {
+                      const active = audienceFilters?.sources?.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => toggleFilter("sources", s)}
+                          className={`px-2.5 py-1 rounded-md text-[12px] font-medium border transition-colors ${
+                            active
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-outline-variant/20 text-on-surface-variant hover:bg-surface-container"
+                          }`}
+                        >
+                          {s.charAt(0) + s.slice(1).toLowerCase()}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {!audienceFilters?.leadStatuses?.length && !audienceFilters?.sources?.length && (
+                  <p className="text-[11px] text-on-surface-variant/50">
+                    Select at least one filter to target specific contacts
+                  </p>
+                )}
+              </div>
+            )}
+
             {previewAudience.data && (
               <p className="text-[12px] text-on-surface-variant">
                 Estimated recipients:{" "}
                 <span className="font-medium text-on-surface">
-                  {previewAudience.data.total.toLocaleString()}
+                  {(previewAudience.data.estimatedRecipients ?? 0).toLocaleString()}
                 </span>
               </p>
             )}

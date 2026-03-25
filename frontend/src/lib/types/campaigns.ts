@@ -98,17 +98,19 @@ export interface CampaignEvent {
 // ─── List Response ───
 
 export interface CampaignListResponse {
-  campaigns: Campaign[];
+  data: Campaign[];
   total: number;
-  take: number;
-  skip: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface RecipientListResponse {
-  recipients: CampaignRecipient[];
+  data: CampaignRecipient[];
   total: number;
-  take: number;
-  skip: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // ─── Recipient Status Counts ───
@@ -136,7 +138,7 @@ export interface CampaignAnalytics {
 // ─── Audience Preview ───
 
 export interface AudiencePreview {
-  total: number;
+  estimatedRecipients: number;
 }
 
 // ─── Request DTOs ───
@@ -176,16 +178,16 @@ export interface ScheduleCampaignRequest {
 // ─── Query Params ───
 
 export interface ListCampaignsParams {
-  take?: number;
-  skip?: number;
+  page?: number;
+  limit?: number;
   status?: CampaignStatus;
-  sortBy?: "createdAt" | "updatedAt" | "name" | "scheduledAt";
+  sortBy?: "createdAt" | "updatedAt" | "scheduledAt";
   sortOrder?: "asc" | "desc";
 }
 
 export interface ListRecipientsParams {
-  take?: number;
-  skip?: number;
+  page?: number;
+  limit?: number;
   status?: CampaignRecipientStatus;
 }
 

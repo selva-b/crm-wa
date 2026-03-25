@@ -38,6 +38,7 @@ import { BillingModule } from './modules/billing/billing.module';
 import { ObservabilityModule } from './modules/observability/observability.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { TeamsModule } from './modules/teams/teams.module';
 
 // Guards & Interceptors
 import { JwtAuthGuard } from './modules/auth/interfaces/guards/jwt-auth.guard';
@@ -102,6 +103,7 @@ import { EventsModule } from './events/events.module';
     ObservabilityModule,
     NotificationsModule,
     SettingsModule,
+    TeamsModule,
 
     // Background workers
     JobsModule,

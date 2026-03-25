@@ -47,11 +47,34 @@ export class SendMessageUseCase {
       }
     }
 
-    // 2. Validate active session exists and is connected
-    const session = await this.sessionRepo.findActiveByUserId(userId, orgId);
+    // 2. Resolve which WhatsApp session to use for sending
+    //    Priority: conversationId (use conversation's session) > viaSessionUserId > caller's own session
+    let session: Awaited<ReturnType<typeof this.sessionRepo.findActiveByUserId>> = null;
+
+    if (dto.conversationId) {
+      // Sending within an existing conversation — use that conversation's session
+      const conv = await this.conversationRepo.findByIdAndOrg(dto.conversationId, orgId);
+      if (conv) {
+        session = await this.sessionRepo.findById(conv.sessionId);
+        if (session && session.status !== 'CONNECTED') {
+          session = null; // Session exists but isn't connected
+        }
+      }
+    }
+
+    if (!session && dto.viaSessionUserId) {
+      // Admin/Manager explicitly specifying which user's session to use
+      session = await this.sessionRepo.findActiveByUserId(dto.viaSessionUserId, orgId);
+    }
+
+    if (!session) {
+      // Default: use caller's own session
+      session = await this.sessionRepo.findActiveByUserId(userId, orgId);
+    }
+
     if (!session || session.status !== 'CONNECTED') {
       throw new BadRequestException(
-        'No connected WhatsApp session. Connect via QR first.',
+        'No connected WhatsApp session available to send this message.',
       );
     }
 

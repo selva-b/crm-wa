@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Users,
+  UsersRound,
   Megaphone,
   Clock,
   Zap,
@@ -27,22 +28,40 @@ import { useUIStore } from "@/stores/ui-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLogout } from "@/hooks/use-auth";
 
-const navItems = [
+type Role = "ADMIN" | "MANAGER" | "EMPLOYEE";
+
+interface NavItemDef {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  countKey?: "inbox";
+  /** Roles that can see this item. Undefined = all roles. */
+  roles?: Role[];
+}
+
+const navItems: NavItemDef[] = [
   { href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" />, label: "Dashboard" },
-  { href: "/inbox", icon: <MessageSquare className="h-5 w-5" />, label: "Inbox", countKey: "inbox" as const },
+  { href: "/inbox", icon: <MessageSquare className="h-5 w-5" />, label: "Inbox", countKey: "inbox" },
   { href: "/contacts", icon: <Users className="h-5 w-5" />, label: "Contacts" },
-  { href: "/campaigns", icon: <Megaphone className="h-5 w-5" />, label: "Campaigns" },
-  { href: "/scheduler", icon: <Clock className="h-5 w-5" />, label: "Scheduler" },
-  { href: "/automation", icon: <Zap className="h-5 w-5" />, label: "Automation" },
-  { href: "/settings", icon: <Settings className="h-5 w-5" />, label: "Settings" },
-  { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing" },
+  { href: "/campaigns", icon: <Megaphone className="h-5 w-5" />, label: "Campaigns", roles: ["ADMIN", "MANAGER"] },
+  { href: "/scheduler", icon: <Clock className="h-5 w-5" />, label: "Scheduler", roles: ["ADMIN", "MANAGER"] },
+  { href: "/automation", icon: <Zap className="h-5 w-5" />, label: "Automation", roles: ["ADMIN", "MANAGER"] },
+  { href: "/settings", icon: <Settings className="h-5 w-5" />, label: "Settings", roles: ["ADMIN"] },
+  { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
+  { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN"] },
 ];
 
 const adminNavItems = [
+  { href: "/admin/users", icon: <Users className="h-5 w-5" />, label: "Users" },
+  { href: "/admin/teams", icon: <UsersRound className="h-5 w-5" />, label: "Teams" },
   { href: "/admin/whatsapp-sessions", icon: <Wifi className="h-5 w-5" />, label: "WA Sessions" },
   { href: "/admin/roles-permissions", icon: <Shield className="h-5 w-5" />, label: "Permissions" },
   { href: "/admin/audit-logs", icon: <FileText className="h-5 w-5" />, label: "Audit Logs" },
   { href: "/admin/observability", icon: <Activity className="h-5 w-5" />, label: "Observability" },
+];
+
+const managerNavItems = [
+  { href: "/team", icon: <UsersRound className="h-5 w-5" />, label: "My Team" },
 ];
 
 export function Sidebar() {
@@ -79,7 +98,9 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
-        {navItems.map((item) => (
+        {navItems
+          .filter((item) => !item.roles || item.roles.includes(user?.role as Role))
+          .map((item) => (
           <NavItem
             key={item.href}
             href={item.href}
@@ -89,6 +110,28 @@ export function Sidebar() {
             collapsed={collapsed}
           />
         ))}
+
+        {/* Manager section */}
+        {user?.role === "MANAGER" && (
+          <>
+            <div className={cn("pt-3 pb-1", collapsed ? "px-0" : "px-2")}>
+              {!collapsed && (
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/50">
+                  Team
+                </span>
+              )}
+            </div>
+            {managerNavItems.map((item) => (
+              <NavItem
+                key={item.href}
+                href={item.href}
+                icon={item.icon}
+                label={item.label}
+                collapsed={collapsed}
+              />
+            ))}
+          </>
+        )}
 
         {/* Admin section */}
         {user?.role === "ADMIN" && (

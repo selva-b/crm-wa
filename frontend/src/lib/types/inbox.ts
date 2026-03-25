@@ -83,6 +83,8 @@ export interface SendMessageRequest {
   mediaMimeType?: string;
   idempotencyKey?: string;
   priority?: number;
+  viaSessionUserId?: string;
+  conversationId?: string;
 }
 
 // Query params matching backend DTOs
@@ -90,6 +92,8 @@ export interface ListConversationsParams {
   status?: "OPEN" | "CLOSED" | "ARCHIVED";
   assignedToId?: string;
   sessionId?: string;
+  targetUserId?: string;
+  teamView?: boolean;
   page?: number;
   limit?: number;
 }

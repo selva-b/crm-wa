@@ -39,6 +39,7 @@ export interface ListContactsOptions {
   skip?: number;
   leadStatus?: LeadStatus;
   ownerId?: string;
+  ownerIds?: string[];
   source?: ContactSource;
   tagIds?: string[];
   search?: string;
@@ -139,8 +140,7 @@ export class ContactRepository {
           now(),
           now()
         )
-        ON CONFLICT (org_id, phone_number, deleted_at)
-          WHERE deleted_at IS NULL
+        ON CONFLICT (org_id, phone_number) WHERE deleted_at IS NULL
         DO NOTHING
         RETURNING id
       `;
@@ -264,6 +264,7 @@ export class ContactRepository {
       mergedIntoId: null, // Exclude merged contacts from listings
       ...(options.leadStatus && { leadStatus: options.leadStatus }),
       ...(options.ownerId && { ownerId: options.ownerId }),
+      ...(options.ownerIds && { ownerId: { in: options.ownerIds } }),
       ...(options.source && { source: options.source }),
       ...(options.tagIds &&
         options.tagIds.length > 0 && {

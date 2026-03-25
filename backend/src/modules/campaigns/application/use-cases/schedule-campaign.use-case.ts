@@ -47,7 +47,9 @@ export class ScheduleCampaignUseCase {
     if (isNaN(scheduledDate.getTime())) {
       throw new BadRequestException('Invalid scheduledAt date');
     }
-    if (scheduledDate <= new Date()) {
+    // Allow 60s buffer to account for create → schedule roundtrip
+    const bufferMs = 60_000;
+    if (scheduledDate.getTime() <= Date.now() - bufferMs) {
       throw new BadRequestException('scheduledAt must be in the future');
     }
 

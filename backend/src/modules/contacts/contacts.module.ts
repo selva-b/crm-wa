@@ -27,9 +27,10 @@ import { ContactsController } from './interfaces/controllers/contacts.controller
 // Dependent modules
 import { AuditModule } from '../audit/audit.module';
 import { UsersModule } from '../users/users.module';
+import { TeamsModule } from '../teams/teams.module';
 
 @Module({
-  imports: [AuditModule, UsersModule],
+  imports: [AuditModule, UsersModule, TeamsModule],
   controllers: [ContactsController],
   providers: [
     // Repository

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Building2,
   MessageSquare,
@@ -115,6 +116,14 @@ const LANGUAGES = [
   { value: "de", label: "German" },
 ];
 
+function EmployeeSettingsRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/settings/whatsapp");
+  }, [router]);
+  return null;
+}
+
 export default function SettingsPage() {
   usePageTitle("Settings");
 
@@ -122,16 +131,7 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("organization");
 
   if (user?.role !== "ADMIN") {
-    return (
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="text-center">
-          <ShieldAlert className="h-12 w-12 text-on-surface-variant/40 mx-auto mb-3" />
-          <p className="text-[14px] text-on-surface-variant">
-            You don&apos;t have permission to access settings.
-          </p>
-        </div>
-      </div>
-    );
+    return <EmployeeSettingsRedirect />;
   }
 
   return (
