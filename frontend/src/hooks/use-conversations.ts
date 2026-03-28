@@ -56,6 +56,20 @@ export function useSendMessage() {
   });
 }
 
+export function useDeleteConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsApi.delete(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}
+
 export function useMarkAsRead() {
   const queryClient = useQueryClient();
 

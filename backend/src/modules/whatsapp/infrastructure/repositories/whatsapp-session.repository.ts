@@ -45,6 +45,22 @@ export class WhatsAppSessionRepository {
     });
   }
 
+  async findAnyByUserId(userId: string, orgId: string) {
+    return this.prisma.whatsAppSession.findFirst({
+      where: { userId, orgId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findAllSessionIdsByUserId(userId: string, orgId: string): Promise<string[]> {
+    const sessions = await this.prisma.whatsAppSession.findMany({
+      where: { userId, orgId },
+      select: { id: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return sessions.map((s) => s.id);
+  }
+
   async findActiveByUserId(userId: string, orgId: string) {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 

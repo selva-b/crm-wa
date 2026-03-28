@@ -1,5 +1,7 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
+import { join } from 'path';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -7,7 +9,7 @@ import { CustomValidationPipe } from './common/pipes/validation.pipe';
 import { StructuredLogger } from './infrastructure/logger/structured-logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
   });
 
@@ -23,8 +25,18 @@ async function bootstrap() {
     'http://localhost:3000',
   );
 
-  // Security
-  app.use(helmet());
+  // Security — relax CSP/CORP for uploaded media served cross-origin to frontend
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: {
+        directives: {
+          ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+          'img-src': ["'self'", 'data:', 'blob:', frontendUrl],
+        },
+      },
+    }),
+  );
 
   // CORS — include x-trace-id header for client-side correlation
   app.enableCors({
@@ -34,6 +46,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-trace-id'],
     exposedHeaders: ['x-trace-id'],
   });
+
+  // Serve uploaded files statically (before global prefix)
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
   // Global prefix
   app.setGlobalPrefix(apiPrefix);

@@ -17,10 +17,11 @@ export default function InboxPage() {
   // Persist selected user in URL: /inbox?userId=xxx&userName=xxx
   const targetUserId = searchParams.get("userId");
   const targetUserName = searchParams.get("userName");
+  const autoSelectPhone = searchParams.get("phone");
 
   // Employee: show their own inbox directly
   if (!isAdminOrManager) {
-    return <InboxView />;
+    return <InboxView autoSelectPhone={autoSelectPhone} />;
   }
 
   // Admin/Manager with a selected user: show that user's conversations
@@ -31,6 +32,7 @@ export default function InboxPage() {
         targetUserName={targetUserName}
         isAdminView
         onBack={() => router.push("/inbox")}
+        autoSelectPhone={autoSelectPhone}
       />
     );
   }

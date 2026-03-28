@@ -7,6 +7,27 @@ import type {
   ListMessagesParams,
 } from "@/lib/types/inbox";
 
+export interface UploadResponse {
+  url: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+}
+
+export const uploadApi = {
+  uploadFile: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiClient
+      .post<UploadResponse>("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000,
+      })
+      .then((r) => r.data);
+  },
+};
+
 export const messagesApi = {
   send: (data: SendMessageRequest) =>
     apiClient

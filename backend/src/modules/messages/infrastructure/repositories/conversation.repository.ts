@@ -91,6 +91,13 @@ export class ConversationRepository {
     });
   }
 
+  async softDelete(id: string) {
+    return this.prisma.conversation.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
   /**
    * List conversations for an org, sorted by most recent message.
    * Supports filtering by status and assigned user.

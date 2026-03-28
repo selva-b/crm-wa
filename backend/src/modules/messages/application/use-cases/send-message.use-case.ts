@@ -109,11 +109,25 @@ export class SendMessageUseCase {
     }
 
     // 5. Find or create conversation thread
-    const conversation = await this.conversationRepo.findOrCreate({
-      orgId,
-      sessionId: session.id,
-      contactPhone: dto.contactPhone,
-    });
+    //    If conversationId is provided (replying in existing thread), reuse it
+    //    Otherwise find/create by sessionId + contactPhone
+    let conversation;
+    if (dto.conversationId) {
+      conversation = await this.conversationRepo.findById(dto.conversationId);
+      if (!conversation || conversation.orgId !== orgId) {
+        conversation = await this.conversationRepo.findOrCreate({
+          orgId,
+          sessionId: session.id,
+          contactPhone: dto.contactPhone,
+        });
+      }
+    } else {
+      conversation = await this.conversationRepo.findOrCreate({
+        orgId,
+        sessionId: session.id,
+        contactPhone: dto.contactPhone,
+      });
+    }
 
     // 6. Persist message in DB with QUEUED status
     const message = await this.messageRepo.create({

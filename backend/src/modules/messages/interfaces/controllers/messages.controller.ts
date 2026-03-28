@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Param,
   Query,
@@ -31,6 +32,7 @@ import {
   ListDeadLettersUseCase,
   ReprocessDeadLetterUseCase,
 } from '../../application/use-cases';
+import { DeleteConversationUseCase } from '../../application/use-cases/delete-conversation.use-case';
 
 @Controller('messaging')
 export class MessagesController {
@@ -42,6 +44,7 @@ export class MessagesController {
     private readonly markConversationReadUseCase: MarkConversationReadUseCase,
     private readonly listDeadLettersUseCase: ListDeadLettersUseCase,
     private readonly reprocessDeadLetterUseCase: ReprocessDeadLetterUseCase,
+    private readonly deleteConversationUseCase: DeleteConversationUseCase,
   ) {}
 
   // ───── Messages ─────
@@ -115,6 +118,23 @@ export class MessagesController {
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
   ) {
     return this.markConversationReadUseCase.execute(conversationId, user.orgId);
+  }
+
+  @Delete('conversations/:conversationId')
+  @Permissions(PERMISSIONS.MESSAGES_SEND)
+  @HttpCode(HttpStatus.OK)
+  async deleteConversation(
+    @CurrentUser() user: JwtPayload,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Req() req: Request,
+  ) {
+    return this.deleteConversationUseCase.execute(
+      conversationId,
+      user.orgId,
+      user.sub,
+      this.getIp(req),
+      this.getUa(req),
+    );
   }
 
   // ───── Dead-Letter Queue (Admin) ─────

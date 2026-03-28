@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { contactsApi } from "@/lib/api/contacts";
+import { useAuthStore } from "@/stores/auth-store";
 import type {
   ListContactsParams,
   CreateContactRequest,
@@ -87,9 +88,11 @@ export function useOrgTags() {
 }
 
 export function useOrgMembers() {
+  const role = useAuthStore((s) => s.user?.role);
   return useQuery({
     queryKey: contactKeys.orgMembers,
     queryFn: () => contactsApi.listOrgMembers(),
+    enabled: role === "ADMIN" || role === "MANAGER",
   });
 }
 

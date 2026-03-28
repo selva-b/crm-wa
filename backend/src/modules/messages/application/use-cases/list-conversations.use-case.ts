@@ -23,12 +23,12 @@ export class ListConversationsUseCase {
     let sessionIds: string[] | undefined;
 
     if (role === 'EMPLOYEE') {
-      // Employee: force to own session only
-      const session = await this.sessionRepo.findActiveByUserId(userId, orgId);
-      if (!session) {
+      // Employee: show conversations from ALL their sessions (current + past)
+      const allIds = await this.sessionRepo.findAllSessionIdsByUserId(userId, orgId);
+      if (allIds.length === 0) {
         return { data: [], total: 0, page: query.page, limit: query.limit };
       }
-      sessionId = session.id;
+      sessionIds = allIds;
     } else if (role === 'MANAGER') {
       if (query.targetUserId) {
         // Drill-down: validate target is in manager's team
@@ -36,31 +36,31 @@ export class ListConversationsUseCase {
         if (!userIds.includes(query.targetUserId)) {
           throw new ForbiddenException('User is not in your team');
         }
-        const session = await this.sessionRepo.findActiveByUserId(query.targetUserId, orgId);
-        if (!session) {
+        const allIds = await this.sessionRepo.findAllSessionIdsByUserId(query.targetUserId, orgId);
+        if (allIds.length === 0) {
           return { data: [], total: 0, page: query.page, limit: query.limit };
         }
-        sessionId = session.id;
+        sessionIds = allIds;
       } else if (query.teamView) {
         // Team view: all team members' sessions
         const result = await this.getTeamSessionIds.execute(userId, orgId);
         sessionIds = result.sessionIds;
       } else {
-        // Default: own session only
-        const session = await this.sessionRepo.findActiveByUserId(userId, orgId);
-        if (!session) {
+        // Default: own sessions (all history)
+        const allIds = await this.sessionRepo.findAllSessionIdsByUserId(userId, orgId);
+        if (allIds.length === 0) {
           return { data: [], total: 0, page: query.page, limit: query.limit };
         }
-        sessionId = session.id;
+        sessionIds = allIds;
       }
     } else if (role === 'ADMIN') {
       if (query.targetUserId) {
-        // Drill-down into any user's session
-        const session = await this.sessionRepo.findActiveByUserId(query.targetUserId, orgId);
-        if (!session) {
+        // Drill-down into any user's all sessions
+        const allIds = await this.sessionRepo.findAllSessionIdsByUserId(query.targetUserId, orgId);
+        if (allIds.length === 0) {
           return { data: [], total: 0, page: query.page, limit: query.limit };
         }
-        sessionId = session.id;
+        sessionIds = allIds;
       }
       // No targetUserId = all org conversations (existing behavior)
     }

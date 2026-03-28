@@ -9,7 +9,11 @@ import {
   Trash2,
   UserPlus,
   MoreHorizontal,
+  MessageSquare,
+  Pencil,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/auth-store";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +24,7 @@ import { ContactTags } from "./contact-tags";
 import { ContactNotes } from "./contact-notes";
 import { ContactHistory } from "./contact-history";
 import { AssignOwnerModal } from "./assign-owner-modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   useContact,
   useChangeLeadStatus,
@@ -56,8 +61,12 @@ export function ContactDetailDrawer({
   const [activeTab, setActiveTab] = useState("info");
   const [showActions, setShowActions] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", email: "" });
+
+  const router = useRouter();
+  const userRole = useAuthStore((s) => s.user?.role);
 
   const { data: contact, isLoading } = useContact(contactId);
   const changeStatus = useChangeLeadStatus();
@@ -70,22 +79,45 @@ export function ContactDetailDrawer({
   }
 
   function handleDelete() {
-    if (!contactId) return;
-    if (!confirm("Are you sure you want to delete this contact?")) return;
-    deleteContact.mutate(contactId, { onSuccess: onClose });
+    setShowDeleteConfirm(true);
   }
 
-  function handleNameSave() {
-    if (!contactId || !nameValue.trim()) return;
+  function startEditing() {
+    if (!contact) return;
+    setEditForm({
+      name: contact.name || "",
+      email: contact.email || "",
+    });
+    setEditing(true);
+  }
+
+  function handleEditSave() {
+    if (!contactId) return;
+    const updates: Record<string, string> = {};
+    if (editForm.name.trim()) updates.name = editForm.name.trim();
+    if (editForm.email.trim()) updates.email = editForm.email.trim();
+    if (Object.keys(updates).length === 0) {
+      setEditing(false);
+      return;
+    }
     updateContact.mutate(
-      { contactId, name: nameValue.trim() },
-      { onSuccess: () => setEditingName(false) },
+      { contactId, ...updates },
+      { onSuccess: () => setEditing(false) },
     );
   }
 
-  function startEditName() {
-    setNameValue(contact?.name || "");
-    setEditingName(true);
+  function openConversation() {
+    if (!contact) return;
+    const phoneParam = `phone=${encodeURIComponent(contact.phoneNumber)}`;
+    const isAdminOrManager = userRole === "ADMIN" || userRole === "MANAGER";
+    if (isAdminOrManager && contact.ownerId) {
+      const ownerName = `${contact.owner.firstName} ${contact.owner.lastName}`;
+      router.push(
+        `/inbox?userId=${encodeURIComponent(contact.ownerId)}&userName=${encodeURIComponent(ownerName)}&${phoneParam}`,
+      );
+    } else {
+      router.push(`/inbox?${phoneParam}`);
+    }
   }
 
   return (
@@ -170,39 +202,22 @@ export function ContactDetailDrawer({
                     size="lg"
                   />
                   <div className="flex-1 min-w-0">
-                    {editingName ? (
-                      <div className="flex gap-1.5">
-                        <input
-                          value={nameValue}
-                          onChange={(e) => setNameValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleNameSave();
-                            if (e.key === "Escape") setEditingName(false);
-                          }}
-                          autoFocus
-                          className="flex-1 h-7 rounded-lg bg-surface-container-low px-2 text-[14px] text-on-surface outline-none focus:ring-1 focus:ring-primary/40"
-                        />
-                        <Button
-                          size="sm"
-                          onClick={handleNameSave}
-                          loading={updateContact.isPending}
-                        >
-                          Save
-                        </Button>
-                      </div>
-                    ) : (
-                      <p
-                        className="text-[16px] font-semibold text-on-surface truncate cursor-pointer hover:text-primary transition-colors"
-                        onClick={startEditName}
-                        title="Click to edit name"
-                      >
-                        {contact.name || "Unknown"}
-                      </p>
-                    )}
+                    <p className="text-[16px] font-semibold text-on-surface truncate">
+                      {contact.name || "Unknown"}
+                    </p>
                     <p className="text-[12px] text-on-surface-variant/60 mt-0.5">
                       {contact.owner.firstName} {contact.owner.lastName}
                     </p>
                   </div>
+                  {!editing && (
+                    <button
+                      onClick={startEditing}
+                      className="shrink-0 p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
+                      title="Edit contact"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Status selector */}
@@ -224,22 +239,98 @@ export function ContactDetailDrawer({
                 </div>
               </div>
 
-              {/* Quick info */}
-              <div className="px-5 pb-4 space-y-2">
-                <div className="flex items-center gap-2 text-[13px] text-on-surface-variant">
-                  <Phone className="h-3.5 w-3.5 shrink-0" />
-                  <span>{contact.phoneNumber}</span>
-                </div>
-                {contact.email && (
-                  <div className="flex items-center gap-2 text-[13px] text-on-surface-variant">
-                    <Mail className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{contact.email}</span>
+              {/* Edit form or Quick info */}
+              {editing ? (
+                <div className="px-5 pb-4 space-y-3">
+                  <div>
+                    <label className="text-[11px] font-medium text-on-surface-variant/60 uppercase tracking-wide">
+                      Name
+                    </label>
+                    <input
+                      value={editForm.name}
+                      onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleEditSave();
+                        if (e.key === "Escape") setEditing(false);
+                      }}
+                      autoFocus
+                      placeholder="Contact name"
+                      className="mt-1 w-full h-9 rounded-lg bg-surface-container-low px-3 text-[13px] text-on-surface outline-none focus:ring-1 focus:ring-primary/40 border border-outline-variant/15"
+                    />
                   </div>
-                )}
-                <div className="flex items-center gap-2 text-[13px] text-on-surface-variant">
-                  <Globe className="h-3.5 w-3.5 shrink-0" />
-                  <Badge variant="default">{contact.source}</Badge>
+                  <div>
+                    <label className="text-[11px] font-medium text-on-surface-variant/60 uppercase tracking-wide">
+                      Email
+                    </label>
+                    <input
+                      value={editForm.email}
+                      onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleEditSave();
+                        if (e.key === "Escape") setEditing(false);
+                      }}
+                      placeholder="email@example.com"
+                      type="email"
+                      className="mt-1 w-full h-9 rounded-lg bg-surface-container-low px-3 text-[13px] text-on-surface outline-none focus:ring-1 focus:ring-primary/40 border border-outline-variant/15"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-on-surface-variant/60 uppercase tracking-wide">
+                      Phone
+                    </label>
+                    <p className="mt-1 px-3 py-2 text-[13px] text-on-surface-variant/60 bg-surface-container-low rounded-lg border border-outline-variant/10">
+                      {contact.phoneNumber}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setEditing(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleEditSave}
+                      loading={updateContact.isPending}
+                    >
+                      Save
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <div className="px-5 pb-4 space-y-2">
+                  <div className="flex items-center gap-2 text-[13px] text-on-surface-variant">
+                    <Phone className="h-3.5 w-3.5 shrink-0" />
+                    <span>{contact.phoneNumber}</span>
+                  </div>
+                  {contact.email && (
+                    <div className="flex items-center gap-2 text-[13px] text-on-surface-variant">
+                      <Mail className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{contact.email}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-[13px] text-on-surface-variant">
+                    <Globe className="h-3.5 w-3.5 shrink-0" />
+                    <Badge variant="default">{contact.source}</Badge>
+                  </div>
+                </div>
+              )}
+
+              {/* Open Conversation */}
+              <div className="px-5 pb-4">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  onClick={openConversation}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  View Conversation
+                </Button>
               </div>
 
               {/* Tags */}
@@ -319,6 +410,26 @@ export function ContactDetailDrawer({
           onClose={() => setShowAssign(false)}
         />
       )}
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete Contact"
+        message="This contact and all associated data will be soft-deleted. This action can be reversed by an admin."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteContact.isPending}
+        onConfirm={() => {
+          if (!contactId) return;
+          deleteContact.mutate(contactId, {
+            onSuccess: () => {
+              setShowDeleteConfirm(false);
+              onClose();
+            },
+          });
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </>
   );
 }

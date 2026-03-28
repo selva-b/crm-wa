@@ -22,6 +22,7 @@ import {
   ListDeadLettersUseCase,
   ReprocessDeadLetterUseCase,
 } from './application/use-cases';
+import { DeleteConversationUseCase } from './application/use-cases/delete-conversation.use-case';
 
 // Controller
 import { MessagesController } from './interfaces/controllers/messages.controller';
@@ -47,6 +48,7 @@ import { MessagesController } from './interfaces/controllers/messages.controller
     MarkConversationReadUseCase,
     ListDeadLettersUseCase,
     ReprocessDeadLetterUseCase,
+    DeleteConversationUseCase,
   ],
   exports: [
     MessageRepository,

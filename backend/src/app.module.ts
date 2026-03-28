@@ -22,6 +22,7 @@ import { EmailModule } from './infrastructure/email/email.module';
 import { WebSocketModule } from './infrastructure/websocket/websocket.module';
 import { WhatsAppApiModule } from './infrastructure/external/whatsapp/whatsapp-api.module';
 import { LoggerModule } from './infrastructure/logger/logger.module';
+import { StorageModule } from './infrastructure/storage/storage.module';
 
 // Domain modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -87,6 +88,7 @@ import { EventsModule } from './events/events.module';
     WebSocketModule,
     WhatsAppApiModule,
     LoggerModule,
+    StorageModule,
 
     // Domain modules
     AuthModule,

@@ -18,7 +18,7 @@ export class UpdateContactDto {
   email?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   @MaxLength(2048)
   avatarUrl?: string;
 }

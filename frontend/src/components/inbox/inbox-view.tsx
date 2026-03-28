@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { MessageSquare, WifiOff, ArrowLeft } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { MessageSquare, WifiOff, ArrowLeft, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { useInboxStore } from "@/stores/inbox-store";
@@ -19,12 +18,15 @@ import {
   useMessages,
   useSendMessage,
   useMarkAsRead,
+  useDeleteConversation,
 } from "@/hooks/use-conversations";
 import { useContactByPhone, useChangeLeadStatus } from "@/hooks/use-contacts";
 import { useInboxSocket } from "@/hooks/use-inbox-socket";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread } from "@/components/chat/message-thread";
-import { ChatInput } from "@/components/chat/chat-input";
+import { ChatInput, type MediaAttachment } from "@/components/chat/chat-input";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { uploadApi } from "@/lib/api/messages";
 import { ContactPanel } from "@/components/chat/contact-panel";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Avatar } from "@/components/ui/avatar";
@@ -80,6 +82,9 @@ function mapMessage(m: MessageResponse): Message {
     status: mapMessageStatus(m.status),
     createdAt: m.createdAt,
     senderName: m.contactName || undefined,
+    type: (m.type as Message["type"]) || "TEXT",
+    mediaUrl: m.mediaUrl,
+    mediaMimeType: m.mediaMimeType,
   };
 }
 
@@ -94,6 +99,8 @@ export interface InboxViewProps {
   isAdminView?: boolean;
   /** Callback to go back to user list (admin/manager) */
   onBack?: () => void;
+  /** Auto-select conversation matching this phone number (from contacts page) */
+  autoSelectPhone?: string | null;
 }
 
 // ─── Component ───────────────────────────────────────
@@ -103,8 +110,8 @@ export function InboxView({
   targetUserName,
   isAdminView = false,
   onBack,
+  autoSelectPhone,
 }: InboxViewProps) {
-  const router = useRouter();
   const userRole = useAuthStore((s) => s.user?.role);
   const contactPanelOpen = useUIStore((s) => s.contactPanelOpen);
   const toggleContactPanel = useUIStore((s) => s.toggleContactPanel);
@@ -141,6 +148,8 @@ export function InboxView({
   const messagesQuery = useMessages(selectedId);
   const sendMessage = useSendMessage();
   const markAsRead = useMarkAsRead();
+  const deleteConversation = useDeleteConversation();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // ─── Contact data for selected conversation (lookup by phone) ───
   const selectedRawConv = conversationsQuery.data?.data?.find(
@@ -161,7 +170,7 @@ export function InboxView({
   }, [conversationsQuery.data, filter]);
 
   const currentMessages = useMemo<Message[]>(
-    () => (messagesQuery.data?.data ?? []).map(mapMessage),
+    () => (messagesQuery.data?.data ?? []).map(mapMessage).reverse(),
     [messagesQuery.data],
   );
 
@@ -180,20 +189,54 @@ export function InboxView({
     }
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ─── Auto-select conversation by phone (from contacts page) ───
+  useEffect(() => {
+    if (!autoSelectPhone || !conversationsQuery.data?.data?.length) return;
+    const match = conversationsQuery.data.data.find(
+      (c) => c.contactPhone === autoSelectPhone,
+    );
+    if (match && match.id !== selectedId) {
+      setSelectedId(match.id);
+    }
+  }, [autoSelectPhone, conversationsQuery.data]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const isDisconnected =
     waStatus === "disconnected" || waStatus === "reconnecting";
   const hasNoSession = waStatus === "no_session";
   const isConnecting = waStatus === "connecting";
 
-  // ─── Send handler ───
+  // ─── Send handler (text + media) ───
+  const [uploading, setUploading] = useState(false);
+
   const handleSend = useCallback(
-    (content: string) => {
+    async (content: string, media?: MediaAttachment) => {
       if (!selectedConversation) return;
+
+      let mediaUrl: string | undefined;
+      let mediaMimeType: string | undefined;
+      let messageType: "TEXT" | "IMAGE" | "VIDEO" | "AUDIO" | "DOCUMENT" = "TEXT";
+
+      if (media) {
+        try {
+          setUploading(true);
+          const uploaded = await uploadApi.uploadFile(media.file);
+          mediaUrl = uploaded.url;
+          mediaMimeType = uploaded.mimeType;
+          messageType = media.type;
+        } catch {
+          setUploading(false);
+          return;
+        }
+        setUploading(false);
+      }
+
       sendMessage.mutate({
         contactPhone: selectedConversation.contactPhone,
         contactName: selectedConversation.contactName,
-        type: "TEXT",
-        body: content,
+        type: messageType,
+        body: content || undefined,
+        mediaUrl,
+        mediaMimeType,
         idempotencyKey: `${selectedConversation.id}-${Date.now()}`,
         conversationId: selectedId || undefined,
         ...(targetUserId && { viaSessionUserId: targetUserId }),
@@ -313,6 +356,14 @@ export function InboxView({
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleteConversation.isPending}
+                  className="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors"
+                  title="Delete conversation"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <button
                   onClick={toggleContactPanel}
                   className={cn(
                     "p-2 rounded-lg transition-colors",
@@ -363,6 +414,7 @@ export function InboxView({
               <ChatInput
                 onSend={handleSend}
                 disabled={sendMessage.isPending}
+                uploading={uploading}
               />
             )}
           </>
@@ -400,6 +452,24 @@ export function InboxView({
           />
         </div>
       )}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete Conversation"
+        message="This conversation will be removed from your inbox. Messages are preserved for audit purposes."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteConversation.isPending}
+        onConfirm={() => {
+          if (!selectedId) return;
+          deleteConversation.mutate(selectedId, {
+            onSuccess: () => {
+              setSelectedId(null);
+              setShowDeleteConfirm(false);
+            },
+          });
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

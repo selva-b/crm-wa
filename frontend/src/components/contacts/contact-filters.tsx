@@ -4,6 +4,7 @@ import { X, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useContactsStore } from "@/stores/contacts-store";
 import { useOrgMembers, useOrgTags } from "@/hooks/use-contacts";
+import { useAuthStore } from "@/stores/auth-store";
 import type { LeadStatus, ContactSource } from "@/lib/types/contacts";
 
 const LEAD_STATUSES: { value: LeadStatus; label: string }[] = [
@@ -34,6 +35,8 @@ export function ContactFilters() {
     clearFilters,
   } = useContactsStore();
 
+  const role = useAuthStore((s) => s.user?.role);
+  const isAdminOrManager = role === "ADMIN" || role === "MANAGER";
   const { data: members } = useOrgMembers();
   const { data: orgTags } = useOrgTags();
 
@@ -59,19 +62,21 @@ export function ContactFilters() {
         ))}
       </select>
 
-      {/* Owner */}
-      <select
-        value={filterOwnerId ?? ""}
-        onChange={(e) => setFilterOwnerId(e.target.value || null)}
-        className="h-8 rounded-lg bg-surface-container-low px-2.5 text-[12px] text-on-surface-variant outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
-      >
-        <option value="">All Owners</option>
-        {(members ?? []).map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.firstName} {m.lastName}
-          </option>
-        ))}
-      </select>
+      {/* Owner — admin/manager only */}
+      {isAdminOrManager && (
+        <select
+          value={filterOwnerId ?? ""}
+          onChange={(e) => setFilterOwnerId(e.target.value || null)}
+          className="h-8 rounded-lg bg-surface-container-low px-2.5 text-[12px] text-on-surface-variant outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
+        >
+          <option value="">All Owners</option>
+          {(members ?? []).map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.firstName} {m.lastName}
+            </option>
+          ))}
+        </select>
+      )}
 
       {/* Source */}
       <select

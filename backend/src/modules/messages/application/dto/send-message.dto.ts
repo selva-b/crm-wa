@@ -34,7 +34,7 @@ export class SendMessageDto {
   body?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   @MaxLength(2048)
   mediaUrl?: string;
 

@@ -55,7 +55,7 @@ export class CreateCampaignDto {
   messageBody?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   mediaUrl?: string;
 
   @IsOptional()
