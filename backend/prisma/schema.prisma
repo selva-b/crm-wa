@@ -372,6 +372,11 @@ model Organization {
   integrationConfigs      IntegrationConfig[]
   webhooks                Webhook[]
   teams                   Team[]
+  analyticsMessageDaily   AnalyticsMessageDaily[]
+  analyticsMessageHourly  AnalyticsMessageHourly[]
+  analyticsResponseTime   AnalyticsResponseTime[]
+  analyticsConversionDaily AnalyticsConversionDaily[]
+  analyticsCampaignSummary AnalyticsCampaignSummary[]
 
   @@index([slug])
   @@index([deletedAt])
@@ -1769,4 +1774,109 @@ model TeamMember {
   @@index([teamId])
   @@index([userId])
   @@map("team_members")
+}
+
+// ─────────────────────────────────────────────
+// EPIC 13 — ANALYTICS & REPORTING
+// ─────────────────────────────────────────────
+
+model AnalyticsMessageDaily {
+  id             String    @id @default(uuid()) @db.Uuid
+  orgId          String    @map("org_id") @db.Uuid
+  userId         String?   @map("user_id") @db.Uuid
+  date           DateTime  @db.Date
+  inboundCount   Int       @default(0) @map("inbound_count")
+  outboundCount  Int       @default(0) @map("outbound_count")
+  sentCount      Int       @default(0) @map("sent_count")
+  deliveredCount Int       @default(0) @map("delivered_count")
+  readCount      Int       @default(0) @map("read_count")
+  failedCount    Int       @default(0) @map("failed_count")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, userId, date], name: "unique_message_daily_org_user_date")
+  @@index([orgId, date])
+  @@index([orgId, userId, date])
+  @@map("analytics_message_daily")
+}
+
+model AnalyticsMessageHourly {
+  id            String   @id @default(uuid()) @db.Uuid
+  orgId         String   @map("org_id") @db.Uuid
+  hour          DateTime @db.Timestamptz()
+  inboundCount  Int      @default(0) @map("inbound_count")
+  outboundCount Int      @default(0) @map("outbound_count")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, hour], name: "unique_message_hourly_org_hour")
+  @@index([orgId, hour])
+  @@map("analytics_message_hourly")
+}
+
+model AnalyticsResponseTime {
+  id                  String   @id @default(uuid()) @db.Uuid
+  orgId               String   @map("org_id") @db.Uuid
+  userId              String?  @map("user_id") @db.Uuid
+  date                DateTime @db.Date
+  totalResponseTimeMs BigInt   @default(0) @map("total_response_time_ms")
+  responseCount       Int      @default(0) @map("response_count")
+  minResponseTimeMs   Int?     @map("min_response_time_ms")
+  maxResponseTimeMs   Int?     @map("max_response_time_ms")
+  p50ResponseTimeMs   Int?     @map("p50_response_time_ms")
+  p95ResponseTimeMs   Int?     @map("p95_response_time_ms")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, userId, date], name: "unique_response_time_org_user_date")
+  @@index([orgId, date])
+  @@index([orgId, userId, date])
+  @@map("analytics_response_time")
+}
+
+model AnalyticsConversionDaily {
+  id              String   @id @default(uuid()) @db.Uuid
+  orgId           String   @map("org_id") @db.Uuid
+  date            DateTime @db.Date
+  newCount        Int      @default(0) @map("new_count")
+  contactedCount  Int      @default(0) @map("contacted_count")
+  interestedCount Int      @default(0) @map("interested_count")
+  convertedCount  Int      @default(0) @map("converted_count")
+  closedCount     Int      @default(0) @map("closed_count")
+  transitionsJson Json     @default("{}") @map("transitions_json") @db.JsonB
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, date], name: "unique_conversion_daily_org_date")
+  @@index([orgId, date])
+  @@map("analytics_conversion_daily")
+}
+
+model AnalyticsCampaignSummary {
+  id                 String   @id @default(uuid()) @db.Uuid
+  orgId              String   @map("org_id") @db.Uuid
+  date               DateTime @db.Date
+  totalCampaigns     Int      @default(0) @map("total_campaigns")
+  completedCampaigns Int      @default(0) @map("completed_campaigns")
+  totalRecipients    Int      @default(0) @map("total_recipients")
+  totalSent          Int      @default(0) @map("total_sent")
+  totalDelivered     Int      @default(0) @map("total_delivered")
+  totalFailed        Int      @default(0) @map("total_failed")
+  totalRead          Int      @default(0) @map("total_read")
+  avgDeliveryRatePct Float    @default(0) @map("avg_delivery_rate_pct")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, date], name: "unique_campaign_summary_org_date")
+  @@index([orgId, date])
+  @@map("analytics_campaign_summary")
 }

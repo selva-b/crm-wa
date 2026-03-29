@@ -96,6 +96,10 @@ export const PERMISSIONS = {
   INTEGRATIONS_MANAGE: 'integrations:manage',
   WEBHOOKS_READ: 'webhooks:read',
   WEBHOOKS_MANAGE: 'webhooks:manage',
+
+  // ── Analytics ──
+  ANALYTICS_READ: 'analytics:read',
+  ANALYTICS_EXPORT: 'analytics:export',
 } as const;
 
 export type PermissionString = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -196,6 +200,10 @@ export const ALL_PERMISSIONS: PermissionSeed[] = [
   { resource: 'integrations', action: 'manage', description: 'Create, update, delete, and test integrations' },
   { resource: 'webhooks', action: 'read', description: 'View webhooks and delivery logs' },
   { resource: 'webhooks', action: 'manage', description: 'Create, update, delete, and test webhooks' },
+
+  // Analytics
+  { resource: 'analytics', action: 'read', description: 'View analytics dashboards and reports' },
+  { resource: 'analytics', action: 'export', description: 'Export analytics data' },
 ];
 
 // ─────────────────────────────────────────────
@@ -269,6 +277,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionString[]> = {
     PERMISSIONS.FEATURE_FLAGS_READ,
     PERMISSIONS.INTEGRATIONS_READ,
     PERMISSIONS.WEBHOOKS_READ,
+
+    // Analytics — read (team-scoped in use-case logic)
+    PERMISSIONS.ANALYTICS_READ,
   ],
 
   EMPLOYEE: [
@@ -305,5 +316,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionString[]> = {
     // Settings — read only
     PERMISSIONS.SETTINGS_READ,
     PERMISSIONS.FEATURE_FLAGS_READ,
+
+    // Analytics — read (self-scoped in use-case logic)
+    PERMISSIONS.ANALYTICS_READ,
   ],
 };

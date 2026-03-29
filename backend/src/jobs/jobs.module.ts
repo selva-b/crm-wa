@@ -35,6 +35,10 @@ import { NotificationEmailWorker } from './notification/notification-email.worke
 import { WebhookDeliveryWorker } from './webhook/webhook-delivery.worker';
 import { UsersModule } from '@/modules/users/users.module';
 import { SettingsModule } from '@/modules/settings/settings.module';
+import { AnalyticsModule } from '@/modules/analytics/analytics.module';
+// EPIC 13 — Analytics & Reporting workers
+import { AnalyticsDailyWorker } from './analytics/analytics-daily.worker';
+import { AnalyticsHourlyWorker } from './analytics/analytics-hourly.worker';
 
 @Module({
   imports: [
@@ -48,6 +52,7 @@ import { SettingsModule } from '@/modules/settings/settings.module';
     BillingModule,
     UsersModule,
     SettingsModule,
+    AnalyticsModule,
   ],
   providers: [
     SendEmailWorker,
@@ -78,6 +83,9 @@ import { SettingsModule } from '@/modules/settings/settings.module';
     NotificationEmailWorker,
     // EPIC 12 — Settings & Configuration workers
     WebhookDeliveryWorker,
+    // EPIC 13 — Analytics & Reporting workers
+    AnalyticsDailyWorker,
+    AnalyticsHourlyWorker,
   ],
 })
 export class JobsModule {}

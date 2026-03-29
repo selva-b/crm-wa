@@ -40,6 +40,7 @@ import { ObservabilityModule } from './modules/observability/observability.modul
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { TeamsModule } from './modules/teams/teams.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 // Guards & Interceptors
 import { JwtAuthGuard } from './modules/auth/interfaces/guards/jwt-auth.guard';
@@ -106,6 +107,7 @@ import { EventsModule } from './events/events.module';
     NotificationsModule,
     SettingsModule,
     TeamsModule,
+    AnalyticsModule,
 
     // Background workers
     JobsModule,

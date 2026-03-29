@@ -54,6 +54,10 @@ export const QUEUE_NAMES = {
   WEBHOOK_RETRY: 'webhook-retry',
   INTEGRATION_TEST: 'integration-test',
   CONFIG_CACHE_INVALIDATE: 'config-cache-invalidate',
+  // EPIC 13 — Analytics & Reporting queues
+  ANALYTICS_DAILY_AGGREGATE: 'analytics-daily-aggregate',
+  ANALYTICS_HOURLY_AGGREGATE: 'analytics-hourly-aggregate',
+  ANALYTICS_CLEANUP: 'analytics-cleanup',
 } as const;
 
 export const EVENT_NAMES = {
@@ -204,6 +208,11 @@ export const EVENT_NAMES = {
   WEBHOOK_DELETED: 'settings.webhook_deleted',
   WEBHOOK_DELIVERED: 'settings.webhook_delivered',
   WEBHOOK_DELIVERY_FAILED: 'settings.webhook_delivery_failed',
+
+  // Analytics & Reporting events (EPIC 13)
+  ANALYTICS_DAILY_AGGREGATED: 'analytics.daily_aggregated',
+  ANALYTICS_HOURLY_AGGREGATED: 'analytics.hourly_aggregated',
+  ANALYTICS_BACKFILL_COMPLETED: 'analytics.backfill_completed',
 } as const;
 
 export const WHATSAPP_CONFIG = {
@@ -404,4 +413,19 @@ export const METRIC_NAMES = {
   ACTIVE_WHATSAPP_SESSIONS: 'active_wa_sessions',
   DB_QUERY_TIME: 'db_query_time',
   ERROR_RATE: 'error_rate',
+} as const;
+
+export const ANALYTICS_CONFIG = {
+  /** How many days of data to retain in analytics tables */
+  RETENTION_DAYS: 365,
+  /** Hourly aggregation runs 5 minutes after each hour */
+  HOURLY_CRON: '5 * * * *',
+  /** Daily aggregation runs at 00:15 UTC */
+  DAILY_CRON: '15 0 * * *',
+  /** Cleanup runs once daily at 03:00 UTC */
+  CLEANUP_CRON: '0 3 * * *',
+  /** Max date range allowed for custom queries (days) */
+  MAX_QUERY_RANGE_DAYS: 90,
+  /** Backfill batch size (days per job) */
+  BACKFILL_BATCH_DAYS: 7,
 } as const;
