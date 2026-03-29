@@ -58,6 +58,10 @@ export const QUEUE_NAMES = {
   ANALYTICS_DAILY_AGGREGATE: 'analytics-daily-aggregate',
   ANALYTICS_HOURLY_AGGREGATE: 'analytics-hourly-aggregate',
   ANALYTICS_CLEANUP: 'analytics-cleanup',
+  // EPIC 15 — SLA Tracking queues
+  SLA_EVALUATE: 'sla-evaluate',
+  SLA_BREACH_CHECK: 'sla-breach-check',
+  SLA_ESCALATION: 'sla-escalation',
 } as const;
 
 export const EVENT_NAMES = {
@@ -213,6 +217,17 @@ export const EVENT_NAMES = {
   ANALYTICS_DAILY_AGGREGATED: 'analytics.daily_aggregated',
   ANALYTICS_HOURLY_AGGREGATED: 'analytics.hourly_aggregated',
   ANALYTICS_BACKFILL_COMPLETED: 'analytics.backfill_completed',
+
+  // SLA Tracking events (EPIC 15)
+  SLA_POLICY_CREATED: 'sla.policy_created',
+  SLA_POLICY_UPDATED: 'sla.policy_updated',
+  SLA_POLICY_DELETED: 'sla.policy_deleted',
+  SLA_TRACKING_STARTED: 'sla.tracking_started',
+  SLA_WARNING_TRIGGERED: 'sla.warning_triggered',
+  SLA_BREACH_DETECTED: 'sla.breach_detected',
+  SLA_BREACH_ACKNOWLEDGED: 'sla.breach_acknowledged',
+  SLA_BREACH_RESOLVED: 'sla.breach_resolved',
+  SLA_ESCALATION_TRIGGERED: 'sla.escalation_triggered',
 } as const;
 
 export const WHATSAPP_CONFIG = {
@@ -413,6 +428,27 @@ export const METRIC_NAMES = {
   ACTIVE_WHATSAPP_SESSIONS: 'active_wa_sessions',
   DB_QUERY_TIME: 'db_query_time',
   ERROR_RATE: 'error_rate',
+} as const;
+
+export const SLA_CONFIG = {
+  /** How often the SLA breach checker runs (seconds) */
+  BREACH_CHECK_INTERVAL_SECONDS: 30,
+  /** Worker concurrency for SLA evaluation */
+  WORKER_CONCURRENCY: 3,
+  /** Max SLA policies per organization */
+  MAX_POLICIES_PER_ORG: 50,
+  /** Breach check batch size (conversations per run) */
+  BREACH_CHECK_BATCH_SIZE: 500,
+  /** Minimum threshold value (ms) — 10 seconds */
+  MIN_THRESHOLD_MS: 10_000,
+  /** Maximum threshold value (ms) — 7 days */
+  MAX_THRESHOLD_MS: 604_800_000,
+  /** Escalation cooldown (seconds) — prevent escalation storms */
+  ESCALATION_COOLDOWN_SECONDS: 300,
+  /** SLA tracking retention days */
+  TRACKING_RETENTION_DAYS: 365,
+  /** Max escalation levels per policy */
+  MAX_ESCALATION_LEVELS: 5,
 } as const;
 
 export const ANALYTICS_CONFIG = {

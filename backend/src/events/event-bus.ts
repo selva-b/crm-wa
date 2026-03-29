@@ -861,3 +861,85 @@ export interface WebhookDeliveryFailedEvent {
   retryCount: number;
   willRetry: boolean;
 }
+
+// ─────────────────────────────────────────────
+// SLA Tracking events (EPIC 15)
+// ─────────────────────────────────────────────
+
+export interface SlaPolicyCreatedEvent {
+  policyId: string;
+  orgId: string;
+  name: string;
+  metricType: string;
+  thresholdMs: number;
+  createdById: string;
+}
+
+export interface SlaPolicyUpdatedEvent {
+  policyId: string;
+  orgId: string;
+  changes: Record<string, unknown>;
+  updatedById: string;
+}
+
+export interface SlaPolicyDeletedEvent {
+  policyId: string;
+  orgId: string;
+  deletedById: string;
+}
+
+export interface SlaTrackingStartedEvent {
+  trackingId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  assignedUserId: string | null;
+  deadlineAt: string;
+}
+
+export interface SlaWarningTriggeredEvent {
+  trackingId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  assignedUserId: string | null;
+  elapsedMs: number;
+  thresholdMs: number;
+  warningThresholdMs: number;
+}
+
+export interface SlaBreachDetectedEvent {
+  breachId: string;
+  trackingId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  assignedUserId: string | null;
+  metricType: string;
+  thresholdMs: number;
+  actualMs: number;
+}
+
+export interface SlaBreachAcknowledgedEvent {
+  breachId: string;
+  orgId: string;
+  acknowledgedById: string;
+}
+
+export interface SlaBreachResolvedEvent {
+  breachId: string;
+  trackingId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  resolvedMs: number;
+}
+
+export interface SlaEscalationTriggeredEvent {
+  breachId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  escalationLevel: number;
+  notifyUserIds: string[];
+}

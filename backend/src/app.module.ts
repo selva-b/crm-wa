@@ -41,6 +41,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { SettingsModule } from './modules/settings/settings.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { SlaModule } from './modules/sla/sla.module';
 
 // Guards & Interceptors
 import { JwtAuthGuard } from './modules/auth/interfaces/guards/jwt-auth.guard';
@@ -108,6 +109,7 @@ import { EventsModule } from './events/events.module';
     SettingsModule,
     TeamsModule,
     AnalyticsModule,
+    SlaModule,
 
     // Background workers
     JobsModule,

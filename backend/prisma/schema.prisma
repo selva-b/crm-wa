@@ -244,6 +244,15 @@ enum AuditAction {
   WEBHOOK_UPDATED
   WEBHOOK_DELETED
   WEBHOOK_TESTED
+
+  // SLA Tracking actions (EPIC 15)
+  SLA_POLICY_CREATED
+  SLA_POLICY_UPDATED
+  SLA_POLICY_DELETED
+  SLA_POLICY_ENABLED
+  SLA_POLICY_DISABLED
+  SLA_BREACH_DETECTED
+  SLA_BREACH_ACKNOWLEDGED
 }
 
 // ─────────────────────────────────────────────
@@ -377,6 +386,9 @@ model Organization {
   analyticsResponseTime   AnalyticsResponseTime[]
   analyticsConversionDaily AnalyticsConversionDaily[]
   analyticsCampaignSummary AnalyticsCampaignSummary[]
+  slaPolicies              SlaPolicy[]
+  slaTrackings             SlaTracking[]
+  slaBreachLogs            SlaBreachLog[]
 
   @@index([slug])
   @@index([deletedAt])
@@ -415,6 +427,7 @@ model User {
   notificationPreferences NotificationPreference[]
   managedTeams            Team[]                   @relation("TeamManager")
   teamMembers             TeamMember[]
+  createdSlaPolicies      SlaPolicy[]              @relation("SlaPolicyCreator")
 
   @@unique([email, deletedAt], name: "unique_email_active")
   @@index([orgId])
@@ -1473,6 +1486,7 @@ enum NotificationType {
   USAGE_LIMIT_REACHED
   SUBSCRIPTION_EXPIRING
   SYSTEM_ALERT
+  SLA_BREACH
 }
 
 enum NotificationPriority {
@@ -1879,4 +1893,127 @@ model AnalyticsCampaignSummary {
   @@unique([orgId, date], name: "unique_campaign_summary_org_date")
   @@index([orgId, date])
   @@map("analytics_campaign_summary")
+}
+
+// ─────────────────────────────────────────────
+// EPIC 15 — SLA TRACKING & TEAM PERFORMANCE
+// ─────────────────────────────────────────────
+
+enum SlaMetricType {
+  FIRST_RESPONSE_TIME
+  AVG_RESPONSE_TIME
+  RESOLUTION_TIME
+}
+
+enum SlaPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum SlaBreachStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model SlaPolicy {
+  id                 String        @id @default(uuid()) @db.Uuid
+  orgId              String        @map("org_id") @db.Uuid
+  name               String        @db.VarChar(255)
+  description        String?       @db.VarChar(1000)
+  metricType         SlaMetricType @map("metric_type")
+  priority           SlaPriority   @default(NORMAL)
+  thresholdMs        Int           @map("threshold_ms")
+  warningThresholdMs Int?          @map("warning_threshold_ms")
+  isActive           Boolean       @default(true) @map("is_active")
+  businessHoursOnly  Boolean       @default(false) @map("business_hours_only")
+  businessHoursStart Int?          @map("business_hours_start") // 0-23
+  businessHoursEnd   Int?          @map("business_hours_end")   // 0-23
+  businessDays       Json?         @map("business_days") @db.JsonB // [1,2,3,4,5]
+  timezone           String?       @db.VarChar(50) // e.g. "America/New_York"
+  notifyOnWarning    Boolean       @default(true) @map("notify_on_warning")
+  notifyOnBreach     Boolean       @default(true) @map("notify_on_breach")
+  notifyUserIds      Json?         @map("notify_user_ids") @db.JsonB // string[] of user IDs to notify
+  escalationPolicy   Json?         @map("escalation_policy") @db.JsonB // { levels: [{ delayMs, userIds }] }
+  createdById        String        @map("created_by_id") @db.Uuid
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  deletedAt          DateTime?     @map("deleted_at")
+
+  organization Organization  @relation(fields: [orgId], references: [id])
+  createdBy    User          @relation("SlaPolicyCreator", fields: [createdById], references: [id])
+  trackings    SlaTracking[]
+  breaches     SlaBreachLog[]
+
+  @@unique([orgId, name, deletedAt], name: "unique_sla_policy_name_per_org")
+  @@index([orgId])
+  @@index([orgId, isActive])
+  @@index([orgId, metricType])
+  @@index([deletedAt])
+  @@map("sla_policies")
+}
+
+model SlaTracking {
+  id               String    @id @default(uuid()) @db.Uuid
+  orgId            String    @map("org_id") @db.Uuid
+  policyId         String    @map("policy_id") @db.Uuid
+  conversationId   String    @map("conversation_id") @db.Uuid
+  assignedUserId   String?   @map("assigned_user_id") @db.Uuid
+  startedAt        DateTime  @map("started_at")
+  respondedAt      DateTime? @map("responded_at")
+  resolvedAt       DateTime? @map("resolved_at")
+  deadlineAt       DateTime  @map("deadline_at")
+  warningAt        DateTime? @map("warning_at")
+  elapsedMs        Int?      @map("elapsed_ms")
+  isBreached       Boolean   @default(false) @map("is_breached")
+  isWarning        Boolean   @default(false) @map("is_warning")
+  pausedAt         DateTime? @map("paused_at")
+  pausedDurationMs Int       @default(0) @map("paused_duration_ms")
+  idempotencyKey   String    @unique @map("idempotency_key") @db.VarChar(255)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  policy       SlaPolicy    @relation(fields: [policyId], references: [id])
+
+  @@index([orgId])
+  @@index([orgId, policyId])
+  @@index([orgId, isBreached])
+  @@index([orgId, conversationId])
+  @@index([deadlineAt])
+  @@index([assignedUserId])
+  @@index([orgId, assignedUserId, isBreached])
+  @@map("sla_trackings")
+}
+
+model SlaBreachLog {
+  id             String          @id @default(uuid()) @db.Uuid
+  orgId          String          @map("org_id") @db.Uuid
+  policyId       String          @map("policy_id") @db.Uuid
+  conversationId String          @map("conversation_id") @db.Uuid
+  assignedUserId String?         @map("assigned_user_id") @db.Uuid
+  metricType     SlaMetricType   @map("metric_type")
+  thresholdMs    Int             @map("threshold_ms")
+  actualMs       Int             @map("actual_ms")
+  status         SlaBreachStatus @default(ACTIVE)
+  acknowledgedBy String?         @map("acknowledged_by") @db.Uuid
+  acknowledgedAt DateTime?       @map("acknowledged_at")
+  resolvedAt     DateTime?       @map("resolved_at")
+  idempotencyKey String          @unique @map("idempotency_key") @db.VarChar(255)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  policy       SlaPolicy    @relation(fields: [policyId], references: [id])
+
+  @@index([orgId])
+  @@index([orgId, status])
+  @@index([orgId, policyId])
+  @@index([orgId, assignedUserId])
+  @@index([conversationId])
+  @@index([createdAt])
+  @@index([orgId, createdAt])
+  @@map("sla_breach_logs")
 }

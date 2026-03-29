@@ -40,6 +40,6 @@ import { AnalyticsController } from './interfaces/controllers/analytics.controll
     GetCampaignSummaryUseCase,
     GetDashboardOverviewUseCase,
   ],
-  exports: [AnalyticsRepository, AnalyticsAggregationRepository],
+  exports: [AnalyticsRepository, AnalyticsAggregationRepository, AnalyticsScopeService],
 })
 export class AnalyticsModule {}

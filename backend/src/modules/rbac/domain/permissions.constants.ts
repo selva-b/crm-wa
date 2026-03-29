@@ -100,6 +100,14 @@ export const PERMISSIONS = {
   // ── Analytics ──
   ANALYTICS_READ: 'analytics:read',
   ANALYTICS_EXPORT: 'analytics:export',
+
+  // ── SLA Tracking ──
+  SLA_READ: 'sla:read',
+  SLA_CREATE: 'sla:create',
+  SLA_UPDATE: 'sla:update',
+  SLA_DELETE: 'sla:delete',
+  SLA_BREACH_READ: 'sla:breach_read',
+  SLA_BREACH_ACKNOWLEDGE: 'sla:breach_acknowledge',
 } as const;
 
 export type PermissionString = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -204,6 +212,14 @@ export const ALL_PERMISSIONS: PermissionSeed[] = [
   // Analytics
   { resource: 'analytics', action: 'read', description: 'View analytics dashboards and reports' },
   { resource: 'analytics', action: 'export', description: 'Export analytics data' },
+
+  // SLA Tracking
+  { resource: 'sla', action: 'read', description: 'View SLA policies and tracking data' },
+  { resource: 'sla', action: 'create', description: 'Create SLA policies' },
+  { resource: 'sla', action: 'update', description: 'Update SLA policies' },
+  { resource: 'sla', action: 'delete', description: 'Delete SLA policies' },
+  { resource: 'sla', action: 'breach_read', description: 'View SLA breach logs' },
+  { resource: 'sla', action: 'breach_acknowledge', description: 'Acknowledge SLA breaches' },
 ];
 
 // ─────────────────────────────────────────────
@@ -280,6 +296,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionString[]> = {
 
     // Analytics — read (team-scoped in use-case logic)
     PERMISSIONS.ANALYTICS_READ,
+
+    // SLA — read + breach management
+    PERMISSIONS.SLA_READ,
+    PERMISSIONS.SLA_BREACH_READ,
+    PERMISSIONS.SLA_BREACH_ACKNOWLEDGE,
   ],
 
   EMPLOYEE: [
@@ -319,5 +340,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionString[]> = {
 
     // Analytics — read (self-scoped in use-case logic)
     PERMISSIONS.ANALYTICS_READ,
+
+    // SLA — read only
+    PERMISSIONS.SLA_READ,
+    PERMISSIONS.SLA_BREACH_READ,
   ],
 };

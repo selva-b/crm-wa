@@ -18,6 +18,7 @@ import {
   FileText,
   CreditCard,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavItem } from "./nav-item";
@@ -46,6 +47,7 @@ const navItems: NavItemDef[] = [
   { href: "/campaigns", icon: <Megaphone className="h-5 w-5" />, label: "Campaigns", roles: ["ADMIN", "MANAGER"] },
   { href: "/scheduler", icon: <Clock className="h-5 w-5" />, label: "Scheduler", roles: ["ADMIN", "MANAGER"] },
   { href: "/automation", icon: <Zap className="h-5 w-5" />, label: "Automation", roles: ["ADMIN", "MANAGER"] },
+  { href: "/sla", icon: <ShieldCheck className="h-5 w-5" />, label: "SLA Tracking", roles: ["ADMIN", "MANAGER"] },
   { href: "/settings", icon: <Settings className="h-5 w-5" />, label: "Settings", roles: ["ADMIN"] },
   { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
   { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN"] },

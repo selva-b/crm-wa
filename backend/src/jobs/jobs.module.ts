@@ -36,9 +36,15 @@ import { WebhookDeliveryWorker } from './webhook/webhook-delivery.worker';
 import { UsersModule } from '@/modules/users/users.module';
 import { SettingsModule } from '@/modules/settings/settings.module';
 import { AnalyticsModule } from '@/modules/analytics/analytics.module';
+import { NotificationsModule } from '@/modules/notifications/notifications.module';
 // EPIC 13 — Analytics & Reporting workers
 import { AnalyticsDailyWorker } from './analytics/analytics-daily.worker';
 import { AnalyticsHourlyWorker } from './analytics/analytics-hourly.worker';
+// EPIC 15 — SLA Tracking workers
+import { SlaModule } from '@/modules/sla/sla.module';
+import { SlaBreachCheckWorker } from './sla/sla-breach-check.worker';
+import { SlaEvaluateWorker } from './sla/sla-evaluate.worker';
+import { SlaEscalationWorker } from './sla/sla-escalation.worker';
 
 @Module({
   imports: [
@@ -53,6 +59,8 @@ import { AnalyticsHourlyWorker } from './analytics/analytics-hourly.worker';
     UsersModule,
     SettingsModule,
     AnalyticsModule,
+    SlaModule,
+    NotificationsModule,
   ],
   providers: [
     SendEmailWorker,
@@ -86,6 +94,10 @@ import { AnalyticsHourlyWorker } from './analytics/analytics-hourly.worker';
     // EPIC 13 — Analytics & Reporting workers
     AnalyticsDailyWorker,
     AnalyticsHourlyWorker,
+    // EPIC 15 — SLA Tracking workers
+    SlaBreachCheckWorker,
+    SlaEvaluateWorker,
+    SlaEscalationWorker,
   ],
 })
 export class JobsModule {}

@@ -27,6 +27,9 @@ import { NotificationEventsHandler } from './handlers/notification-events.handle
 // EPIC 12 — Settings & Configuration events
 import { SettingsEventsHandler } from './handlers/settings-events.handler';
 import { SettingsModule } from '@/modules/settings/settings.module';
+// EPIC 15 — SLA Tracking events
+import { SlaEventsHandler } from './handlers/sla-events.handler';
+import { SlaModule } from '@/modules/sla/sla.module';
 
 @Module({
   imports: [
@@ -40,6 +43,7 @@ import { SettingsModule } from '@/modules/settings/settings.module';
     NotificationsModule,
     UsersModule,
     SettingsModule,
+    SlaModule,
   ],
   providers: [
     AuthEventsHandler,
@@ -61,6 +65,8 @@ import { SettingsModule } from '@/modules/settings/settings.module';
     NotificationEventsHandler,
     // EPIC 12 — Settings & Configuration events
     SettingsEventsHandler,
+    // EPIC 15 — SLA Tracking events
+    SlaEventsHandler,
   ],
 })
 export class EventsModule {}
