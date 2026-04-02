@@ -5,7 +5,7 @@ import { MessageType, Prisma } from '@prisma/client';
 export interface CreateDeadLetterInput {
   orgId: string;
   originalMessageId: string;
-  sessionId: string;
+  sessionId?: string;
   contactPhone: string;
   type: MessageType;
   body?: string;

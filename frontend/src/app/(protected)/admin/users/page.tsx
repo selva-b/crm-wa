@@ -34,6 +34,15 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Table,
+  TableHeader,
+  TableHeaderRow,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 
 type Role = "ADMIN" | "MANAGER" | "EMPLOYEE";
 
@@ -338,27 +347,17 @@ export default function AdminUsersPage() {
         />
       ) : (
         <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-surface-container/50">
-                <th className="text-left text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider px-4 py-3">
-                  User
-                </th>
-                <th className="text-left text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider px-4 py-3">
-                  Role
-                </th>
-                <th className="text-left text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider px-4 py-3">
-                  Status
-                </th>
-                <th className="text-left text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider px-4 py-3">
-                  WhatsApp
-                </th>
-                <th className="text-right text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider px-4 py-3">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/10">
+          <Table>
+            <TableHeader>
+              <TableHeaderRow>
+                <TableHead>User</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>WhatsApp</TableHead>
+                <TableHead align="right">Actions</TableHead>
+              </TableHeaderRow>
+            </TableHeader>
+            <TableBody>
               {users.map((user) => {
                 const session = sessionByUser.get(user.id) as
                   | { status: string; phoneNumber: string | null }
@@ -366,11 +365,8 @@ export default function AdminUsersPage() {
                 const isSelf = user.id === currentUser?.id;
 
                 return (
-                  <tr
-                    key={user.id}
-                    className="hover:bg-surface-container/30 transition-colors"
-                  >
-                    <td className="px-4 py-3">
+                  <TableRow key={user.id}>
+                    <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar
                           name={`${user.firstName} ${user.lastName}`}
@@ -390,8 +386,8 @@ export default function AdminUsersPage() {
                           </p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       {changingRoleUserId === user.id ? (
                         <div className="flex items-center gap-1.5">
                           <select
@@ -446,11 +442,11 @@ export default function AdminUsersPage() {
                           )}
                         </button>
                       )}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <UserStatusBadge status={user.status} />
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         <SessionStatusBadge status={session?.status} />
                         {session?.phoneNumber && (
@@ -459,8 +455,8 @@ export default function AdminUsersPage() {
                           </span>
                         )}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell align="right">
                       <div className="flex items-center justify-end gap-1.5">
                         {/* View Inbox */}
                         <Button
@@ -517,12 +513,12 @@ export default function AdminUsersPage() {
                           </>
                         )}
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

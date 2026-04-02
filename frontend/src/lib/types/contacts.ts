@@ -1,7 +1,17 @@
 // ─── Enums (match backend Prisma enums) ───
 
 export type LeadStatus = "NEW" | "CONTACTED" | "INTERESTED" | "CONVERTED" | "CLOSED";
-export type ContactSource = "WHATSAPP" | "MANUAL" | "IMPORT" | "API";
+export type ContactSource =
+  | "WHATSAPP"
+  | "INSTAGRAM"
+  | "FACEBOOK"
+  | "EMAIL"
+  | "MANUAL"
+  | "IMPORT"
+  | "API"
+  | "FACEBOOK_LEAD_AD"
+  | "INSTAGRAM_LEAD_AD"
+  | "WHATSAPP_LEAD_AD";
 
 // ─── Tag ───
 

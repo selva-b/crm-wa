@@ -1,5 +1,7 @@
 // ─── Backend-aligned types (EPIC 5 Messaging Engine) ─────
 
+import type { ChannelType } from "./channels";
+
 // Matches backend Conversation model
 export interface ConversationResponse {
   id: string;
@@ -16,6 +18,10 @@ export interface ConversationResponse {
   updatedAt: string;
   // Joined field from backend (if populated)
   contactName?: string;
+  // EPIC 16 — Multi-Channel fields
+  channelId?: string | null;
+  channelType?: ChannelType | null;
+  contactIdentifier?: string | null;
 }
 
 export interface ConversationListResponse {
@@ -54,6 +60,11 @@ export interface MessageResponse {
   retryCount: number;
   failedReason: string | null;
   createdAt: string;
+  // EPIC 16 — Multi-Channel fields
+  channelId?: string | null;
+  channelType?: ChannelType | null;
+  externalMessageId?: string | null;
+  channelPayload?: Record<string, unknown> | null;
 }
 
 export interface MessagesListResponse {
@@ -85,6 +96,10 @@ export interface SendMessageRequest {
   priority?: number;
   viaSessionUserId?: string;
   conversationId?: string;
+  // EPIC 16 — Multi-Channel fields
+  channelId?: string;
+  contactIdentifier?: string;
+  channelPayload?: Record<string, unknown>;
 }
 
 // Query params matching backend DTOs
@@ -96,6 +111,8 @@ export interface ListConversationsParams {
   teamView?: boolean;
   page?: number;
   limit?: number;
+  // EPIC 16 — Multi-Channel filter
+  channelType?: ChannelType;
 }
 
 export interface ListMessagesParams {

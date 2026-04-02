@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AuditModule } from '@/modules/audit/audit.module';
 
 // Repositories
@@ -10,6 +11,8 @@ import { PaymentRepository } from './infrastructure/repositories/payment.reposit
 // Domain services
 import { UsageTrackingService } from './domain/services/usage-tracking.service';
 import { ProrationService } from './domain/services/proration.service';
+import { StripePaymentService } from './domain/services/stripe-payment.service';
+import { RazorpayPaymentService } from './domain/services/razorpay-payment.service';
 
 // Use cases
 import { CreatePlanUseCase } from './application/use-cases/create-plan.use-case';
@@ -26,12 +29,14 @@ import { ListInvoicesUseCase, ListPaymentsUseCase } from './application/use-case
 import { UsageLimitGuard } from './interfaces/guards/usage-limit.guard';
 import { FeatureFlagGuard } from './interfaces/guards/feature-flag.guard';
 
-// Controller
+// Controllers
 import { BillingController } from './interfaces/controllers/billing.controller';
+import { StripeWebhookController } from './interfaces/controllers/stripe-webhook.controller';
+import { RazorpayWebhookController } from './interfaces/controllers/razorpay-webhook.controller';
 
 @Module({
-  imports: [AuditModule],
-  controllers: [BillingController],
+  imports: [AuditModule, ConfigModule],
+  controllers: [BillingController, StripeWebhookController, RazorpayWebhookController],
   providers: [
     // Repositories
     PlanRepository,
@@ -42,6 +47,8 @@ import { BillingController } from './interfaces/controllers/billing.controller';
     // Domain services
     UsageTrackingService,
     ProrationService,
+    StripePaymentService,
+    RazorpayPaymentService,
 
     // Use cases
     CreatePlanUseCase,
@@ -69,6 +76,8 @@ import { BillingController } from './interfaces/controllers/billing.controller';
     PaymentRepository,
     UsageLimitGuard,
     FeatureFlagGuard,
+    StripePaymentService,
+    RazorpayPaymentService,
   ],
 })
 export class BillingModule {}

@@ -19,12 +19,13 @@ import {
   CreditCard,
   Activity,
   ShieldCheck,
+  Radio,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavItem } from "./nav-item";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useUIStore } from "@/stores/ui-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLogout } from "@/hooks/use-auth";
@@ -48,8 +49,10 @@ const navItems: NavItemDef[] = [
   { href: "/scheduler", icon: <Clock className="h-5 w-5" />, label: "Scheduler", roles: ["ADMIN", "MANAGER"] },
   { href: "/automation", icon: <Zap className="h-5 w-5" />, label: "Automation", roles: ["ADMIN", "MANAGER"] },
   { href: "/sla", icon: <ShieldCheck className="h-5 w-5" />, label: "SLA Tracking", roles: ["ADMIN", "MANAGER"] },
+  { href: "/lead-ads", icon: <Target className="h-5 w-5" />, label: "Lead Ads", roles: ["ADMIN", "MANAGER"] },
   { href: "/settings", icon: <Settings className="h-5 w-5" />, label: "Settings", roles: ["ADMIN"] },
   { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
+  { href: "/settings/channels", icon: <Radio className="h-5 w-5" />, label: "Channels", roles: ["ADMIN", "MANAGER"] },
   { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN"] },
 ];
 
@@ -108,7 +111,7 @@ export function Sidebar() {
             href={item.href}
             icon={item.icon}
             label={item.label}
-            count={item.countKey === "inbox" ? 12 : undefined}
+            count={undefined}
             collapsed={collapsed}
           />
         ))}
@@ -165,12 +168,14 @@ export function Sidebar() {
           collapsed && "px-1",
         )}
       >
-        {/* User info */}
-        <div
+        {/* User info — click to open profile */}
+        <a
+          href="/settings/profile"
           className={cn(
-            "flex items-center gap-2.5 rounded-xl px-2 py-2",
+            "flex items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-surface-container transition-colors cursor-pointer",
             collapsed && "justify-center px-0",
           )}
+          title="Edit profile"
         >
           <Avatar name={userName} size="sm" />
           {!collapsed && (
@@ -183,7 +188,7 @@ export function Sidebar() {
               </Badge>
             </div>
           )}
-        </div>
+        </a>
 
         {/* Actions */}
         <div
@@ -192,7 +197,6 @@ export function Sidebar() {
             collapsed ? "flex-col" : "justify-between px-2",
           )}
         >
-          <ThemeToggle />
           <button
             onClick={() => logout.mutate()}
             className="text-on-surface-variant hover:text-error transition-colors p-1.5 rounded-lg"

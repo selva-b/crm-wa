@@ -10,6 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Table,
+  TableHeader,
+  TableHeaderRow,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 
 export default function ManagerTeamPage() {
   usePageTitle("My Team");
@@ -63,34 +72,23 @@ export default function ManagerTeamPage() {
       </div>
 
       <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-surface-container/50">
-              <th className="text-left text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider px-4 py-3">
-                Member
-              </th>
-              <th className="text-left text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider px-4 py-3">
-                Team
-              </th>
-              <th className="text-left text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider px-4 py-3">
-                WhatsApp
-              </th>
-              <th className="text-right text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider px-4 py-3">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-outline-variant/10">
+        <Table>
+          <TableHeader>
+            <TableHeaderRow>
+              <TableHead>Member</TableHead>
+              <TableHead>Team</TableHead>
+              <TableHead>WhatsApp</TableHead>
+              <TableHead align="right">Actions</TableHead>
+            </TableHeaderRow>
+          </TableHeader>
+          <TableBody>
             {allMembers.map((member) => {
               const session = sessionByUser.get(member.user.id) as
                 | { status: string; phoneNumber: string | null }
                 | undefined;
               return (
-                <tr
-                  key={member.id}
-                  className="hover:bg-surface-container/30 transition-colors"
-                >
-                  <td className="px-4 py-3">
+                <TableRow key={member.id}>
+                  <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar
                         name={`${member.user.firstName} ${member.user.lastName}`}
@@ -105,11 +103,11 @@ export default function ManagerTeamPage() {
                         </p>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <Badge variant="info">{member.teamName}</Badge>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     {!session ? (
                       <Badge variant="default" className="gap-1">
                         <Minus className="h-3 w-3" />
@@ -126,8 +124,8 @@ export default function ManagerTeamPage() {
                         {session.status}
                       </Badge>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell align="right">
                     <Button
                       variant="secondary"
                       size="sm"
@@ -139,12 +137,12 @@ export default function ManagerTeamPage() {
                       <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
                       View Inbox
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

@@ -20,6 +20,7 @@ import {
   RefreshTokenUseCase,
   LogoutUseCase,
   SessionManagementUseCase,
+  ChangePasswordUseCase,
 } from './application/use-cases';
 
 // Controller
@@ -60,6 +61,7 @@ import { AuditModule } from '../audit/audit.module';
     RefreshTokenUseCase,
     LogoutUseCase,
     SessionManagementUseCase,
+    ChangePasswordUseCase,
 
     // Guard
     JwtAuthGuard,

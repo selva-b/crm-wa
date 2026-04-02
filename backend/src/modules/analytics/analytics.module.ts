@@ -16,6 +16,7 @@ import { GetPeakHoursUseCase } from './application/use-cases/get-peak-hours.use-
 import { GetTeamPerformanceUseCase } from './application/use-cases/get-team-performance.use-case';
 import { GetCampaignSummaryUseCase } from './application/use-cases/get-campaign-summary.use-case';
 import { GetDashboardOverviewUseCase } from './application/use-cases/get-dashboard-overview.use-case';
+import { ExportAnalyticsUseCase } from './application/use-cases/export-analytics.use-case';
 
 // Controller
 import { AnalyticsController } from './interfaces/controllers/analytics.controller';
@@ -39,6 +40,7 @@ import { AnalyticsController } from './interfaces/controllers/analytics.controll
     GetTeamPerformanceUseCase,
     GetCampaignSummaryUseCase,
     GetDashboardOverviewUseCase,
+    ExportAnalyticsUseCase,
   ],
   exports: [AnalyticsRepository, AnalyticsAggregationRepository, AnalyticsScopeService],
 })

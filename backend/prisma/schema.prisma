@@ -84,9 +84,36 @@ enum LeadStatus {
 
 enum ContactSource {
   WHATSAPP
+  INSTAGRAM
+  FACEBOOK
+  EMAIL
   MANUAL
   IMPORT
   API
+  // Lead Ads sources (Social Ads Integration)
+  FACEBOOK_LEAD_AD
+  INSTAGRAM_LEAD_AD
+  WHATSAPP_LEAD_AD
+}
+
+// ─────────────────────────────────────────────
+// MULTI-CHANNEL ENUMS (EPIC 16)
+// ─────────────────────────────────────────────
+
+enum ChannelType {
+  WHATSAPP
+  INSTAGRAM
+  FACEBOOK_MESSENGER
+  EMAIL
+}
+
+enum ChannelStatus {
+  PENDING_SETUP
+  VERIFYING
+  ACTIVE
+  SUSPENDED
+  ERROR
+  DISCONNECTED
 }
 
 enum CampaignStatus {
@@ -245,6 +272,23 @@ enum AuditAction {
   WEBHOOK_DELETED
   WEBHOOK_TESTED
 
+  // Social Ads Lead Integration actions
+  LEAD_AD_RECEIVED
+  LEAD_AD_PROCESSED
+  LEAD_AD_FAILED
+  LEAD_AD_CONFIG_CREATED
+  LEAD_AD_CONFIG_UPDATED
+
+  // Multi-Channel Integration actions (EPIC 16)
+  CHANNEL_CREATED
+  CHANNEL_UPDATED
+  CHANNEL_VERIFIED
+  CHANNEL_SUSPENDED
+  CHANNEL_REACTIVATED
+  CHANNEL_DISCONNECTED
+  CHANNEL_DELETED
+  CHANNEL_ERROR
+
   // SLA Tracking actions (EPIC 15)
   SLA_POLICY_CREATED
   SLA_POLICY_UPDATED
@@ -273,6 +317,7 @@ enum AutomationTriggerType {
   LEAD_STATUS_CHANGED
   TIME_BASED
   NO_REPLY
+  LEAD_AD_RECEIVED
 }
 
 enum AutomationConditionOperator {
@@ -389,6 +434,11 @@ model Organization {
   slaPolicies              SlaPolicy[]
   slaTrackings             SlaTracking[]
   slaBreachLogs            SlaBreachLog[]
+  channels                 Channel[]
+  leadAdEntries            LeadAdEntry[]
+  leadAdsConfig            LeadAdsConfig?
+  cannedResponses          CannedResponse[]
+  messageTemplates         MessageTemplate[]
 
   @@index([slug])
   @@index([deletedAt])
@@ -654,7 +704,7 @@ model WhatsAppSession {
 model Message {
   id                String           @id @default(uuid()) @db.Uuid
   orgId             String           @map("org_id") @db.Uuid
-  sessionId         String           @map("session_id") @db.Uuid
+  sessionId         String?          @map("session_id") @db.Uuid
   conversationId    String?          @map("conversation_id") @db.Uuid
   whatsappMessageId String?          @unique @map("whatsapp_message_id") @db.VarChar(255)
   direction         MessageDirection
@@ -681,9 +731,16 @@ model Message {
   updatedAt         DateTime         @updatedAt @map("updated_at")
   deletedAt         DateTime?        @map("deleted_at")
 
+  // EPIC 16 — Multi-Channel fields
+  channelId         String?          @map("channel_id") @db.Uuid
+  channelType       ChannelType?     @map("channel_type")
+  externalMessageId String?          @unique @map("external_message_id") @db.VarChar(255)
+  channelPayload    Json?            @map("channel_payload") @db.JsonB
+
   organization      Organization       @relation(fields: [orgId], references: [id])
-  session           WhatsAppSession    @relation(fields: [sessionId], references: [id])
+  session           WhatsAppSession?   @relation(fields: [sessionId], references: [id])
   conversation      Conversation?      @relation(fields: [conversationId], references: [id])
+  channel           Channel?           @relation(fields: [channelId], references: [id])
   events            MessageEvent[]
   campaignRecipient CampaignRecipient?
 
@@ -700,6 +757,10 @@ model Message {
   @@index([sessionId, contactPhone, createdAt])
   @@index([status, nextRetryAt])
   @@index([orgId, status, direction])
+  @@index([channelId])
+  @@index([channelType])
+  @@index([orgId, channelId, createdAt])
+  @@index([externalMessageId])
   @@map("messages")
 }
 
@@ -722,6 +783,86 @@ model WhatsAppAuthKey {
   @@index([sessionId])
   @@index([sessionId, keyType])
   @@map("whatsapp_auth_keys")
+}
+
+// ─────────────────────────────────────────────
+// CHANNEL (EPIC 16 — Multi-Channel Integration)
+// ─────────────────────────────────────────────
+
+model Channel {
+  id              String        @id @default(uuid()) @db.Uuid
+  orgId           String        @map("org_id") @db.Uuid
+  type            ChannelType
+  name            String        @db.VarChar(255)
+  status          ChannelStatus @default(PENDING_SETUP)
+
+  // Provider-specific identifiers
+  externalId      String?       @map("external_id") @db.VarChar(255)
+  externalHandle  String?       @map("external_handle") @db.VarChar(255)
+
+  // Encrypted credentials (AES-256-GCM)
+  encryptedConfig String?       @map("encrypted_config") @db.Text
+
+  // Channel capabilities (JSON array of supported features)
+  capabilities    Json          @default("[]") @db.JsonB
+
+  // Rate limiting
+  rateLimitPerMin Int           @default(60) @map("rate_limit_per_min")
+  rateLimitBurst  Int           @default(120) @map("rate_limit_burst")
+
+  // Webhook registration
+  webhookId       String?       @map("webhook_id") @db.VarChar(255)
+  webhookSecret   String?       @map("webhook_secret") @db.VarChar(255)
+
+  // Migration: link to legacy WhatsAppSession if migrated
+  legacySessionId String?       @unique @map("legacy_session_id") @db.Uuid
+
+  createdById     String        @map("created_by_id") @db.Uuid
+  verifiedAt      DateTime?     @map("verified_at")
+  suspendedAt     DateTime?     @map("suspended_at")
+  suspendReason   String?       @map("suspend_reason") @db.VarChar(500)
+  lastActiveAt    DateTime?     @map("last_active_at")
+  lastErrorAt     DateTime?     @map("last_error_at")
+  lastError       String?       @map("last_error") @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
+
+  organization    Organization  @relation(fields: [orgId], references: [id])
+  messages        Message[]
+  conversations   Conversation[]
+  rateLimits      ChannelRateLimit[]
+
+  @@unique([orgId, type, externalHandle, deletedAt], name: "unique_channel_handle_per_org")
+  @@index([orgId])
+  @@index([orgId, type])
+  @@index([type, status])
+  @@index([status])
+  @@index([externalId])
+  @@index([externalHandle])
+  @@index([lastActiveAt])
+  @@index([deletedAt])
+  @@map("channels")
+}
+
+// ─────────────────────────────────────────────
+// CHANNEL RATE LIMIT (EPIC 16 — Database-backed rate limiter)
+// ─────────────────────────────────────────────
+
+model ChannelRateLimit {
+  id          String   @id @default(uuid()) @db.Uuid
+  channelId   String   @map("channel_id") @db.Uuid
+  orgId       String   @map("org_id") @db.Uuid
+  windowStart DateTime @map("window_start")
+  count       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  channel     Channel  @relation(fields: [channelId], references: [id])
+
+  @@unique([channelId, windowStart], name: "unique_rate_window")
+  @@index([channelId, windowStart])
+  @@index([orgId])
+  @@map("channel_rate_limits")
 }
 
 // ─────────────────────────────────────────────
@@ -888,24 +1029,31 @@ model ContactNote {
 // ─────────────────────────────────────────────
 
 model Conversation {
-  id              String             @id @default(uuid()) @db.Uuid
-  orgId           String             @map("org_id") @db.Uuid
-  sessionId       String             @map("session_id") @db.Uuid
-  contactId       String?            @map("contact_id") @db.Uuid
-  contactPhone    String             @map("contact_phone") @db.VarChar(20)
-  status          ConversationStatus @default(OPEN)
-  lastMessageAt   DateTime?          @map("last_message_at")
-  lastMessageBody String?            @map("last_message_body") @db.VarChar(500)
-  unreadCount     Int                @default(0) @map("unread_count")
-  assignedToId    String?            @map("assigned_to_id") @db.Uuid
-  createdAt       DateTime           @default(now()) @map("created_at")
-  updatedAt       DateTime           @updatedAt @map("updated_at")
-  deletedAt       DateTime?          @map("deleted_at")
+  id                String             @id @default(uuid()) @db.Uuid
+  orgId             String             @map("org_id") @db.Uuid
+  sessionId         String?            @map("session_id") @db.Uuid
+  contactId         String?            @map("contact_id") @db.Uuid
+  contactPhone      String             @map("contact_phone") @db.VarChar(20)
+  status            ConversationStatus @default(OPEN)
+  lastMessageAt     DateTime?          @map("last_message_at")
+  lastMessageBody   String?            @map("last_message_body") @db.VarChar(500)
+  unreadCount       Int                @default(0) @map("unread_count")
+  assignedToId      String?            @map("assigned_to_id") @db.Uuid
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+
+  // EPIC 16 — Multi-Channel fields
+  channelId         String?            @map("channel_id") @db.Uuid
+  channelType       ChannelType?       @map("channel_type")
+  contactIdentifier String?            @map("contact_identifier") @db.VarChar(255)
 
   organization Organization @relation(fields: [orgId], references: [id])
+  channel      Channel?     @relation(fields: [channelId], references: [id])
   messages     Message[]
 
   @@unique([orgId, sessionId, contactPhone], name: "unique_conversation_per_contact_session")
+  @@unique([orgId, channelId, contactIdentifier], name: "unique_conversation_per_contact_channel")
   @@index([orgId])
   @@index([sessionId])
   @@index([contactPhone])
@@ -914,6 +1062,9 @@ model Conversation {
   @@index([orgId, lastMessageAt])
   @@index([assignedToId])
   @@index([deletedAt])
+  @@index([channelId])
+  @@index([channelType])
+  @@index([orgId, channelType, status])
   @@map("conversations")
 }
 
@@ -946,7 +1097,9 @@ model DeadLetterMessage {
   id                String      @id @default(uuid()) @db.Uuid
   orgId             String      @map("org_id") @db.Uuid
   originalMessageId String      @map("original_message_id") @db.Uuid
-  sessionId         String      @map("session_id") @db.Uuid
+  sessionId         String?     @map("session_id") @db.Uuid
+  channelId         String?     @map("channel_id") @db.Uuid
+  queueName         String?     @map("queue_name") @db.VarChar(100)
   contactPhone      String      @map("contact_phone") @db.VarChar(20)
   type              MessageType
   body              String?     @db.Text
@@ -1788,6 +1941,116 @@ model TeamMember {
   @@index([teamId])
   @@index([userId])
   @@map("team_members")
+}
+
+// ─────────────────────────────────────────────
+// CANNED RESPONSES (Quick Replies)
+// ─────────────────────────────────────────────
+
+model CannedResponse {
+  id          String   @id @default(uuid()) @db.Uuid
+  orgId       String   @map("org_id") @db.Uuid
+  title       String   @db.VarChar(100)
+  content     String   @db.Text
+  shortcut    String?  @db.VarChar(50)
+  category    String?  @db.VarChar(100)
+  createdById String   @map("created_by_id") @db.Uuid
+  usageCount  Int      @default(0) @map("usage_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, shortcut, deletedAt], name: "unique_shortcut_per_org")
+  @@index([orgId])
+  @@index([orgId, category])
+  @@index([deletedAt])
+  @@map("canned_responses")
+}
+
+// ─────────────────────────────────────────────
+// WHATSAPP MESSAGE TEMPLATES
+// ─────────────────────────────────────────────
+
+model MessageTemplate {
+  id                  String   @id @default(uuid()) @db.Uuid
+  orgId               String   @map("org_id") @db.Uuid
+  channelId           String?  @map("channel_id") @db.Uuid
+  name                String   @db.VarChar(255)
+  language            String   @default("en") @db.VarChar(10)
+  category            String?  @db.VarChar(50)
+  status              String   @default("PENDING") @db.VarChar(20)
+  whatsappTemplateId  String?  @map("whatsapp_template_id") @db.VarChar(255)
+  components          Json     @default("[]") @db.JsonB
+  exampleValues       Json?    @map("example_values") @db.JsonB
+  lastSyncedAt        DateTime? @map("last_synced_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, name, language, deletedAt], name: "unique_template_per_org")
+  @@index([orgId])
+  @@index([orgId, status])
+  @@index([channelId])
+  @@index([deletedAt])
+  @@map("message_templates")
+}
+
+// ─────────────────────────────────────────────
+// SOCIAL ADS LEAD INTEGRATION
+// ─────────────────────────────────────────────
+
+model LeadAdEntry {
+  id              String    @id @default(uuid()) @db.Uuid
+  orgId           String    @map("org_id") @db.Uuid
+  leadgenId       String    @map("leadgen_id") @db.VarChar(255)
+  pageId          String    @map("page_id") @db.VarChar(255)
+  formId          String?   @map("form_id") @db.VarChar(255)
+  adId            String?   @map("ad_id") @db.VarChar(255)
+  adName          String?   @map("ad_name") @db.VarChar(500)
+  campaignId      String?   @map("campaign_id") @db.VarChar(255)
+  campaignName    String?   @map("campaign_name") @db.VarChar(500)
+  platform        String    @db.VarChar(50)
+  leadData        Json      @map("lead_data") @db.JsonB
+  contactId       String?   @map("contact_id") @db.Uuid
+  status          String    @default("PENDING") @db.VarChar(20)
+  errorMessage    String?   @map("error_message") @db.Text
+  processedAt     DateTime? @map("processed_at")
+  rawWebhookData  Json?     @map("raw_webhook_data") @db.JsonB
+  channelId       String?   @map("channel_id") @db.Uuid
+  retryCount      Int       @default(0) @map("retry_count")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, leadgenId], name: "unique_lead_per_org")
+  @@index([orgId])
+  @@index([orgId, status])
+  @@index([pageId])
+  @@index([orgId, platform])
+  @@index([contactId])
+  @@index([createdAt])
+  @@index([orgId, createdAt])
+  @@map("lead_ad_entries")
+}
+
+model LeadAdsConfig {
+  id                 String    @id @default(uuid()) @db.Uuid
+  orgId              String    @unique @map("org_id") @db.Uuid
+  encryptedAppSecret String?   @map("encrypted_app_secret") @db.Text
+  webhookVerifyToken String?   @map("webhook_verify_token") @db.VarChar(255)
+  isConfigured       Boolean   @default(false) @map("is_configured")
+  lastVerifiedAt     DateTime? @map("last_verified_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@map("lead_ads_configs")
 }
 
 // ─────────────────────────────────────────────

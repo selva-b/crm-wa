@@ -2,7 +2,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usersApi } from "@/lib/api/users";
-import type { CreateUserRequest, InviteUserRequest, ChangeRoleRequest } from "@/lib/api/users";
+import type {
+  CreateUserRequest,
+  InviteUserRequest,
+  ChangeRoleRequest,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
+} from "@/lib/api/users";
 
 export const userKeys = {
   all: ["users"] as const,
@@ -102,5 +108,22 @@ export function useDeleteUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.all });
     },
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateProfileRequest) => usersApi.updateProfile(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    },
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: ChangePasswordRequest) =>
+      usersApi.changePassword(data),
   });
 }

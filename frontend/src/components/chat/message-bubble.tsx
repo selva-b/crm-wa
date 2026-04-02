@@ -18,6 +18,8 @@ export interface Message {
   type?: MessageType;
   mediaUrl?: string | null;
   mediaMimeType?: string | null;
+  channelType?: string | null;
+  channelPayload?: Record<string, unknown> | null;
 }
 
 interface MessageBubbleProps {
@@ -142,6 +144,12 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
         {/* Text + timestamp */}
         <div className={cn(hasMedia ? "px-3 py-2" : "")}>
+          {/* Email subject line */}
+          {message.channelType === "EMAIL" && message.channelPayload?.subject != null && (
+            <p className="text-[13px] font-semibold mb-1 opacity-90">
+              {String(message.channelPayload.subject)}
+            </p>
+          )}
           {hasText && (
             <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
               {message.content}

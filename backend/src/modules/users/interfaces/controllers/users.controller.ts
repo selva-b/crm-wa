@@ -109,6 +109,24 @@ export class UsersController {
     );
   }
 
+  // ───── Self-service profile ─────
+
+  @Patch('me')
+  async updateMyProfile(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateUserDto,
+    @Req() req: Request,
+  ) {
+    return this.updateUserUseCase.execute(
+      user.sub,
+      user.orgId,
+      user.sub,
+      dto,
+      req.ip,
+      req.headers['user-agent'],
+    );
+  }
+
   // ───── User CRUD endpoints ─────
 
   @Post()

@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
 import { CountBadge } from "@/components/ui/badge";
+import { ChannelIcon } from "@/components/channels/channel-icon";
+import type { ChannelType } from "@/lib/types/channels";
 
 export interface Conversation {
   id: string;
@@ -13,6 +15,7 @@ export interface Conversation {
   lastMessageAt: string;
   unreadCount: number;
   isOnline?: boolean;
+  channelType?: ChannelType | null;
 }
 
 interface ConversationItemProps {
@@ -62,6 +65,14 @@ export function ConversationItem({
         />
         {conversation.isOnline && (
           <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-success ring-2 ring-surface-container-lowest" />
+        )}
+        {!conversation.isOnline && (
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-surface-container-lowest ring-1 ring-outline-variant/20">
+            <ChannelIcon
+              type={conversation.channelType ?? "WHATSAPP"}
+              className="h-2.5 w-2.5 text-on-surface-variant/60"
+            />
+          </span>
         )}
       </div>
 

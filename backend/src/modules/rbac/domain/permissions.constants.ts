@@ -101,6 +101,17 @@ export const PERMISSIONS = {
   ANALYTICS_READ: 'analytics:read',
   ANALYTICS_EXPORT: 'analytics:export',
 
+  // ── Lead Ads (Social Ads Integration) ──
+  LEAD_ADS_READ: 'lead_ads:read',
+  LEAD_ADS_MANAGE: 'lead_ads:manage',
+
+  // ── Channels (Multi-Channel Integration) ──
+  CHANNELS_READ: 'channels:read',
+  CHANNELS_CREATE: 'channels:create',
+  CHANNELS_UPDATE: 'channels:update',
+  CHANNELS_DELETE: 'channels:delete',
+  CHANNELS_MANAGE: 'channels:manage',
+
   // ── SLA Tracking ──
   SLA_READ: 'sla:read',
   SLA_CREATE: 'sla:create',
@@ -213,6 +224,17 @@ export const ALL_PERMISSIONS: PermissionSeed[] = [
   { resource: 'analytics', action: 'read', description: 'View analytics dashboards and reports' },
   { resource: 'analytics', action: 'export', description: 'Export analytics data' },
 
+  // Lead Ads (Social Ads Integration)
+  { resource: 'lead_ads', action: 'read', description: 'View lead ads entries and analytics' },
+  { resource: 'lead_ads', action: 'manage', description: 'Configure lead ads integration and retry failed leads' },
+
+  // Channels (Multi-Channel Integration)
+  { resource: 'channels', action: 'read', description: 'View channels and their status' },
+  { resource: 'channels', action: 'create', description: 'Create new channels' },
+  { resource: 'channels', action: 'update', description: 'Update channel configuration' },
+  { resource: 'channels', action: 'delete', description: 'Delete channels (soft delete)' },
+  { resource: 'channels', action: 'manage', description: 'Suspend and reactivate channels' },
+
   // SLA Tracking
   { resource: 'sla', action: 'read', description: 'View SLA policies and tracking data' },
   { resource: 'sla', action: 'create', description: 'Create SLA policies' },
@@ -301,6 +323,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionString[]> = {
     PERMISSIONS.SLA_READ,
     PERMISSIONS.SLA_BREACH_READ,
     PERMISSIONS.SLA_BREACH_ACKNOWLEDGE,
+
+    // Channels — read, create, update
+    PERMISSIONS.CHANNELS_READ,
+    PERMISSIONS.CHANNELS_CREATE,
+    PERMISSIONS.CHANNELS_UPDATE,
+
+    // Lead Ads — read only
+    PERMISSIONS.LEAD_ADS_READ,
   ],
 
   EMPLOYEE: [
@@ -344,5 +374,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionString[]> = {
     // SLA — read only
     PERMISSIONS.SLA_READ,
     PERMISSIONS.SLA_BREACH_READ,
+
+    // Channels — read only
+    PERMISSIONS.CHANNELS_READ,
+
+    // Lead Ads — read only
+    PERMISSIONS.LEAD_ADS_READ,
   ],
 };

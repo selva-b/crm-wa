@@ -1,6 +1,15 @@
 "use client";
 
 import type { TeamPerformanceResponse } from "@/lib/types/analytics";
+import {
+  Table,
+  TableHeader,
+  TableHeaderRow,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 
 function formatMs(ms: number | null): string {
   if (ms === null) return "—";
@@ -30,59 +39,42 @@ export function TeamPerformanceTable({ data }: TeamPerformanceTableProps) {
           No team data available
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr className="border-b border-outline-variant/10">
-                <th className="text-left py-2 pr-4 text-on-surface-variant/60 font-medium">
-                  Name
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Sent
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Received
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Avg Response
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Converted
-                </th>
-                <th className="text-right py-2 pl-3 text-on-surface-variant/60 font-medium">
-                  Active Convos
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((user) => (
-                <tr
-                  key={user.userId}
-                  className="border-b border-outline-variant/5 hover:bg-surface-container/30"
-                >
-                  <td className="py-2.5 pr-4 text-on-surface font-medium">
-                    {user.firstName} {user.lastName}
-                  </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums text-on-surface">
-                    {user.messagesSent.toLocaleString()}
-                  </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums text-on-surface-variant">
-                    {user.messagesReceived.toLocaleString()}
-                  </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums text-on-surface-variant">
-                    {formatMs(user.avgResponseTimeMs)}
-                  </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums text-success">
-                    {user.contactsConverted}
-                  </td>
-                  <td className="py-2.5 pl-3 text-right tabular-nums text-on-surface-variant">
-                    {user.activeConversations}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableHeaderRow>
+              <TableHead>Name</TableHead>
+              <TableHead align="right">Sent</TableHead>
+              <TableHead align="right">Received</TableHead>
+              <TableHead align="right">Avg Response</TableHead>
+              <TableHead align="right">Converted</TableHead>
+              <TableHead align="right">Active Convos</TableHead>
+            </TableHeaderRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((user) => (
+              <TableRow key={user.userId}>
+                <TableCell className="text-on-surface font-medium">
+                  {user.firstName} {user.lastName}
+                </TableCell>
+                <TableCell align="right" className="tabular-nums text-on-surface">
+                  {user.messagesSent.toLocaleString()}
+                </TableCell>
+                <TableCell align="right" className="tabular-nums text-on-surface-variant">
+                  {user.messagesReceived.toLocaleString()}
+                </TableCell>
+                <TableCell align="right" className="tabular-nums text-on-surface-variant">
+                  {formatMs(user.avgResponseTimeMs)}
+                </TableCell>
+                <TableCell align="right" className="tabular-nums text-success">
+                  {user.contactsConverted}
+                </TableCell>
+                <TableCell align="right" className="tabular-nums text-on-surface-variant">
+                  {user.activeConversations}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
     </div>
   );

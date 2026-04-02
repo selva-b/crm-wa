@@ -118,6 +118,21 @@ export const contactsApi = {
       })
       .then((r) => r.data.contacts[0] ?? null),
 
+  // ─── Import / Export ───
+
+  exportCsv: () =>
+    apiClient
+      .get("/contacts/export", { responseType: "blob" })
+      .then((r) => r.data),
+
+  importCsv: (csv: string) =>
+    apiClient
+      .post<{ imported: number; skipped: number; errors: string[] }>(
+        "/contacts/import",
+        { csv },
+      )
+      .then((r) => r.data),
+
   // ─── Org Members (for owner assignment) ───
 
   listOrgMembers: () =>

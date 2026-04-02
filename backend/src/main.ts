@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
-import { join } from 'path';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -47,8 +46,8 @@ async function bootstrap() {
     exposedHeaders: ['x-trace-id'],
   });
 
-  // Serve uploaded files statically (before global prefix)
-  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
+  // Files are served through the authenticated FileServeController
+  // Do NOT use app.useStaticAssets() for uploads — it bypasses auth guards
 
   // Global prefix
   app.setGlobalPrefix(apiPrefix);

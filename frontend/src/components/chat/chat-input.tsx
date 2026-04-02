@@ -3,6 +3,7 @@
 import { useState, useRef, type KeyboardEvent } from "react";
 import { Paperclip, Smile, Send, X, FileText, Image, Film, Music } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CannedResponsePicker } from "./canned-response-picker";
 
 export interface MediaAttachment {
   file: File;
@@ -15,6 +16,10 @@ interface ChatInputProps {
   onSend: (content: string, media?: MediaAttachment) => void;
   disabled?: boolean;
   uploading?: boolean;
+  channelType?: string | null;
+  emailSubject?: string;
+  onSubjectChange?: (subject: string) => void;
+  maxTextLength?: number;
 }
 
 function detectMediaType(mimeType: string): MediaAttachment["type"] {
@@ -43,9 +48,11 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ChatInput({ onSend, disabled, uploading }: ChatInputProps) {
+export function ChatInput({ onSend, disabled, uploading, channelType, emailSubject, onSubjectChange, maxTextLength }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [attachment, setAttachment] = useState<MediaAttachment | null>(null);
+  const [showCannedPicker, setShowCannedPicker] = useState(false);
+  const [cannedFilter, setCannedFilter] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -94,10 +101,26 @@ export function ChatInput({ onSend, disabled, uploading }: ChatInputProps) {
     setAttachment(null);
   };
 
-  const canSend = (value.trim() || attachment) && !disabled && !uploading;
+  const isOverLimit = maxTextLength ? value.length > maxTextLength : false;
+  const canSend = (value.trim() || attachment) && !disabled && !uploading && !isOverLimit;
+  const isEmail = channelType === "EMAIL";
 
   return (
     <div className="shrink-0 border-t border-outline-variant/15 px-4 py-3">
+      {/* Email subject line */}
+      {isEmail && onSubjectChange && (
+        <div className="mb-2">
+          <input
+            type="text"
+            value={emailSubject ?? ""}
+            onChange={(e) => onSubjectChange(e.target.value)}
+            placeholder="Subject..."
+            disabled={disabled}
+            className="w-full rounded-xl border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+      )}
+
       {/* Attachment preview */}
       {attachment && (
         <div className="mb-2 flex items-center gap-3 rounded-xl bg-surface-container px-3 py-2">
@@ -131,7 +154,16 @@ export function ChatInput({ onSend, disabled, uploading }: ChatInputProps) {
       )}
 
       {/* Input row */}
-      <div className="flex items-end gap-2 rounded-2xl bg-surface-container px-3 py-2">
+      <div className="relative flex items-end gap-2 rounded-2xl bg-surface-container px-3 py-2">
+        <CannedResponsePicker
+          open={showCannedPicker}
+          filter={cannedFilter}
+          onSelect={(content) => {
+            setValue(content);
+            setShowCannedPicker(false);
+          }}
+          onClose={() => setShowCannedPicker(false)}
+        />
         <input
           ref={fileInputRef}
           type="file"
@@ -161,10 +193,19 @@ export function ChatInput({ onSend, disabled, uploading }: ChatInputProps) {
         <textarea
           ref={textareaRef}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setValue(v);
+            if (v.startsWith("/")) {
+              setShowCannedPicker(true);
+              setCannedFilter(v.slice(1));
+            } else {
+              setShowCannedPicker(false);
+            }
+          }}
           onKeyDown={handleKeyDown}
           onInput={handleInput}
-          placeholder={attachment ? "Add a caption..." : "Type a message..."}
+          placeholder={attachment ? "Add a caption..." : isEmail ? "Compose email..." : "Type a message..."}
           rows={1}
           disabled={disabled || uploading}
           className="flex-1 resize-none bg-transparent text-[14px] text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none min-h-[24px] max-h-[120px] py-1"
@@ -188,6 +229,24 @@ export function ChatInput({ onSend, disabled, uploading }: ChatInputProps) {
           )}
         </button>
       </div>
+
+      {/* Character counter */}
+      {maxTextLength && value.length > 0 && (
+        <div className="flex justify-end mt-1 px-1">
+          <span
+            className={cn(
+              "text-[11px]",
+              isOverLimit
+                ? "text-error font-medium"
+                : value.length > maxTextLength * 0.9
+                  ? "text-warning"
+                  : "text-on-surface-variant/50",
+            )}
+          >
+            {value.length} / {maxTextLength}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

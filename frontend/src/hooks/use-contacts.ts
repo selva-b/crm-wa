@@ -244,3 +244,27 @@ export function useRemoveTag() {
     },
   });
 }
+
+export function useImportContacts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (csv: string) => contactsApi.importCsv(csv),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: contactKeys.all });
+    },
+  });
+}
+
+export function useExportContacts() {
+  return useMutation({
+    mutationFn: () => contactsApi.exportCsv(),
+    onSuccess: (blob: Blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `contacts-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+  });
+}

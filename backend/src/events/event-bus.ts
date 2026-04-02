@@ -281,6 +281,135 @@ export interface ContactTagRemovedEvent {
 }
 
 // ─────────────────────────────────────────────
+// Social Ads Lead Integration Events
+// ─────────────────────────────────────────────
+
+export interface LeadAdReceivedEvent {
+  leadAdEntryId: string;
+  orgId: string;
+  leadgenId: string;
+  pageId: string;
+  platform: string;
+  contactId: string;
+  contactPhone: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  adName: string | null;
+  campaignName: string | null;
+  formId: string | null;
+  leadData: Record<string, unknown>;
+}
+
+export interface LeadAdProcessedEvent {
+  leadAdEntryId: string;
+  orgId: string;
+  contactId: string;
+  leadgenId: string;
+  platform: string;
+}
+
+export interface LeadAdFailedEvent {
+  leadAdEntryId: string;
+  orgId: string;
+  leadgenId: string;
+  error: string;
+  retryCount: number;
+}
+
+// ─────────────────────────────────────────────
+// EPIC 16 — Multi-Channel Integration Events
+// ─────────────────────────────────────────────
+
+export interface ChannelCreatedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+  userId: string;
+}
+
+export interface ChannelUpdatedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+  userId: string;
+  changes: Record<string, unknown>;
+}
+
+export interface ChannelVerifiedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+}
+
+export interface ChannelSuspendedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+  reason: string;
+}
+
+export interface ChannelReactivatedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+}
+
+export interface ChannelDeletedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+}
+
+export interface ChannelErrorEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+  error: string;
+}
+
+export interface ChannelMessageSentEvent {
+  orgId: string;
+  messageId: string;
+  channelId: string;
+  channelType: string;
+  conversationId: string;
+  externalMessageId: string;
+}
+
+export interface ChannelMessageReceivedEvent {
+  orgId: string;
+  messageId: string;
+  channelId: string;
+  channelType: string;
+  conversationId: string;
+  senderIdentifier: string;
+  senderName?: string;
+}
+
+export interface ChannelMessageDeliveredEvent {
+  orgId: string;
+  messageId: string;
+  channelId: string;
+  conversationId: string;
+  externalMessageId: string;
+}
+
+export interface ChannelMessageReadEvent {
+  orgId: string;
+  messageId: string;
+  channelId: string;
+  conversationId: string;
+  externalMessageId: string;
+}
+
+export interface ChannelMessageFailedEvent {
+  orgId: string;
+  messageId: string;
+  channelId?: string;
+  error: string;
+}
+
+// ─────────────────────────────────────────────
 // EPIC 5 — Messaging Engine Events
 // ─────────────────────────────────────────────
 

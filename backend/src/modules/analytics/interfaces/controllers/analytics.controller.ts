@@ -4,9 +4,11 @@ import {
   Post,
   Body,
   Query,
+  Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
@@ -21,6 +23,7 @@ import { GetPeakHoursUseCase } from '../../application/use-cases/get-peak-hours.
 import { GetTeamPerformanceUseCase } from '../../application/use-cases/get-team-performance.use-case';
 import { GetCampaignSummaryUseCase } from '../../application/use-cases/get-campaign-summary.use-case';
 import { GetDashboardOverviewUseCase } from '../../application/use-cases/get-dashboard-overview.use-case';
+import { ExportAnalyticsUseCase } from '../../application/use-cases/export-analytics.use-case';
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -32,8 +35,33 @@ export class AnalyticsController {
     private readonly getTeamPerformanceUseCase: GetTeamPerformanceUseCase,
     private readonly getCampaignSummaryUseCase: GetCampaignSummaryUseCase,
     private readonly getDashboardOverviewUseCase: GetDashboardOverviewUseCase,
+    private readonly exportAnalyticsUseCase: ExportAnalyticsUseCase,
     private readonly queueService: QueueService,
   ) {}
+
+  /**
+   * GET /analytics/export
+   * Export analytics data as CSV.
+   */
+  @Get('export')
+  @Permissions(PERMISSIONS.ANALYTICS_EXPORT)
+  async exportAnalytics(
+    @CurrentUser() user: JwtPayload,
+    @Query('type') type: 'messages' | 'conversions' | 'campaigns' = 'messages',
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Res() res?: Response,
+  ) {
+    const csv = await this.exportAnalyticsUseCase.execute({
+      orgId: user.orgId,
+      type,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
+    });
+    res!.setHeader('Content-Type', 'text/csv');
+    res!.setHeader('Content-Disposition', `attachment; filename="analytics-${type}-${new Date().toISOString().split('T')[0]}.csv"`);
+    return res!.send(csv);
+  }
 
   /**
    * GET /analytics/dashboard

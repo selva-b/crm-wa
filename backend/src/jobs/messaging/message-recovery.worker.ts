@@ -52,7 +52,7 @@ export class MessageRecoveryWorker {
         await this.deadLetterRepo.create({
           orgId: message.orgId,
           originalMessageId: message.id,
-          sessionId: message.sessionId,
+          sessionId: message.sessionId ?? undefined,
           contactPhone: message.contactPhone,
           type: message.type as MessageType,
           body: message.body ?? undefined,

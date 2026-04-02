@@ -614,14 +614,14 @@ function NotificationsSection() {
         </p>
         <table className="w-full">
           <thead>
-            <tr className="border-b border-outline-variant/15">
-              <th className="py-2 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+            <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+              <th className="py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                 Notification Type
               </th>
-              <th className="py-2 text-center text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+              <th className="py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                 In-App
               </th>
-              <th className="py-2 text-center text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+              <th className="py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                 Email
               </th>
             </tr>

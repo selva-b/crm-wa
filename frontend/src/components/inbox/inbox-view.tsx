@@ -22,6 +22,12 @@ import {
 } from "@/hooks/use-conversations";
 import { useContactByPhone, useChangeLeadStatus } from "@/hooks/use-contacts";
 import { useInboxSocket } from "@/hooks/use-inbox-socket";
+import { useChannelSocket } from "@/hooks/use-channel-socket";
+import { useChannels } from "@/hooks/use-channels";
+import { ChannelIcon } from "@/components/channels/channel-icon";
+import { Badge } from "@/components/ui/badge";
+import { CHANNEL_TYPE_LABELS } from "@/lib/types/channels";
+import type { ChannelType } from "@/lib/types/channels";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { MessageThread } from "@/components/chat/message-thread";
 import { ChatInput, type MediaAttachment } from "@/components/chat/chat-input";
@@ -50,6 +56,7 @@ function mapConversation(c: ConversationResponse): Conversation {
     lastMessage: c.lastMessageBody || "",
     lastMessageAt: c.lastMessageAt || c.createdAt,
     unreadCount: c.unreadCount,
+    channelType: (c.channelType as ChannelType) ?? null,
   };
 }
 
@@ -85,6 +92,8 @@ function mapMessage(m: MessageResponse): Message {
     type: (m.type as Message["type"]) || "TEXT",
     mediaUrl: m.mediaUrl,
     mediaMimeType: m.mediaMimeType,
+    channelType: m.channelType ?? null,
+    channelPayload: m.channelPayload ?? null,
   };
 }
 
@@ -130,7 +139,15 @@ export function InboxView({
   const disconnectSession = useDisconnectSession();
   useWhatsAppSocket();
   useInboxSocket();
+  useChannelSocket();
   const waStatus = useWhatsAppStore((s) => s.status);
+
+  // Channel filter state
+  const channelFilter = useInboxStore((s) => s.channelFilter);
+  const setChannelFilter = useInboxStore((s) => s.setChannelFilter);
+
+  // Email subject state for EMAIL channel conversations
+  const [emailSubject, setEmailSubject] = useState("");
 
   // ─── Data hooks ───
   const conversationParams = useMemo(() => {
@@ -205,6 +222,25 @@ export function InboxView({
   const hasNoSession = waStatus === "no_session";
   const isConnecting = waStatus === "connecting";
 
+  // Check if any channels exist (to relax WhatsApp session gating)
+  const { data: activeChannels } = useChannels(
+    (hasNoSession || isConnecting) && !skipSessionCheck ? { status: "ACTIVE" } : undefined,
+  );
+  const hasActiveChannels = (activeChannels?.length ?? 0) > 0;
+
+  // Compute available channel types for filter pills
+  const availableChannelTypes = useMemo<ChannelType[]>(() => {
+    const raw = conversationsQuery.data?.data ?? [];
+    const types = new Set<ChannelType>();
+    for (const c of raw) {
+      if (c.channelType) types.add(c.channelType as ChannelType);
+    }
+    return Array.from(types);
+  }, [conversationsQuery.data]);
+
+  // Determine selected conversation's channel info
+  const selectedChannelType = selectedRawConv?.channelType as ChannelType | undefined;
+
   // ─── Send handler (text + media) ───
   const [uploading, setUploading] = useState(false);
 
@@ -230,6 +266,12 @@ export function InboxView({
         setUploading(false);
       }
 
+      // Build channel-specific payload
+      const channelPayload: Record<string, unknown> | undefined =
+        selectedChannelType === "EMAIL" && emailSubject
+          ? { subject: emailSubject }
+          : undefined;
+
       sendMessage.mutate({
         contactPhone: selectedConversation.contactPhone,
         contactName: selectedConversation.contactName,
@@ -240,7 +282,12 @@ export function InboxView({
         idempotencyKey: `${selectedConversation.id}-${Date.now()}`,
         conversationId: selectedId || undefined,
         ...(targetUserId && { viaSessionUserId: targetUserId }),
+        ...(selectedRawConv?.channelId && { channelId: selectedRawConv.channelId }),
+        ...(channelPayload && { channelPayload }),
       });
+
+      // Reset email subject after sending
+      if (selectedChannelType === "EMAIL") setEmailSubject("");
     },
     [selectedConversation, selectedId, sendMessage, targetUserId],
   );
@@ -254,8 +301,8 @@ export function InboxView({
     );
   }
 
-  // ─── No Session / Connecting: Full-page empty state (skip for admin — they see all org conversations) ───
-  if (!skipSessionCheck && (hasNoSession || isConnecting)) {
+  // ─── No Session / Connecting: Full-page empty state (skip for admin or if channels exist) ───
+  if (!skipSessionCheck && !hasActiveChannels && (hasNoSession || isConnecting)) {
     return (
       <div className="flex h-[calc(100vh-var(--header-height))]">
         <div className="flex-1 flex items-center justify-center">
@@ -297,6 +344,9 @@ export function InboxView({
             conversations={conversations}
             activeId={selectedId}
             onSelect={setSelectedId}
+            channelFilter={channelFilter}
+            onChannelFilterChange={setChannelFilter}
+            availableChannelTypes={availableChannelTypes}
           />
         </div>
       </div>
@@ -346,9 +396,17 @@ export function InboxView({
                   size="sm"
                 />
                 <div className="min-w-0">
-                  <h3 className="text-[14px] font-semibold text-on-surface truncate">
-                    {selectedConversation.contactName}
-                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-[14px] font-semibold text-on-surface truncate">
+                      {selectedConversation.contactName}
+                    </h3>
+                    {selectedChannelType && (
+                      <Badge variant="default" className="shrink-0">
+                        <ChannelIcon type={selectedChannelType} className="h-3 w-3 mr-1" />
+                        {CHANNEL_TYPE_LABELS[selectedChannelType]}
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-[12px] text-on-surface-variant">
                     {selectedConversation.contactPhone}
                   </p>
@@ -415,6 +473,14 @@ export function InboxView({
                 onSend={handleSend}
                 disabled={sendMessage.isPending}
                 uploading={uploading}
+                channelType={selectedChannelType}
+                emailSubject={emailSubject}
+                onSubjectChange={setEmailSubject}
+                maxTextLength={
+                  selectedChannelType === "INSTAGRAM" ? 1000
+                    : selectedChannelType === "FACEBOOK_MESSENGER" ? 2000
+                    : undefined
+                }
               />
             )}
           </>

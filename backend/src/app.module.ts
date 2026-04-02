@@ -42,6 +42,9 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { SlaModule } from './modules/sla/sla.module';
+import { ChannelsModule } from './modules/channels/channels.module';
+import { LeadAdsModule } from './modules/lead-ads/lead-ads.module';
+import { SearchModule } from './modules/search/search.module';
 
 // Guards & Interceptors
 import { JwtAuthGuard } from './modules/auth/interfaces/guards/jwt-auth.guard';
@@ -110,6 +113,9 @@ import { EventsModule } from './events/events.module';
     TeamsModule,
     AnalyticsModule,
     SlaModule,
+    ChannelsModule,
+    LeadAdsModule,
+    SearchModule,
 
     // Background workers
     JobsModule,

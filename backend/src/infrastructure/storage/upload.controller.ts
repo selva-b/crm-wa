@@ -79,10 +79,10 @@ export class UploadController {
       throw new BadRequestException('No file provided');
     }
 
-    // Build the public URL
+    // Build the authenticated file URL (served via FileServeController)
     const protocol = req.headers['x-forwarded-proto'] || 'http';
     const host = req.headers.host || 'localhost:8080';
-    const url = `${protocol}://${host}/uploads/${file.filename}`;
+    const url = `${protocol}://${host}/api/v1/files/${file.filename}`;
 
     return {
       url,

@@ -4,6 +4,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PaymentRepository } from '@/modules/billing/infrastructure/repositories/payment.repository';
 import { SubscriptionRepository } from '@/modules/billing/infrastructure/repositories/subscription.repository';
 import { AuditService } from '@/modules/audit/domain/services/audit.service';
+import { StripePaymentService } from '@/modules/billing/domain/services/stripe-payment.service';
 import { BILLING_CONFIG, EVENT_NAMES } from '@/common/constants';
 import { AuditAction, PaymentStatus, SubscriptionStatus } from '@prisma/client';
 
@@ -14,6 +15,7 @@ export class PaymentRetryWorker {
   constructor(
     private readonly paymentRepo: PaymentRepository,
     private readonly subscriptionRepo: SubscriptionRepository,
+    private readonly stripePayment: StripePaymentService,
     private readonly auditService: AuditService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -74,13 +76,36 @@ export class PaymentRetryWorker {
       return;
     }
 
-    // TODO: Retry payment through Stripe/Razorpay gateway
-    // For now, log the retry attempt
+    // Retry payment through Stripe
     this.logger.log(
       `Retrying payment ${payment.id} (attempt ${payment.retryCount + 1}/${payment.maxRetries})`,
     );
 
-    // Calculate next retry with exponential backoff
+    const subscription = await this.subscriptionRepo.findById(payment.subscriptionId);
+    const result = await this.stripePayment.chargePayment(
+      payment.amountInCents,
+      payment.currency,
+      subscription?.externalCustomerId || '',
+      subscription?.externalCustomerId || '', // Stripe uses default payment method from customer
+      `retry-${payment.id}-${payment.retryCount + 1}`,
+      `CRM-WA payment retry #${payment.retryCount + 1}`,
+    );
+
+    if (result.success) {
+      await this.paymentRepo.transitionPaymentStatus(payment.id, 'FAILED', 'SUCCEEDED');
+
+      this.eventEmitter.emit(EVENT_NAMES.PAYMENT_SUCCEEDED, {
+        paymentId: payment.id,
+        orgId: payment.orgId,
+        subscriptionId: payment.subscriptionId,
+        amountInCents: payment.amountInCents,
+      });
+
+      this.logger.log(`Payment ${payment.id} retry succeeded`);
+      return;
+    }
+
+    // Still failing — schedule next retry with exponential backoff
     const delaySeconds = BILLING_CONFIG.PAYMENT_RETRY_BASE_DELAY_SECONDS * Math.pow(2, payment.retryCount);
     const nextRetryAt = new Date(Date.now() + delaySeconds * 1000);
 

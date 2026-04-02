@@ -30,6 +30,10 @@ import { SettingsModule } from '@/modules/settings/settings.module';
 // EPIC 15 — SLA Tracking events
 import { SlaEventsHandler } from './handlers/sla-events.handler';
 import { SlaModule } from '@/modules/sla/sla.module';
+// EPIC 16 — Multi-Channel Integration events
+import { ChannelEventsHandler } from './handlers/channel-events.handler';
+// Social Ads Lead Integration events
+import { LeadAdEventsHandler } from './handlers/lead-ad-events.handler';
 
 @Module({
   imports: [
@@ -67,6 +71,10 @@ import { SlaModule } from '@/modules/sla/sla.module';
     SettingsEventsHandler,
     // EPIC 15 — SLA Tracking events
     SlaEventsHandler,
+    // EPIC 16 — Multi-Channel Integration events
+    ChannelEventsHandler,
+    // Social Ads Lead Integration events
+    LeadAdEventsHandler,
   ],
 })
 export class EventsModule {}

@@ -373,17 +373,17 @@ export default function BillingPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-outline-variant/15">
-                          <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                        <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                             Date
                           </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                             Amount
                           </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                             Method
                           </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                             Status
                           </th>
                         </tr>
@@ -450,20 +450,20 @@ export default function BillingPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-outline-variant/15">
-                          <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                        <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                             Invoice
                           </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                             Period
                           </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                             Amount
                           </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                             Status
                           </th>
-                          <th className="px-6 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                          <th className="px-6 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                             Action
                           </th>
                         </tr>
@@ -819,14 +819,14 @@ function UpgradeConfirmModal({
           <div className="rounded-xl bg-surface-container/50 overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="border-b border-outline-variant/15">
-                  <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Feature
                   </th>
-                  <th className="px-4 py-2.5 text-center text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Current
                   </th>
-                  <th className="px-4 py-2.5 text-center text-[11px] font-medium uppercase tracking-wider text-primary">
+                  <th className="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-primary">
                     New
                   </th>
                 </tr>

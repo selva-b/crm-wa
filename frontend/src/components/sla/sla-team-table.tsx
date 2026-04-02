@@ -5,6 +5,15 @@ import type {
   SlaBreachByUser,
   SlaAvgResponseByUser,
 } from "@/lib/types/sla";
+import {
+  Table,
+  TableHeader,
+  TableHeaderRow,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 
 function formatMs(ms: number): string {
   if (ms < 1000) return "<1s";
@@ -41,7 +50,6 @@ export function SlaTeamTable({ performance, users }: SlaTeamTableProps) {
 
   const userMap = new Map(users.map((u) => [u.id, u]));
 
-  // Combine data for all users who appear in either dataset
   const allUserIds = new Set([
     ...breachByUser.map((b: SlaBreachByUser) => b.assignedUserId),
     ...avgResponseByUser.map((r: SlaAvgResponseByUser) => r.assignedUserId),
@@ -71,81 +79,62 @@ export function SlaTeamTable({ performance, users }: SlaTeamTableProps) {
           No team performance data available
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr className="border-b border-outline-variant/10">
-                <th className="text-left py-2 pr-4 text-on-surface-variant/60 font-medium">
-                  Name
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Avg Response
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Conversations
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Breaches
-                </th>
-                <th className="text-right py-2 pl-3 text-on-surface-variant/60 font-medium">
-                  Compliance
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const complianceRate =
-                  row.conversations > 0
-                    ? (
-                        ((row.conversations - row.breaches) /
-                          row.conversations) *
-                        100
-                      ).toFixed(1)
-                    : "100.0";
-                const complianceNum = parseFloat(complianceRate);
+        <Table>
+          <TableHeader>
+            <TableHeaderRow>
+              <TableHead>Name</TableHead>
+              <TableHead align="right">Avg Response</TableHead>
+              <TableHead align="right">Conversations</TableHead>
+              <TableHead align="right">Breaches</TableHead>
+              <TableHead align="right">Compliance</TableHead>
+            </TableHeaderRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => {
+              const complianceRate =
+                row.conversations > 0
+                  ? (
+                      ((row.conversations - row.breaches) /
+                        row.conversations) *
+                      100
+                    ).toFixed(1)
+                  : "100.0";
+              const complianceNum = parseFloat(complianceRate);
 
-                return (
-                  <tr
-                    key={row.userId}
-                    className="border-b border-outline-variant/5 hover:bg-surface-container/30"
-                  >
-                    <td className="py-2.5 pr-4 text-on-surface font-medium">
-                      {row.name}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums text-on-surface-variant">
-                      {row.avgMs > 0 ? formatMs(row.avgMs) : "—"}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums text-on-surface">
-                      {row.conversations}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums">
-                      <span
-                        className={
-                          row.breaches === 0 ? "text-success" : "text-error"
-                        }
-                      >
-                        {row.breaches}
-                      </span>
-                    </td>
-                    <td className="py-2.5 pl-3 text-right tabular-nums">
-                      <span
-                        className={
-                          complianceNum >= 90
-                            ? "text-success"
-                            : complianceNum >= 70
-                              ? "text-warning"
-                              : "text-error"
-                        }
-                      >
-                        {complianceRate}%
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+              return (
+                <TableRow key={row.userId}>
+                  <TableCell className="text-on-surface font-medium">
+                    {row.name}
+                  </TableCell>
+                  <TableCell align="right" className="tabular-nums text-on-surface-variant">
+                    {row.avgMs > 0 ? formatMs(row.avgMs) : "—"}
+                  </TableCell>
+                  <TableCell align="right" className="tabular-nums text-on-surface">
+                    {row.conversations}
+                  </TableCell>
+                  <TableCell align="right" className="tabular-nums">
+                    <span className={row.breaches === 0 ? "text-success" : "text-error"}>
+                      {row.breaches}
+                    </span>
+                  </TableCell>
+                  <TableCell align="right" className="tabular-nums">
+                    <span
+                      className={
+                        complianceNum >= 90
+                          ? "text-success"
+                          : complianceNum >= 70
+                            ? "text-warning"
+                            : "text-error"
+                      }
+                    >
+                      {complianceRate}%
+                    </span>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
     </div>
   );

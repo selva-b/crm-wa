@@ -202,14 +202,14 @@ function OverviewSection() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-outline-variant/15">
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Metric
                     </th>
-                    <th className="px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Value
                     </th>
-                    <th className="px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Recorded At
                     </th>
                   </tr>
@@ -400,20 +400,20 @@ function AlertsSection() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-outline-variant/15">
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Name
                     </th>
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Metric
                     </th>
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Condition
                     </th>
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Status
                     </th>
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Last Triggered
                     </th>
                   </tr>
@@ -478,17 +478,17 @@ function AlertsSection() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-outline-variant/15">
-                      <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                      <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                         Time
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                      <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                         Metric
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                      <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                         Value / Threshold
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                      <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                         Message
                       </th>
                     </tr>
@@ -594,20 +594,20 @@ function ErrorsSection() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-outline-variant/15">
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Error
                   </th>
-                  <th className="px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Count
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Context
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     First Seen
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Last Seen
                   </th>
                 </tr>

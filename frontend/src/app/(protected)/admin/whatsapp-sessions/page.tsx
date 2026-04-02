@@ -106,20 +106,20 @@ export default function AdminWhatsAppSessionsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-outline-variant/15">
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     User
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Phone
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Status
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Last Active
                   </th>
-                  <th className="px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Actions
                   </th>
                 </tr>

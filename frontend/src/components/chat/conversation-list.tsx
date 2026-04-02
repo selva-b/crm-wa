@@ -4,11 +4,18 @@ import { useState } from "react";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
 import { ConversationItem, type Conversation } from "./conversation-item";
+import { ChannelIcon } from "@/components/channels/channel-icon";
+import { cn } from "@/lib/utils";
+import type { ChannelType } from "@/lib/types/channels";
+import { CHANNEL_TYPE_LABELS } from "@/lib/types/channels";
 
 interface ConversationListProps {
   conversations: Conversation[];
   activeId: string | null;
   onSelect: (id: string) => void;
+  channelFilter?: ChannelType | "all";
+  onChannelFilterChange?: (filter: ChannelType | "all") => void;
+  availableChannelTypes?: ChannelType[];
 }
 
 const filterTabs: TabItem[] = [
@@ -21,6 +28,9 @@ export function ConversationList({
   conversations,
   activeId,
   onSelect,
+  channelFilter = "all",
+  onChannelFilterChange,
+  availableChannelTypes,
 }: ConversationListProps) {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -35,8 +45,13 @@ export function ConversationList({
       activeTab === "all" ||
       (activeTab === "unread" && c.unreadCount > 0);
 
-    return matchesSearch && matchesTab;
+    const matchesChannel =
+      channelFilter === "all" || c.channelType === channelFilter;
+
+    return matchesSearch && matchesTab && matchesChannel;
   });
+
+  const showChannelFilters = availableChannelTypes && availableChannelTypes.length > 1;
 
   return (
     <div className="flex h-full flex-col bg-surface-container-lowest">
@@ -48,6 +63,39 @@ export function ConversationList({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+
+        {/* Channel filter pills */}
+        {showChannelFilters && onChannelFilterChange && (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onChannelFilterChange("all")}
+              className={cn(
+                "px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors",
+                channelFilter === "all"
+                  ? "bg-primary/15 text-primary"
+                  : "text-on-surface-variant hover:bg-surface-container",
+              )}
+            >
+              All
+            </button>
+            {availableChannelTypes.map((type) => (
+              <button
+                key={type}
+                onClick={() => onChannelFilterChange(type)}
+                title={CHANNEL_TYPE_LABELS[type]}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-colors",
+                  channelFilter === type
+                    ? "bg-primary/15 text-primary"
+                    : "text-on-surface-variant hover:bg-surface-container",
+                )}
+              >
+                <ChannelIcon type={type} className="h-3 w-3" />
+              </button>
+            ))}
+          </div>
+        )}
+
         <Tabs
           tabs={filterTabs}
           activeTab={activeTab}

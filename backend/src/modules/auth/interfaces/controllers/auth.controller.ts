@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Body,
   HttpCode,
   HttpStatus,
@@ -20,6 +21,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   RefreshTokenDto,
+  ChangePasswordDto,
 } from '../../application/dto';
 import {
   RegisterUseCase,
@@ -31,6 +33,7 @@ import {
   RefreshTokenUseCase,
   LogoutUseCase,
   SessionManagementUseCase,
+  ChangePasswordUseCase,
 } from '../../application/use-cases';
 
 @Controller('auth')
@@ -45,6 +48,7 @@ export class AuthController {
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly sessionManagementUseCase: SessionManagementUseCase,
+    private readonly changePasswordUseCase: ChangePasswordUseCase,
   ) {}
 
   // ───────────────────────────────────────────
@@ -215,6 +219,20 @@ export class AuthController {
       this.getIp(req),
       this.getUa(req),
     );
+  }
+
+  @Patch('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    await this.changePasswordUseCase.execute(
+      user.sub,
+      dto.oldPassword,
+      dto.newPassword,
+    );
+    return { message: 'Password changed successfully' };
   }
 
   // ───────────────────────────────────────────

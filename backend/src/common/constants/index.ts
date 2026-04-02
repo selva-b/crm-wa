@@ -62,6 +62,16 @@ export const QUEUE_NAMES = {
   SLA_EVALUATE: 'sla-evaluate',
   SLA_BREACH_CHECK: 'sla-breach-check',
   SLA_ESCALATION: 'sla-escalation',
+  // Social Ads Lead Integration queues
+  PROCESS_LEAD_AD: 'process-lead-ad',
+  FETCH_LEAD_AD_DATA: 'fetch-lead-ad-data',
+  // EPIC 16 — Multi-Channel Integration queues
+  SEND_CHANNEL_MESSAGE: 'send-channel-message',
+  PROCESS_CHANNEL_INBOUND: 'process-channel-inbound',
+  CHANNEL_MESSAGE_DEAD_LETTER: 'channel-message-dead-letter',
+  CHANNEL_VERIFY: 'channel-verify',
+  CHANNEL_HEALTH_CHECK: 'channel-health-check',
+  EMAIL_IMAP_POLL: 'email-imap-poll',
 } as const;
 
 export const EVENT_NAMES = {
@@ -217,6 +227,26 @@ export const EVENT_NAMES = {
   ANALYTICS_DAILY_AGGREGATED: 'analytics.daily_aggregated',
   ANALYTICS_HOURLY_AGGREGATED: 'analytics.hourly_aggregated',
   ANALYTICS_BACKFILL_COMPLETED: 'analytics.backfill_completed',
+
+  // Social Ads Lead Integration events
+  LEAD_AD_RECEIVED: 'lead_ad.received',
+  LEAD_AD_PROCESSED: 'lead_ad.processed',
+  LEAD_AD_FAILED: 'lead_ad.failed',
+
+  // Multi-Channel Integration events (EPIC 16)
+  CHANNEL_CREATED: 'channel.created',
+  CHANNEL_UPDATED: 'channel.updated',
+  CHANNEL_VERIFIED: 'channel.verified',
+  CHANNEL_SUSPENDED: 'channel.suspended',
+  CHANNEL_REACTIVATED: 'channel.reactivated',
+  CHANNEL_DISCONNECTED: 'channel.disconnected',
+  CHANNEL_DELETED: 'channel.deleted',
+  CHANNEL_ERROR: 'channel.error',
+  CHANNEL_MESSAGE_SENT: 'channel.message_sent',
+  CHANNEL_MESSAGE_RECEIVED: 'channel.message_received',
+  CHANNEL_MESSAGE_DELIVERED: 'channel.message_delivered',
+  CHANNEL_MESSAGE_READ: 'channel.message_read',
+  CHANNEL_MESSAGE_FAILED: 'channel.message_failed',
 
   // SLA Tracking events (EPIC 15)
   SLA_POLICY_CREATED: 'sla.policy_created',
@@ -449,6 +479,48 @@ export const SLA_CONFIG = {
   TRACKING_RETENTION_DAYS: 365,
   /** Max escalation levels per policy */
   MAX_ESCALATION_LEVELS: 5,
+} as const;
+
+export const LEAD_ADS_CONFIG = {
+  /** Worker concurrency for lead ad processing */
+  WORKER_CONCURRENCY: 5,
+  /** Max retries for failed lead processing */
+  MAX_RETRY_COUNT: 3,
+  /** Retry base delay (seconds) for exponential backoff */
+  RETRY_BASE_DELAY_SECONDS: 10,
+  /** Meta Graph API version */
+  GRAPH_API_VERSION: 'v19.0',
+  /** Meta Graph API base URL */
+  GRAPH_API_BASE_URL: 'https://graph.facebook.com',
+  /** Timeout for fetching lead data from Meta (ms) */
+  LEAD_FETCH_TIMEOUT_MS: 15_000,
+  /** Deduplication window (hours) */
+  DEDUP_WINDOW_HOURS: 24,
+} as const;
+
+export const CHANNEL_CONFIG = {
+  /** Max channels per organization */
+  MAX_CHANNELS_PER_ORG: 20,
+  /** Default rate limit per minute for new channels */
+  DEFAULT_RATE_LIMIT_PER_MIN: 60,
+  /** Worker concurrency for channel message sending */
+  WORKER_CONCURRENCY: 5,
+  /** Channel health check interval (seconds) */
+  HEALTH_CHECK_INTERVAL_SECONDS: 300,
+  /** Consecutive failures before auto-suspending channel */
+  AUTO_SUSPEND_THRESHOLD: 3,
+  /** Provider API timeout (ms) */
+  PROVIDER_TIMEOUT_MS: 30_000,
+  /** Max retries for channel messages */
+  MAX_RETRY_COUNT: 3,
+  /** Retry base delay (seconds) for exponential backoff */
+  RETRY_BASE_DELAY_SECONDS: 5,
+  /** Maximum backoff delay cap (seconds) */
+  RETRY_MAX_DELAY_SECONDS: 300,
+  /** Rate limit window cleanup interval (hours) */
+  RATE_LIMIT_CLEANUP_INTERVAL_HOURS: 1,
+  /** Channel config encryption algorithm */
+  ENCRYPTION_ALGORITHM: 'aes-256-gcm',
 } as const;
 
 export const ANALYTICS_CONFIG = {

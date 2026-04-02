@@ -42,6 +42,17 @@ export interface ChangeRoleRequest {
   role: "ADMIN" | "MANAGER" | "EMPLOYEE";
 }
 
+export interface UpdateProfileRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
 export const usersApi = {
   list: (params?: { role?: string; status?: string }) =>
     apiClient
@@ -74,4 +85,10 @@ export const usersApi = {
 
   delete: (userId: string) =>
     apiClient.delete(`/users/${userId}`).then((r) => r.data),
+
+  updateProfile: (data: UpdateProfileRequest) =>
+    apiClient.patch<OrgUser>("/users/me", data).then((r) => r.data),
+
+  changePassword: (data: ChangePasswordRequest) =>
+    apiClient.patch("/auth/change-password", data).then((r) => r.data),
 };

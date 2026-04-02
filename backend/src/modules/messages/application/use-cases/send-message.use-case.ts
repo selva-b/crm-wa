@@ -55,7 +55,7 @@ export class SendMessageUseCase {
       // Sending within an existing conversation — use that conversation's session
       const conv = await this.conversationRepo.findByIdAndOrg(dto.conversationId, orgId);
       if (conv) {
-        session = await this.sessionRepo.findById(conv.sessionId);
+        session = conv.sessionId ? await this.sessionRepo.findById(conv.sessionId) : null;
         if (session && session.status !== 'CONNECTED') {
           session = null; // Session exists but isn't connected
         }

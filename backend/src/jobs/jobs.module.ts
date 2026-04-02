@@ -45,6 +45,13 @@ import { SlaModule } from '@/modules/sla/sla.module';
 import { SlaBreachCheckWorker } from './sla/sla-breach-check.worker';
 import { SlaEvaluateWorker } from './sla/sla-evaluate.worker';
 import { SlaEscalationWorker } from './sla/sla-escalation.worker';
+// EPIC 16 — Multi-Channel Integration workers
+import { ChannelsModule } from '@/modules/channels/channels.module';
+// Social Ads Lead Integration workers
+import { LeadAdsModule } from '@/modules/lead-ads/lead-ads.module';
+import { ProcessLeadAdWorker } from './lead-ads/process-lead-ad.worker';
+import { SendChannelMessageWorker } from './channel/send-channel-message.worker';
+import { ProcessChannelInboundWorker } from './channel/process-channel-inbound.worker';
 
 @Module({
   imports: [
@@ -61,6 +68,8 @@ import { SlaEscalationWorker } from './sla/sla-escalation.worker';
     AnalyticsModule,
     SlaModule,
     NotificationsModule,
+    ChannelsModule,
+    LeadAdsModule,
   ],
   providers: [
     SendEmailWorker,
@@ -98,6 +107,11 @@ import { SlaEscalationWorker } from './sla/sla-escalation.worker';
     SlaBreachCheckWorker,
     SlaEvaluateWorker,
     SlaEscalationWorker,
+    // EPIC 16 — Multi-Channel Integration workers
+    SendChannelMessageWorker,
+    ProcessChannelInboundWorker,
+    // Social Ads Lead Integration workers
+    ProcessLeadAdWorker,
   ],
 })
 export class JobsModule {}

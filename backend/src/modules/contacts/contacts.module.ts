@@ -20,6 +20,8 @@ import {
   RemoveTagUseCase,
   GetContactHistoryUseCase,
 } from './application/use-cases';
+import { ExportContactsUseCase } from './application/use-cases/export-contacts.use-case';
+import { ImportContactsUseCase } from './application/use-cases/import-contacts.use-case';
 
 // Controller
 import { ContactsController } from './interfaces/controllers/contacts.controller';
@@ -51,6 +53,8 @@ import { TeamsModule } from '../teams/teams.module';
     AddTagUseCase,
     RemoveTagUseCase,
     GetContactHistoryUseCase,
+    ExportContactsUseCase,
+    ImportContactsUseCase,
   ],
   exports: [ContactRepository, AutoCreateContactUseCase],
 })

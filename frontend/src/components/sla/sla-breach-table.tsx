@@ -1,7 +1,16 @@
 "use client";
 
-import { AlertTriangle, CheckCircle, Clock, Eye } from "lucide-react";
+import { AlertTriangle, CheckCircle, Eye } from "lucide-react";
 import type { SlaBreachLog, SlaPolicy } from "@/lib/types/sla";
+import {
+  Table,
+  TableHeader,
+  TableHeaderRow,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 
 function formatMs(ms: number): string {
   if (ms < 1000) return "<1s";
@@ -81,98 +90,75 @@ export function SlaBreachTable({
           No breaches found — all SLAs are being met
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr className="border-b border-outline-variant/10">
-                <th className="text-left py-2 pr-4 text-on-surface-variant/60 font-medium">
-                  Status
-                </th>
-                <th className="text-left py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Policy
-                </th>
-                <th className="text-left py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Metric
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Threshold
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Actual
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  Over By
-                </th>
-                <th className="text-right py-2 px-3 text-on-surface-variant/60 font-medium">
-                  When
-                </th>
-                {onAcknowledge && (
-                  <th className="text-right py-2 pl-3 text-on-surface-variant/60 font-medium">
-                    Action
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {breaches.map((breach) => {
-                const config = statusConfig[breach.status];
-                const StatusIcon = config.icon;
-                const policy = policyMap.get(breach.policyId);
+        <Table>
+          <TableHeader>
+            <TableHeaderRow>
+              <TableHead>Status</TableHead>
+              <TableHead>Policy</TableHead>
+              <TableHead>Metric</TableHead>
+              <TableHead align="right">Threshold</TableHead>
+              <TableHead align="right">Actual</TableHead>
+              <TableHead align="right">Over By</TableHead>
+              <TableHead align="right">When</TableHead>
+              {onAcknowledge && <TableHead align="right">Action</TableHead>}
+            </TableHeaderRow>
+          </TableHeader>
+          <TableBody>
+            {breaches.map((breach) => {
+              const config = statusConfig[breach.status];
+              const StatusIcon = config.icon;
+              const policy = policyMap.get(breach.policyId);
 
-                return (
-                  <tr
-                    key={breach.id}
-                    className="border-b border-outline-variant/5 hover:bg-surface-container/30"
-                  >
-                    <td className="py-2.5 pr-4">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${config.className}`}
-                      >
-                        <StatusIcon className="h-3 w-3" />
-                        {config.label}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-on-surface font-medium">
-                      {policy?.name ?? "Unknown"}
-                    </td>
-                    <td className="py-2.5 px-3 text-on-surface-variant">
-                      {metricLabels[breach.metricType] ?? breach.metricType}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums text-on-surface-variant">
-                      {formatMs(breach.thresholdMs)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums text-error font-medium">
-                      {formatMs(breach.actualMs)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right tabular-nums text-error">
-                      +{formatMs(breach.actualMs - breach.thresholdMs)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-on-surface-variant/60">
-                      {formatTimeAgo(breach.createdAt)}
-                    </td>
-                    {onAcknowledge && (
-                      <td className="py-2.5 pl-3 text-right">
-                        {breach.status === "ACTIVE" ? (
-                          <button
-                            onClick={() => onAcknowledge(breach.id)}
-                            disabled={isAcknowledging}
-                            className="text-[11px] text-primary hover:text-primary/80 font-medium disabled:opacity-50"
-                          >
-                            Acknowledge
-                          </button>
-                        ) : (
-                          <span className="text-[11px] text-on-surface-variant/40">
-                            —
-                          </span>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+              return (
+                <TableRow key={breach.id}>
+                  <TableCell>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${config.className}`}
+                    >
+                      <StatusIcon className="h-3 w-3" />
+                      {config.label}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-on-surface font-medium">
+                    {policy?.name ?? "Unknown"}
+                  </TableCell>
+                  <TableCell className="text-on-surface-variant">
+                    {metricLabels[breach.metricType] ?? breach.metricType}
+                  </TableCell>
+                  <TableCell align="right" className="tabular-nums text-on-surface-variant">
+                    {formatMs(breach.thresholdMs)}
+                  </TableCell>
+                  <TableCell align="right" className="tabular-nums text-error font-medium">
+                    {formatMs(breach.actualMs)}
+                  </TableCell>
+                  <TableCell align="right" className="tabular-nums text-error">
+                    +{formatMs(breach.actualMs - breach.thresholdMs)}
+                  </TableCell>
+                  <TableCell align="right" className="text-on-surface-variant/60">
+                    {formatTimeAgo(breach.createdAt)}
+                  </TableCell>
+                  {onAcknowledge && (
+                    <TableCell align="right">
+                      {breach.status === "ACTIVE" ? (
+                        <button
+                          onClick={() => onAcknowledge(breach.id)}
+                          disabled={isAcknowledging}
+                          className="text-[11px] text-primary hover:text-primary/80 font-medium disabled:opacity-50"
+                        >
+                          Acknowledge
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-on-surface-variant/40">
+                          —
+                        </span>
+                      )}
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
     </div>
   );
