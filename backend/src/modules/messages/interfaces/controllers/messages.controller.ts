@@ -33,6 +33,8 @@ import {
   ReprocessDeadLetterUseCase,
 } from '../../application/use-cases';
 import { DeleteConversationUseCase } from '../../application/use-cases/delete-conversation.use-case';
+import { CloseConversationUseCase } from '../../application/use-cases/close-conversation.use-case';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
 
 @Controller('messaging')
 export class MessagesController {
@@ -45,6 +47,8 @@ export class MessagesController {
     private readonly listDeadLettersUseCase: ListDeadLettersUseCase,
     private readonly reprocessDeadLetterUseCase: ReprocessDeadLetterUseCase,
     private readonly deleteConversationUseCase: DeleteConversationUseCase,
+    private readonly closeConversationUseCase: CloseConversationUseCase,
+    private readonly prisma: PrismaService,
   ) {}
 
   // ───── Messages ─────
@@ -135,6 +139,100 @@ export class MessagesController {
       this.getIp(req),
       this.getUa(req),
     );
+  }
+
+  @Post('conversations/:conversationId/close')
+  @Permissions(PERMISSIONS.CONVERSATIONS_UPDATE)
+  @HttpCode(HttpStatus.OK)
+  async closeConversation(
+    @CurrentUser() user: JwtPayload,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Req() req: Request,
+  ) {
+    return this.closeConversationUseCase.execute(
+      conversationId,
+      user.orgId,
+      user.sub,
+      'CLOSED',
+      this.getIp(req),
+      this.getUa(req),
+    );
+  }
+
+  @Post('conversations/:conversationId/archive')
+  @Permissions(PERMISSIONS.CONVERSATIONS_UPDATE)
+  @HttpCode(HttpStatus.OK)
+  async archiveConversation(
+    @CurrentUser() user: JwtPayload,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Req() req: Request,
+  ) {
+    return this.closeConversationUseCase.execute(
+      conversationId,
+      user.orgId,
+      user.sub,
+      'ARCHIVED',
+      this.getIp(req),
+      this.getUa(req),
+    );
+  }
+
+  @Post('conversations/:conversationId/reopen')
+  @Permissions(PERMISSIONS.CONVERSATIONS_UPDATE)
+  @HttpCode(HttpStatus.OK)
+  async reopenConversation(
+    @CurrentUser() user: JwtPayload,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+  ) {
+    await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: { status: 'OPEN' },
+    });
+    return { success: true, status: 'OPEN' };
+  }
+
+  // ───── Conversation Labels ─────
+
+  @Get('conversations/:conversationId/labels')
+  @Permissions(PERMISSIONS.CONVERSATIONS_READ)
+  async getConversationLabels(
+    @CurrentUser() user: JwtPayload,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+  ) {
+    return this.prisma.conversationLabel.findMany({
+      where: { conversationId, orgId: user.orgId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  @Post('conversations/:conversationId/labels')
+  @Permissions(PERMISSIONS.CONVERSATIONS_UPDATE)
+  @HttpCode(HttpStatus.CREATED)
+  async addConversationLabel(
+    @CurrentUser() user: JwtPayload,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Body('name') name: string,
+    @Body('color') color?: string,
+  ) {
+    return this.prisma.conversationLabel.upsert({
+      where: { unique_label_per_conversation: { conversationId, name } },
+      create: { orgId: user.orgId, conversationId, name, color },
+      update: { color },
+    });
+  }
+
+  @Delete('conversations/:conversationId/labels/:labelId')
+  @Permissions(PERMISSIONS.CONVERSATIONS_UPDATE)
+  @HttpCode(HttpStatus.OK)
+  async removeConversationLabel(
+    @CurrentUser() user: JwtPayload,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Param('labelId', ParseUUIDPipe) labelId: string,
+  ) {
+    await this.prisma.conversationLabel.deleteMany({
+      where: { id: labelId, conversationId, orgId: user.orgId },
+    });
+    return { success: true };
   }
 
   // ───── Dead-Letter Queue (Admin) ─────

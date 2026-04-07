@@ -85,6 +85,28 @@ export class SendMessageUseCase {
     if (['IMAGE', 'VIDEO', 'DOCUMENT', 'AUDIO'].includes(dto.type) && !dto.mediaUrl) {
       throw new BadRequestException(`${dto.type} messages require a mediaUrl`);
     }
+    if (dto.type === 'INTERACTIVE') {
+      if (!dto.interactive) {
+        throw new BadRequestException('INTERACTIVE messages require an interactive payload');
+      }
+      if (dto.interactive.type === 'button') {
+        if (!dto.interactive.buttons || dto.interactive.buttons.length === 0) {
+          throw new BadRequestException('Button interactive messages require at least one button');
+        }
+        if (dto.interactive.buttons.length > 3) {
+          throw new BadRequestException('Button interactive messages allow a maximum of 3 buttons');
+        }
+      }
+      if (dto.interactive.type === 'list') {
+        if (!dto.interactive.sections || dto.interactive.sections.length === 0) {
+          throw new BadRequestException('List interactive messages require at least one section');
+        }
+        const totalRows = dto.interactive.sections.reduce((sum, s) => sum + s.rows.length, 0);
+        if (totalRows > 10) {
+          throw new BadRequestException('List interactive messages allow a maximum of 10 rows total');
+        }
+      }
+    }
 
     // 4. Rate limit check
     const rateResult = await this.rateLimiter.checkLimit(session.id, orgId);
@@ -138,9 +160,10 @@ export class SendMessageUseCase {
       type: dto.type as MessageType,
       contactPhone: dto.contactPhone,
       contactName: dto.contactName,
-      body: dto.body,
+      body: dto.type === 'INTERACTIVE' ? (dto.interactive?.body ?? dto.body) : dto.body,
       mediaUrl: dto.mediaUrl,
       mediaMimeType: dto.mediaMimeType,
+      metadata: dto.interactive ? { interactive: dto.interactive } as any : undefined,
       idempotencyKey: dto.idempotencyKey,
       priority: dto.priority,
       maxRetries: MESSAGING_CONFIG.MAX_RETRY_COUNT,

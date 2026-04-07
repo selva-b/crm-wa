@@ -19,4 +19,19 @@ export const conversationsApi = {
     apiClient
       .delete(`/messaging/conversations/${conversationId}`)
       .then((r) => r.data),
+
+  close: (conversationId: string) =>
+    apiClient
+      .post(`/messaging/conversations/${conversationId}/close`)
+      .then((r) => r.data),
+
+  archive: (conversationId: string) =>
+    apiClient
+      .post(`/messaging/conversations/${conversationId}/archive`)
+      .then((r) => r.data),
+
+  reopen: (conversationId: string) =>
+    apiClient
+      .post(`/messaging/conversations/${conversationId}/reopen`)
+      .then((r) => r.data),
 };

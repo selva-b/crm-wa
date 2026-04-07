@@ -42,6 +42,7 @@ export interface ListContactsOptions {
   ownerIds?: string[];
   source?: ContactSource;
   tagIds?: string[];
+  productIds?: string[];
   search?: string;
   sortBy?: 'createdAt' | 'updatedAt' | 'name';
   sortOrder?: 'asc' | 'desc';
@@ -272,6 +273,12 @@ export class ContactRepository {
             some: { tagId: { in: options.tagIds } },
           },
         }),
+      ...(options.productIds &&
+        options.productIds.length > 0 && {
+          contactProducts: {
+            some: { productId: { in: options.productIds } },
+          },
+        }),
       ...(options.search && {
         OR: [
           {
@@ -312,6 +319,10 @@ export class ContactRepository {
           contactTags: {
             include: { tag: true },
             where: { tag: { deletedAt: null } },
+          },
+          contactProducts: {
+            include: { product: { select: { id: true, name: true, status: true } } },
+            where: { product: { deletedAt: null } },
           },
           _count: {
             select: { notes: { where: { deletedAt: null } } },

@@ -7,6 +7,8 @@ export interface AudienceFilters {
   tagIds?: string[];
   ownerIds?: string[];
   sources?: string[];
+  productIds?: string[];
+  teamIds?: string[];
 }
 
 export interface ResolvedContact {
@@ -41,6 +43,7 @@ export class AudienceResolverService {
     audienceType: CampaignAudienceType,
     filters?: AudienceFilters,
   ): Promise<AudienceResult> {
+    if (filters) await this.resolveTeamIds(filters);
     const where = this.buildWhereClause(orgId, audienceType, filters);
 
     const contacts: ResolvedContact[] = [];
@@ -104,6 +107,7 @@ export class AudienceResolverService {
     audienceType: CampaignAudienceType,
     filters?: AudienceFilters,
   ): Promise<number> {
+    if (filters) await this.resolveTeamIds(filters);
     const where = this.buildWhereClause(orgId, audienceType, filters);
     return this.prisma.contact.count({ where });
   }
@@ -138,8 +142,35 @@ export class AudienceResolverService {
           some: { tagId: { in: filters.tagIds } },
         };
       }
+
+      if (filters.productIds && filters.productIds.length > 0) {
+        where.contactProducts = {
+          some: { productId: { in: filters.productIds } },
+        };
+      }
     }
 
     return where;
+  }
+
+  /**
+   * Resolves teamIds to ownerIds by looking up team members.
+   * Mutates the filters object in place.
+   */
+  private async resolveTeamIds(filters: AudienceFilters): Promise<void> {
+    if (!filters.teamIds?.length) return;
+
+    const members = await this.prisma.teamMember.findMany({
+      where: { teamId: { in: filters.teamIds } },
+      select: { userId: true },
+    });
+    const teamUserIds = [...new Set(members.map((m) => m.userId))];
+
+    if (filters.ownerIds?.length) {
+      // Intersection: only owners that are also in the team
+      filters.ownerIds = filters.ownerIds.filter((id) => teamUserIds.includes(id));
+    } else {
+      filters.ownerIds = teamUserIds;
+    }
   }
 }

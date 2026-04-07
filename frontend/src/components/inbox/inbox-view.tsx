@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { MessageSquare, WifiOff, ArrowLeft, Trash2 } from "lucide-react";
+import { MessageSquare, WifiOff, ArrowLeft, Trash2, XCircle, Archive, RotateCcw, Star, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
 import { useInboxStore } from "@/stores/inbox-store";
@@ -19,8 +19,17 @@ import {
   useSendMessage,
   useMarkAsRead,
   useDeleteConversation,
+  useCloseConversation,
+  useArchiveConversation,
+  useReopenConversation,
 } from "@/hooks/use-conversations";
+import { useSendCsatSurvey } from "@/hooks/use-csat";
+import { AiReplySuggestions } from "@/components/chat/ai-reply-suggestions";
+import { ConversationSummaryPanel } from "@/components/chat/conversation-summary-panel";
+import { AiInsightPanel } from "@/components/chat/ai-insight-panel";
 import { useContactByPhone, useChangeLeadStatus } from "@/hooks/use-contacts";
+import { CreateDealModal } from "@/components/deals/create-deal-modal";
+import { useContactProducts } from "@/hooks/use-products";
 import { useInboxSocket } from "@/hooks/use-inbox-socket";
 import { useChannelSocket } from "@/hooks/use-channel-socket";
 import { useChannels } from "@/hooks/use-channels";
@@ -40,6 +49,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { Conversation } from "@/components/chat/conversation-item";
 import type { Message } from "@/components/chat/message-bubble";
+import type { InteractivePayload } from "@/lib/types/inbox";
 import type {
   ConversationResponse,
   MessageResponse,
@@ -148,6 +158,7 @@ export function InboxView({
 
   // Email subject state for EMAIL channel conversations
   const [emailSubject, setEmailSubject] = useState("");
+  const [aiSuggestionText, setAiSuggestionText] = useState("");
 
   // ─── Data hooks ───
   const conversationParams = useMemo(() => {
@@ -166,13 +177,20 @@ export function InboxView({
   const sendMessage = useSendMessage();
   const markAsRead = useMarkAsRead();
   const deleteConversation = useDeleteConversation();
+  const closeConversation = useCloseConversation();
+  const archiveConversation = useArchiveConversation();
+  const reopenConversation = useReopenConversation();
+  const sendCsatSurvey = useSendCsatSurvey();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showCreateDeal, setShowCreateDeal] = useState(false);
 
   // ─── Contact data for selected conversation (lookup by phone) ───
   const selectedRawConv = conversationsQuery.data?.data?.find(
     (c) => c.id === selectedId,
   );
   const { data: contactData } = useContactByPhone(selectedRawConv?.contactPhone ?? null);
+  const { data: contactProducts } = useContactProducts(contactData?.id ?? null);
   const changeLeadStatus = useChangeLeadStatus();
 
   // ─── Map backend data to component props ───
@@ -292,6 +310,24 @@ export function InboxView({
     [selectedConversation, selectedId, sendMessage, targetUserId],
   );
 
+  const handleSendInteractive = useCallback(
+    (payload: InteractivePayload) => {
+      if (!selectedConversation) return;
+      sendMessage.mutate({
+        contactPhone: selectedConversation.contactPhone,
+        contactName: selectedConversation.contactName,
+        type: "INTERACTIVE",
+        body: payload.body,
+        interactive: payload,
+        idempotencyKey: `${selectedConversation.id}-int-${Date.now()}`,
+        conversationId: selectedId || undefined,
+        ...(targetUserId && { viaSessionUserId: targetUserId }),
+        ...(selectedRawConv?.channelId && { channelId: selectedRawConv.channelId }),
+      });
+    },
+    [selectedConversation, selectedId, sendMessage, targetUserId],
+  );
+
   // ─── Loading ───
   if (sessionLoading && !skipSessionCheck) {
     return (
@@ -407,12 +443,74 @@ export function InboxView({
                       </Badge>
                     )}
                   </div>
-                  <p className="text-[12px] text-on-surface-variant">
-                    {selectedConversation.contactPhone}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[12px] text-on-surface-variant">
+                      {selectedConversation.contactPhone}
+                    </p>
+                    {contactProducts && contactProducts.length > 0 && contactProducts.slice(0, 2).map((p) => (
+                      <span key={p.id} className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{p.name}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                {/* Close / Reopen */}
+                {selectedRawConv?.status === "OPEN" ? (
+                  <button
+                    onClick={() => setShowCloseConfirm(true)}
+                    disabled={closeConversation.isPending}
+                    className="p-2 rounded-lg text-on-surface-variant hover:text-warning hover:bg-warning/10 transition-colors"
+                    title="Close conversation"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => selectedId && reopenConversation.mutate(selectedId)}
+                    disabled={reopenConversation.isPending}
+                    className="p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Reopen conversation"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </button>
+                )}
+                {/* Archive */}
+                {selectedRawConv?.status !== "ARCHIVED" && (
+                  <button
+                    onClick={() => selectedId && archiveConversation.mutate(selectedId)}
+                    disabled={archiveConversation.isPending}
+                    className="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                    title="Archive conversation"
+                  >
+                    <Archive className="h-4 w-4" />
+                  </button>
+                )}
+                {/* Create Deal */}
+                {contactData?.id && (
+                  <button
+                    onClick={() => setShowCreateDeal(true)}
+                    className="p-2 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="Create deal"
+                  >
+                    <Handshake className="h-4 w-4" />
+                  </button>
+                )}
+                {/* Send CSAT */}
+                <button
+                  onClick={() => {
+                    if (!selectedId || !selectedConversation) return;
+                    sendCsatSurvey.mutate({
+                      conversationId: selectedId,
+                      contactPhone: selectedConversation.contactPhone,
+                    });
+                  }}
+                  disabled={sendCsatSurvey.isPending}
+                  className="p-2 rounded-lg text-on-surface-variant hover:text-tertiary hover:bg-tertiary/10 transition-colors"
+                  title="Send CSAT survey"
+                >
+                  <Star className="h-4 w-4" />
+                </button>
+                {/* Delete */}
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={deleteConversation.isPending}
@@ -451,6 +549,11 @@ export function InboxView({
               </div>
             </div>
 
+            {/* AI Summary Panel */}
+            {selectedId && (
+              <ConversationSummaryPanel conversationId={selectedId} />
+            )}
+
             {/* Messages */}
             {messagesQuery.isLoading ? (
               <div className="flex-1 flex items-center justify-center">
@@ -459,6 +562,15 @@ export function InboxView({
             ) : (
               <MessageThread messages={currentMessages} />
             )}
+
+            {/* AI Insight Panel */}
+            <AiInsightPanel conversationId={selectedId} />
+
+            {/* AI Reply Suggestions */}
+            <AiReplySuggestions
+              conversationId={selectedId}
+              onSelect={setAiSuggestionText}
+            />
 
             {/* Input — disabled when disconnected */}
             {isDisconnected && !skipSessionCheck ? (
@@ -471,11 +583,14 @@ export function InboxView({
             ) : (
               <ChatInput
                 onSend={handleSend}
+                onSendInteractive={handleSendInteractive}
                 disabled={sendMessage.isPending}
                 uploading={uploading}
                 channelType={selectedChannelType}
                 emailSubject={emailSubject}
                 onSubjectChange={setEmailSubject}
+                prefillText={aiSuggestionText}
+                onPrefillApplied={() => setAiSuggestionText("")}
                 maxTextLength={
                   selectedChannelType === "INSTAGRAM" ? 1000
                     : selectedChannelType === "FACEBOOK_MESSENGER" ? 2000
@@ -535,6 +650,30 @@ export function InboxView({
           });
         }}
         onCancel={() => setShowDeleteConfirm(false)}
+      />
+      <ConfirmDialog
+        open={showCloseConfirm}
+        title="Close Conversation"
+        message="This will close the conversation and automatically send a CSAT survey to the customer. You can reopen it later."
+        confirmLabel="Close"
+        variant="default"
+        loading={closeConversation.isPending}
+        onConfirm={() => {
+          if (!selectedId) return;
+          closeConversation.mutate(selectedId, {
+            onSuccess: () => {
+              setShowCloseConfirm(false);
+            },
+          });
+        }}
+        onCancel={() => setShowCloseConfirm(false)}
+      />
+      <CreateDealModal
+        open={showCreateDeal}
+        onClose={() => setShowCreateDeal(false)}
+        prefilledContactId={contactData?.id}
+        prefilledContactName={contactData?.name || selectedConversation?.contactName}
+        lockContact
       />
     </div>
   );

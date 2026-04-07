@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useRef, type KeyboardEvent } from "react";
-import { Paperclip, Smile, Send, X, FileText, Image, Film, Music } from "lucide-react";
+import { useState, useRef, useEffect, type KeyboardEvent } from "react";
+import { Paperclip, Smile, Send, X, FileText, Image, Film, Music, MousePointerClick } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CannedResponsePicker } from "./canned-response-picker";
+import { InteractiveMessageBuilder } from "./interactive-message-builder";
+import type { InteractivePayload } from "@/lib/types/inbox";
 
 export interface MediaAttachment {
   file: File;
@@ -14,12 +16,15 @@ export interface MediaAttachment {
 
 interface ChatInputProps {
   onSend: (content: string, media?: MediaAttachment) => void;
+  onSendInteractive?: (payload: InteractivePayload) => void;
   disabled?: boolean;
   uploading?: boolean;
   channelType?: string | null;
   emailSubject?: string;
   onSubjectChange?: (subject: string) => void;
   maxTextLength?: number;
+  prefillText?: string;
+  onPrefillApplied?: () => void;
 }
 
 function detectMediaType(mimeType: string): MediaAttachment["type"] {
@@ -48,10 +53,20 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ChatInput({ onSend, disabled, uploading, channelType, emailSubject, onSubjectChange, maxTextLength }: ChatInputProps) {
+export function ChatInput({ onSend, onSendInteractive, disabled, uploading, channelType, emailSubject, onSubjectChange, maxTextLength, prefillText, onPrefillApplied }: ChatInputProps) {
   const [value, setValue] = useState("");
   const [attachment, setAttachment] = useState<MediaAttachment | null>(null);
+
+  // Apply prefilled text from AI suggestions
+  useEffect(() => {
+    if (prefillText) {
+      setValue(prefillText);
+      onPrefillApplied?.();
+      textareaRef.current?.focus();
+    }
+  }, [prefillText, onPrefillApplied]);
   const [showCannedPicker, setShowCannedPicker] = useState(false);
+  const [showInteractiveBuilder, setShowInteractiveBuilder] = useState(false);
   const [cannedFilter, setCannedFilter] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -107,6 +122,17 @@ export function ChatInput({ onSend, disabled, uploading, channelType, emailSubje
 
   return (
     <div className="shrink-0 border-t border-outline-variant/15 px-4 py-3">
+      {/* Interactive message builder */}
+      {showInteractiveBuilder && onSendInteractive && (
+        <InteractiveMessageBuilder
+          onSend={(payload) => {
+            onSendInteractive(payload);
+            setShowInteractiveBuilder(false);
+          }}
+          onClose={() => setShowInteractiveBuilder(false)}
+        />
+      )}
+
       {/* Email subject line */}
       {isEmail && onSubjectChange && (
         <div className="mb-2">
@@ -190,6 +216,22 @@ export function ChatInput({ onSend, disabled, uploading, channelType, emailSubje
         >
           <Smile className="h-5 w-5" />
         </button>
+        {onSendInteractive && (
+          <button
+            type="button"
+            onClick={() => setShowInteractiveBuilder(!showInteractiveBuilder)}
+            disabled={disabled || uploading}
+            className={cn(
+              "shrink-0 p-1.5 transition-colors rounded-lg",
+              showInteractiveBuilder
+                ? "text-primary bg-primary/10"
+                : "text-on-surface-variant hover:text-on-surface",
+            )}
+            title="Interactive message (buttons / list)"
+          >
+            <MousePointerClick className="h-5 w-5" />
+          </button>
+        )}
         <textarea
           ref={textareaRef}
           value={value}

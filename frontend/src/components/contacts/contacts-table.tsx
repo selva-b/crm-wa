@@ -15,6 +15,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { LeadStatusBadge } from "./lead-status-badge";
+import { LeadScoreBadge } from "./lead-score-badge";
 import type { Contact, ContactSource } from "@/lib/types/contacts";
 
 interface ContactsTableProps {
@@ -110,8 +111,10 @@ export function ContactsTable({
             <TableHead>Contact</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Score</TableHead>
             <TableHead>Owner</TableHead>
             <TableHead>Tags</TableHead>
+            <TableHead>Products</TableHead>
             <TableHead>Source</TableHead>
             <TableHead>Created</TableHead>
           </TableHeaderRow>
@@ -151,6 +154,10 @@ export function ContactsTable({
                 <LeadStatusBadge status={contact.leadStatus} />
               </TableCell>
 
+              <TableCell>
+                <LeadScoreBadge score={contact.leadScore} />
+              </TableCell>
+
               <TableCell className="text-[12px] text-on-surface-variant truncate">
                 {contact.owner.firstName} {contact.owner.lastName}
               </TableCell>
@@ -165,6 +172,21 @@ export function ContactsTable({
                   {contact.contactTags.length > 2 && (
                     <span className="text-[11px] text-on-surface-variant/50">
                       +{contact.contactTags.length - 2}
+                    </span>
+                  )}
+                </div>
+              </TableCell>
+
+              <TableCell>
+                <div className="flex gap-1 overflow-hidden">
+                  {(contact.contactProducts || []).slice(0, 2).map((cp) => (
+                    <Badge key={cp.product.id} variant="info">
+                      {cp.product.name}
+                    </Badge>
+                  ))}
+                  {(contact.contactProducts || []).length > 2 && (
+                    <span className="text-[11px] text-on-surface-variant/50">
+                      +{(contact.contactProducts || []).length - 2}
                     </span>
                   )}
                 </div>

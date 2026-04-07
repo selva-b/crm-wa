@@ -11,6 +11,7 @@ interface ContactsState {
   filterOwnerId: string | null;
   filterSource: ContactSource | null;
   filterTagIds: string[];
+  filterProductIds: string[];
   page: number;
 
   setSelectedContact: (id: string | null) => void;
@@ -22,6 +23,7 @@ interface ContactsState {
   setFilterOwnerId: (ownerId: string | null) => void;
   setFilterSource: (source: ContactSource | null) => void;
   setFilterTagIds: (tagIds: string[]) => void;
+  setFilterProductIds: (productIds: string[]) => void;
   clearFilters: () => void;
   setPage: (page: number) => void;
 }
@@ -34,6 +36,7 @@ export const useContactsStore = create<ContactsState>()((set) => ({
   filterOwnerId: null,
   filterSource: null,
   filterTagIds: [],
+  filterProductIds: [],
   page: 0,
 
   setSelectedContact: (id) => set({ selectedContactId: id }),
@@ -47,12 +50,14 @@ export const useContactsStore = create<ContactsState>()((set) => ({
   setFilterOwnerId: (ownerId) => set({ filterOwnerId: ownerId, page: 0 }),
   setFilterSource: (source) => set({ filterSource: source, page: 0 }),
   setFilterTagIds: (tagIds) => set({ filterTagIds: tagIds, page: 0 }),
+  setFilterProductIds: (productIds) => set({ filterProductIds: productIds, page: 0 }),
   clearFilters: () =>
     set({
       filterStatus: null,
       filterOwnerId: null,
       filterSource: null,
       filterTagIds: [],
+      filterProductIds: [],
       searchQuery: "",
       page: 0,
     }),

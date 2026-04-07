@@ -2,6 +2,34 @@
 
 import type { ChannelType } from "./channels";
 
+// ─── Interactive message types (buttons & lists) ─────
+
+export interface InteractiveButton {
+  id: string;
+  title: string;
+}
+
+export interface InteractiveListRow {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+export interface InteractiveListSection {
+  title?: string;
+  rows: InteractiveListRow[];
+}
+
+export interface InteractivePayload {
+  type: "button" | "list";
+  header?: string;
+  body: string;
+  footer?: string;
+  buttons?: InteractiveButton[];
+  sections?: InteractiveListSection[];
+  buttonText?: string;
+}
+
 // Matches backend Conversation model
 export interface ConversationResponse {
   id: string;
@@ -33,7 +61,7 @@ export interface ConversationListResponse {
 
 // Matches backend Message model
 export type MessageDirection = "INBOUND" | "OUTBOUND";
-export type MessageType = "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO";
+export type MessageType = "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO" | "INTERACTIVE";
 export type MessageStatus =
   | "QUEUED"
   | "PROCESSING"
@@ -56,6 +84,7 @@ export interface MessageResponse {
   mediaMimeType: string | null;
   status: MessageStatus;
   whatsappMessageId: string | null;
+  interactivePayload?: InteractivePayload | null;
   idempotencyKey: string | null;
   retryCount: number;
   failedReason: string | null;
@@ -96,6 +125,8 @@ export interface SendMessageRequest {
   priority?: number;
   viaSessionUserId?: string;
   conversationId?: string;
+  /** Interactive message payload (buttons or list). Required when type=INTERACTIVE. */
+  interactive?: InteractivePayload;
   // EPIC 16 — Multi-Channel fields
   channelId?: string;
   contactIdentifier?: string;

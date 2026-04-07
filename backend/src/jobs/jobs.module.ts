@@ -50,6 +50,9 @@ import { ChannelsModule } from '@/modules/channels/channels.module';
 // Social Ads Lead Integration workers
 import { LeadAdsModule } from '@/modules/lead-ads/lead-ads.module';
 import { ProcessLeadAdWorker } from './lead-ads/process-lead-ad.worker';
+// Drip Sequence workers
+import { SequenceStepWorker } from './sequence/sequence-step.worker';
+import { SequencesModule } from '@/modules/sequences/sequences.module';
 import { SendChannelMessageWorker } from './channel/send-channel-message.worker';
 import { ProcessChannelInboundWorker } from './channel/process-channel-inbound.worker';
 
@@ -70,6 +73,7 @@ import { ProcessChannelInboundWorker } from './channel/process-channel-inbound.w
     NotificationsModule,
     ChannelsModule,
     LeadAdsModule,
+    SequencesModule,
   ],
   providers: [
     SendEmailWorker,
@@ -112,6 +116,8 @@ import { ProcessChannelInboundWorker } from './channel/process-channel-inbound.w
     ProcessChannelInboundWorker,
     // Social Ads Lead Integration workers
     ProcessLeadAdWorker,
+    // Drip Sequence workers
+    SequenceStepWorker,
   ],
 })
 export class JobsModule {}

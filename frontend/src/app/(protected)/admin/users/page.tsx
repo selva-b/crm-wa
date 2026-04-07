@@ -368,10 +368,15 @@ export default function AdminUsersPage() {
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar
-                          name={`${user.firstName} ${user.lastName}`}
-                          size="sm"
-                        />
+                        <div className="relative">
+                          <Avatar
+                            name={`${user.firstName} ${user.lastName}`}
+                            size="sm"
+                          />
+                          {user.isOnline && (
+                            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-success ring-2 ring-surface-container-lowest" />
+                          )}
+                        </div>
                         <div>
                           <p className="text-[14px] font-medium text-on-surface">
                             {user.firstName} {user.lastName}

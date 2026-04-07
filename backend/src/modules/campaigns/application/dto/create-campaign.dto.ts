@@ -33,6 +33,16 @@ export class AudienceFiltersDto {
   @IsArray()
   @IsEnum(ContactSource, { each: true })
   sources?: ContactSource[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  productIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  teamIds?: string[];
 }
 
 export class CreateCampaignDto {

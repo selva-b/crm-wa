@@ -72,6 +72,11 @@ export const QUEUE_NAMES = {
   CHANNEL_VERIFY: 'channel-verify',
   CHANNEL_HEALTH_CHECK: 'channel-health-check',
   EMAIL_IMAP_POLL: 'email-imap-poll',
+  // Drip Sequence queues
+  SEQUENCE_STEP_CHECK: 'sequence-step-check',
+  SEQUENCE_SEND_STEP: 'sequence-send-step',
+  // Developer API queues
+  DEVELOPER_WEBHOOK_DELIVER: 'developer-webhook-deliver',
 } as const;
 
 export const EVENT_NAMES = {
@@ -136,6 +141,7 @@ export const EVENT_NAMES = {
   MESSAGE_REPROCESSED: 'message.reprocessed',
   CONVERSATION_CREATED: 'conversation.created',
   CONVERSATION_UPDATED: 'conversation.updated',
+  CONVERSATION_CLOSED: 'conversation.closed',
   RATE_LIMIT_EXCEEDED: 'message.rate_limit_exceeded',
 
   // Campaign Management events (EPIC 6)
@@ -247,6 +253,24 @@ export const EVENT_NAMES = {
   CHANNEL_MESSAGE_DELIVERED: 'channel.message_delivered',
   CHANNEL_MESSAGE_READ: 'channel.message_read',
   CHANNEL_MESSAGE_FAILED: 'channel.message_failed',
+
+  // Chatbot events
+  CHATBOT_FLOW_TRIGGERED: 'chatbot.flow_triggered',
+  CHATBOT_AI_REPLY_SENT: 'chatbot.ai_reply_sent',
+  CHATBOT_SESSION_COMPLETED: 'chatbot.session_completed',
+  CHATBOT_SESSION_HANDED_OFF: 'chatbot.session_handed_off',
+
+  // Developer API events
+  DEVELOPER_MESSAGE_SENT: 'developer.message_sent',
+  DEVELOPER_WEBHOOK_TRIGGERED: 'developer.webhook_triggered',
+
+  // Deal events
+  DEAL_AUTO_CREATED: 'deals.auto_created',
+  PURCHASE_INTENT_DETECTED: 'ai.purchase_intent_detected',
+
+  // Product events
+  CONTACT_PRODUCT_ASSIGNED: 'product.contact_assigned',
+  CONTACT_PRODUCT_REMOVED: 'product.contact_removed',
 
   // SLA Tracking events (EPIC 15)
   SLA_POLICY_CREATED: 'sla.policy_created',
@@ -521,6 +545,26 @@ export const CHANNEL_CONFIG = {
   RATE_LIMIT_CLEANUP_INTERVAL_HOURS: 1,
   /** Channel config encryption algorithm */
   ENCRYPTION_ALGORITHM: 'aes-256-gcm',
+} as const;
+
+export const DEVELOPER_API_CONFIG = {
+  /** Default rate limit per minute for developer API */
+  RATE_LIMIT_PER_MINUTE: 60,
+  /** Max webhooks per developer org */
+  MAX_WEBHOOKS_PER_ORG: 10,
+  /** Default page size for API responses */
+  DEFAULT_PAGE_SIZE: 20,
+  /** Max page size for API responses */
+  MAX_PAGE_SIZE: 100,
+  /** Webhook events that developers can subscribe to */
+  AVAILABLE_WEBHOOK_EVENTS: [
+    'message.received',
+    'message.status',
+    'message.sent',
+    'message.delivered',
+    'message.read',
+    'message.failed',
+  ],
 } as const;
 
 export const ANALYTICS_CONFIG = {

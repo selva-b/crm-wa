@@ -8,6 +8,7 @@ import { useDashboardAnalytics, useTeamPerformance } from "@/hooks/use-analytics
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PeriodSelector } from "@/components/analytics/period-selector";
+import { ProductFilterSelect } from "@/components/ui/product-filter-select";
 import { AnalyticsKpiCards } from "@/components/analytics/analytics-kpi-cards";
 import { MessageVolumeChart } from "@/components/analytics/message-volume-chart";
 import { ResponseTimeChart } from "@/components/analytics/response-time-chart";
@@ -54,6 +55,7 @@ export default function DashboardPage() {
           </h1>
         </div>
         <PeriodSelector value={period} onChange={setPeriod} />
+        <ProductFilterSelect value="" onChange={() => {}} />
       </div>
 
       {/* Content */}

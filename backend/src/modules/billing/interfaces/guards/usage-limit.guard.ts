@@ -43,14 +43,15 @@ export class UsageLimitGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
+    const orgId = user?.orgId ?? request.apiKeyAuth?.orgId;
 
-    if (!user?.orgId) return true;
+    if (!orgId) return true;
 
-    const result = await this.usageTrackingService.checkUsage(user.orgId, metricType);
+    const result = await this.usageTrackingService.checkUsage(orgId, metricType);
 
     if (!result.allowed) {
       this.logger.warn(
-        `Usage limit exceeded for org ${user.orgId}: ${metricType} ` +
+        `Usage limit exceeded for org ${orgId}: ${metricType} ` +
         `(${result.currentValue}/${result.limitValue})`,
       );
 

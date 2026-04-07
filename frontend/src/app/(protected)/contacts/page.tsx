@@ -45,6 +45,7 @@ export default function ContactsPage() {
     filterOwnerId,
     filterSource,
     filterTagIds,
+    filterProductIds,
     page,
     setSearchQuery,
     openContactDetail,
@@ -65,6 +66,7 @@ export default function ContactsPage() {
       ownerId: filterOwnerId ?? undefined,
       source: filterSource ?? undefined,
       tagIds: filterTagIds.length > 0 ? filterTagIds : undefined,
+      productIds: filterProductIds.length > 0 ? filterProductIds : undefined,
       sortBy: "createdAt",
       sortOrder: "desc",
     }),
@@ -75,6 +77,7 @@ export default function ContactsPage() {
       filterOwnerId,
       filterSource,
       filterTagIds,
+      filterProductIds,
     ],
   );
 

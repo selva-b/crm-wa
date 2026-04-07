@@ -8,6 +8,8 @@ export interface OrgUser {
   role: "ADMIN" | "MANAGER" | "EMPLOYEE";
   status: string;
   lastLoginAt: string | null;
+  isOnline?: boolean;
+  lastSeenAt?: string | null;
   createdAt: string;
 }
 

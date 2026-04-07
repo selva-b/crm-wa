@@ -26,6 +26,7 @@ import {
   ReprocessDeadLetterUseCase,
 } from './application/use-cases';
 import { DeleteConversationUseCase } from './application/use-cases/delete-conversation.use-case';
+import { CloseConversationUseCase } from './application/use-cases/close-conversation.use-case';
 import { SyncTemplatesUseCase } from './application/use-cases/sync-templates.use-case';
 import { SendTemplateMessageUseCase } from './application/use-cases/send-template-message.use-case';
 
@@ -56,6 +57,7 @@ import { TemplatesController } from './interfaces/controllers/templates.controll
     ListDeadLettersUseCase,
     ReprocessDeadLetterUseCase,
     DeleteConversationUseCase,
+    CloseConversationUseCase,
     CannedResponseRepository,
     TemplateRepository,
     SyncTemplatesUseCase,

@@ -138,6 +138,7 @@ export class SubscribeUseCase {
       [UsageMetricType.ACTIVE_USERS]: plan.maxUsers,
       [UsageMetricType.WHATSAPP_SESSIONS]: plan.maxWhatsappSessions,
       [UsageMetricType.CAMPAIGN_EXECUTIONS]: plan.maxCampaignsPerMonth,
+      [UsageMetricType.API_CALLS]: plan.maxMessagesPerMonth,
     };
 
     await this.usageRepo.resetUsageForOrg(

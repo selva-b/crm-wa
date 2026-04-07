@@ -83,3 +83,45 @@ export function useMarkAsRead() {
     },
   });
 }
+
+export function useCloseConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsApi.close(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}
+
+export function useArchiveConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsApi.archive(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}
+
+export function useReopenConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsApi.reopen(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}

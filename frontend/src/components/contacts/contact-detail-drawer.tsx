@@ -11,6 +11,10 @@ import {
   MoreHorizontal,
   MessageSquare,
   Pencil,
+  Download,
+  ShieldCheck,
+  SlidersHorizontal,
+  Save,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
@@ -20,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import { LeadStatusBadge } from "./lead-status-badge";
+import { LeadScoreBadge } from "./lead-score-badge";
 import { ContactTags } from "./contact-tags";
 import { ContactNotes } from "./contact-notes";
 import { ContactHistory } from "./contact-history";
@@ -32,6 +37,12 @@ import {
   useUpdateContact,
 } from "@/hooks/use-contacts";
 import type { LeadStatus } from "@/lib/types/contacts";
+import { useContactDeals } from "@/hooks/use-deals";
+import { CreateDealModal } from "@/components/deals/create-deal-modal";
+import { useProducts, useContactProducts, useAssignProduct, useUnassignProduct } from "@/hooks/use-products";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getFieldValues, setFieldValues, listFieldDefinitions, type CustomFieldValue } from "@/lib/api/custom-fields";
+import { exportContactData, eraseContactData } from "@/lib/api/gdpr";
 
 interface ContactDetailDrawerProps {
   contactId: string | null;
@@ -49,6 +60,9 @@ const LEAD_STATUSES: { value: LeadStatus; label: string }[] = [
 
 const drawerTabs = [
   { id: "info", label: "Info" },
+  { id: "products", label: "Products" },
+  { id: "deals", label: "Deals" },
+  { id: "fields", label: "Fields" },
   { id: "notes", label: "Notes" },
   { id: "history", label: "History" },
 ];
@@ -163,6 +177,25 @@ export function ContactDetailDrawer({
                   </button>
                   <button
                     onClick={() => {
+                      if (!contactId) return;
+                      exportContactData(contactId).then((data) => {
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `contact-export-${contactId}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      });
+                      setShowActions(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-on-surface hover:bg-surface-container transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export Data (GDPR)
+                  </button>
+                  <button
+                    onClick={() => {
                       handleDelete();
                       setShowActions(false);
                     }}
@@ -170,6 +203,19 @@ export function ContactDetailDrawer({
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Delete Contact
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!contactId) return;
+                      if (confirm("GDPR Erasure: This will PERMANENTLY delete ALL data for this contact. This cannot be undone. Continue?")) {
+                        eraseContactData(contactId, "GDPR erasure request").then(() => onClose());
+                      }
+                      setShowActions(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-error hover:bg-surface-container transition-colors"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Erase Data (GDPR)
                   </button>
                 </div>
               )}
@@ -237,6 +283,14 @@ export function ContactDetailDrawer({
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Lead Score */}
+              <div className="px-5 pb-2">
+                <p className="text-[11px] font-medium text-on-surface-variant/60 uppercase tracking-wide mb-1">
+                  Lead Score
+                </p>
+                <LeadScoreBadge score={contact.leadScore} size="md" />
               </div>
 
               {/* Edit form or Quick info */}
@@ -388,6 +442,15 @@ export function ContactDetailDrawer({
                       />
                     </div>
                   )}
+                  {activeTab === "products" && (
+                    <ContactProductsTab contactId={contact.id} />
+                  )}
+                  {activeTab === "deals" && (
+                    <ContactDealsTab contactId={contact.id} contactName={contact.name || contact.phoneNumber} />
+                  )}
+                  {activeTab === "fields" && (
+                    <CustomFieldsTab contactId={contact.id} />
+                  )}
                   {activeTab === "notes" && (
                     <ContactNotes contactId={contact.id} />
                   )}
@@ -431,6 +494,214 @@ export function ContactDetailDrawer({
         onCancel={() => setShowDeleteConfirm(false)}
       />
     </>
+  );
+}
+
+function CustomFieldsTab({ contactId }: { contactId: string }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [values, setValues] = useState<Record<string, string>>({});
+
+  const { data: definitions } = useQuery({
+    queryKey: ["custom-fields", "contact"],
+    queryFn: () => listFieldDefinitions("contact"),
+  });
+
+  const { data: fieldValues, isLoading } = useQuery({
+    queryKey: ["custom-field-values", contactId],
+    queryFn: () => getFieldValues(contactId),
+  });
+
+  const saveMut = useMutation({
+    mutationFn: (vals: { fieldId: string; value: string }[]) => setFieldValues(contactId, vals),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["custom-field-values", contactId] });
+      setEditing(false);
+    },
+  });
+
+  const startEdit = () => {
+    const map: Record<string, string> = {};
+    fieldValues?.forEach((fv) => { map[fv.fieldId] = fv.value; });
+    setValues(map);
+    setEditing(true);
+  };
+
+  const handleSave = () => {
+    if (!definitions) return;
+    const payload = definitions.map((d) => ({ fieldId: d.id, value: values[d.id] || "" })).filter((v) => v.value);
+    saveMut.mutate(payload);
+  };
+
+  if (isLoading) return <Spinner size="sm" />;
+
+  if (!definitions?.length) {
+    return <p className="text-[12px] text-on-surface-variant/50">No custom fields defined. Add them in Settings.</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-medium text-on-surface-variant/60 uppercase tracking-wide">Custom Fields</span>
+        {!editing ? (
+          <button onClick={startEdit} className="text-[11px] text-primary hover:underline">Edit</button>
+        ) : (
+          <div className="flex gap-1.5">
+            <button onClick={() => setEditing(false)} className="text-[11px] text-on-surface-variant hover:underline">Cancel</button>
+            <button onClick={handleSave} disabled={saveMut.isPending} className="text-[11px] text-primary hover:underline font-medium">
+              {saveMut.isPending ? "Saving..." : "Save"}
+            </button>
+          </div>
+        )}
+      </div>
+      {definitions.map((def) => {
+        const currentValue = fieldValues?.find((fv) => fv.fieldId === def.id)?.value || "";
+        return (
+          <div key={def.id} className="flex items-center justify-between">
+            <span className="text-[12px] text-on-surface-variant/60">{def.fieldLabel}</span>
+            {editing ? (
+              def.fieldType === "boolean" ? (
+                <input
+                  type="checkbox"
+                  checked={values[def.id] === "true"}
+                  onChange={(e) => setValues((v) => ({ ...v, [def.id]: String(e.target.checked) }))}
+                  className="rounded"
+                />
+              ) : def.fieldType === "select" && def.options ? (
+                <select
+                  value={values[def.id] || ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [def.id]: e.target.value }))}
+                  className="max-w-[160px] rounded-lg border border-outline-variant/20 bg-surface px-2 py-1 text-[12px]"
+                >
+                  <option value="">—</option>
+                  {(def.options as string[]).map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              ) : (
+                <input
+                  type={def.fieldType === "number" ? "number" : def.fieldType === "date" ? "date" : "text"}
+                  value={values[def.id] || ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [def.id]: e.target.value }))}
+                  className="max-w-[160px] rounded-lg border border-outline-variant/20 bg-surface px-2 py-1 text-[12px] text-on-surface"
+                />
+              )
+            ) : (
+              <span className="text-[13px] text-on-surface">{currentValue || "—"}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ContactProductsTab({ contactId }: { contactId: string }) {
+  const { data: contactProducts, isLoading: loadingContact } = useContactProducts(contactId);
+  const { data: allProducts, isLoading: loadingAll } = useProducts();
+  const assignProduct = useAssignProduct();
+  const unassignProduct = useUnassignProduct();
+
+  if (loadingContact || loadingAll) return <Spinner size="sm" />;
+
+  const assignedIds = new Set(contactProducts?.map((p) => p.id) || []);
+  const available = allProducts?.filter((p) => !assignedIds.has(p.id) && p.status === "ACTIVE") || [];
+
+  return (
+    <div className="space-y-3">
+      <span className="text-[11px] font-medium text-on-surface-variant/60 uppercase tracking-wide">
+        Assigned Products ({contactProducts?.length || 0})
+      </span>
+
+      {contactProducts && contactProducts.length > 0 ? (
+        contactProducts.map((p) => (
+          <div key={p.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10">
+            <span className="text-[13px] text-on-surface">{p.name}</span>
+            <button
+              onClick={() => unassignProduct.mutate({ contactId, productId: p.id })}
+              className="text-[11px] text-error hover:underline"
+            >
+              Remove
+            </button>
+          </div>
+        ))
+      ) : (
+        <p className="text-[12px] text-on-surface-variant/50">No products assigned.</p>
+      )}
+
+      {available.length > 0 && (
+        <div className="pt-2">
+          <span className="text-[11px] font-medium text-on-surface-variant/60 uppercase tracking-wide">
+            Add Product
+          </span>
+          <select
+            onChange={(e) => {
+              if (e.target.value) {
+                assignProduct.mutate({ contactId, productId: e.target.value });
+                e.target.value = "";
+              }
+            }}
+            className="mt-1 w-full rounded-lg border border-outline-variant/20 bg-surface px-3 py-2 text-[13px] text-on-surface"
+            defaultValue=""
+          >
+            <option value="" disabled>Select a product...</option>
+            {available.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ContactDealsTab({ contactId, contactName }: { contactId: string; contactName: string }) {
+  const { data: deals, isLoading } = useContactDeals(contactId);
+  const [showCreate, setShowCreate] = useState(false);
+
+  if (isLoading) return <Spinner size="sm" />;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium text-on-surface-variant/60 uppercase tracking-wide">
+          Deals ({deals?.length || 0})
+        </span>
+        <button onClick={() => setShowCreate(true)} className="text-[11px] text-primary hover:underline font-medium">
+          + Create Deal
+        </button>
+      </div>
+
+      {deals && deals.length > 0 ? (
+        deals.map((deal) => (
+          <div key={deal.id} className="p-3 rounded-lg bg-surface-container border border-outline-variant/10 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-medium text-on-surface">{deal.title}</span>
+              <Badge variant={deal.status === "WON" ? "success" : deal.status === "LOST" ? "danger" : "default"}>
+                {deal.status}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-on-surface-variant/60">
+              <span>{deal.stage?.name}</span>
+              {deal.value != null && <span>{deal.currency || "INR"} {deal.value.toLocaleString()}</span>}
+            </div>
+            {deal.expectedClose && (
+              <p className="text-[11px] text-on-surface-variant/40">
+                Close: {new Date(deal.expectedClose).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        ))
+      ) : (
+        <p className="text-[12px] text-on-surface-variant/50">No deals yet for this contact.</p>
+      )}
+
+      <CreateDealModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        prefilledContactId={contactId}
+        prefilledContactName={contactName}
+        lockContact
+      />
+    </div>
   );
 }
 

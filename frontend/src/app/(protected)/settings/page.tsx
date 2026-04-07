@@ -30,6 +30,11 @@ import {
   ChevronUp,
   Zap,
   X,
+  Code,
+  Key,
+  BarChart3,
+  FileCode,
+  Activity,
 } from "lucide-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useAuthStore } from "@/stores/auth-store";
@@ -56,6 +61,15 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreference,
 } from "@/hooks/use-notifications";
+import {
+  useDeveloperDashboard,
+  useDeveloperLogs,
+  useApiKeys,
+  useCreateApiKey,
+  useRevokeApiKey,
+  useRotateApiKey,
+} from "@/hooks/use-developer";
+import type { DeveloperApiKey } from "@/lib/types/developer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -78,18 +92,22 @@ import type {
 type SettingsTab =
   | "organization"
   | "whatsapp"
+  | "working-hours"
   | "features"
   | "notifications"
   | "integrations"
-  | "webhooks";
+  | "webhooks"
+  | "developer-api";
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: "organization", label: "Organization", icon: Building2 },
   { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
+  { id: "working-hours", label: "Working Hours", icon: Clock },
   { id: "features", label: "Feature Flags", icon: ToggleLeft },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "integrations", label: "Integrations", icon: Plug },
   { id: "webhooks", label: "Webhooks", icon: Webhook },
+  { id: "developer-api", label: "Developer API", icon: Code },
 ];
 
 const TIMEZONES = [
@@ -172,10 +190,17 @@ export default function SettingsPage() {
         <div className="flex-1 min-w-0">
           {activeTab === "organization" && <OrganizationSection />}
           {activeTab === "whatsapp" && <WhatsAppSection />}
-          {activeTab === "features" && <FeatureFlagsSection />}
+          {activeTab === "working-hours" && <WorkingHoursSection />}
+          {activeTab === "features" && (
+            <>
+              <FeatureFlagsSection />
+              <AiSettingsSection />
+            </>
+          )}
           {activeTab === "notifications" && <NotificationsSection />}
           {activeTab === "integrations" && <IntegrationsSection />}
           {activeTab === "webhooks" && <WebhooksSection />}
+          {activeTab === "developer-api" && <DeveloperApiSection />}
         </div>
       </div>
     </div>
@@ -351,6 +376,61 @@ function WhatsAppSection() {
           <ChevronRight className="h-4 w-4 text-on-surface-variant/40 group-hover:text-on-surface-variant transition-colors" />
         </Link>
 
+        {/* Chat Widget */}
+        <Link
+          href="/settings/chat-widget"
+          className="flex items-center justify-between p-4 rounded-lg border border-outline-variant/20 bg-surface-container/10 hover:bg-surface-container/20 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Globe className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[13px] font-medium text-on-surface">
+                Chat Widget
+              </p>
+              <p className="text-[11px] text-on-surface-variant/60">
+                Embed a chat widget on your website to connect visitors to WhatsApp
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-on-surface-variant/40 group-hover:text-on-surface-variant transition-colors" />
+        </Link>
+
+        {/* Custom Fields */}
+        <Link
+          href="/settings/custom-fields"
+          className="flex items-center justify-between p-4 rounded-lg border border-outline-variant/20 bg-surface-container/10 hover:bg-surface-container/20 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <ToggleLeft className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[13px] font-medium text-on-surface">Custom Fields</p>
+              <p className="text-[11px] text-on-surface-variant/60">Define custom fields for contacts, deals, and conversations</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-on-surface-variant/40 group-hover:text-on-surface-variant transition-colors" />
+        </Link>
+
+        {/* API Keys */}
+        <Link
+          href="/settings/api-keys"
+          className="flex items-center justify-between p-4 rounded-lg border border-outline-variant/20 bg-surface-container/10 hover:bg-surface-container/20 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Plug className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[13px] font-medium text-on-surface">API Keys</p>
+              <p className="text-[11px] text-on-surface-variant/60">Manage API keys for third-party integrations</p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-on-surface-variant/40 group-hover:text-on-surface-variant transition-colors" />
+        </Link>
+
         {/* Message Delay */}
         <div className="space-y-1.5">
           <label className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
@@ -447,6 +527,164 @@ function WhatsAppSection() {
   );
 }
 
+// ─── Working Hours Section ──────────────────────
+
+function WorkingHoursSection() {
+  const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  const [enabled, setEnabled] = useState(true);
+  const [startHour, setStartHour] = useState("09:00");
+  const [endHour, setEndHour] = useState("18:00");
+  const [workDays, setWorkDays] = useState([true, true, true, true, true, false, false]);
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState(false);
+  const [autoReplyMessage, setAutoReplyMessage] = useState(
+    "Thanks for reaching out! We're currently outside business hours. We'll get back to you as soon as we're open."
+  );
+  const [saved, setSaved] = useState(false);
+
+  const toggleDay = (idx: number) => {
+    const next = [...workDays];
+    next[idx] = !next[idx];
+    setWorkDays(next);
+  };
+
+  const handleSave = () => {
+    // TODO: Save via settings API (PUT /settings with category: "messaging")
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Working Hours */}
+      <div>
+        <h3 className="text-[15px] font-semibold text-on-surface mb-1">
+          Business Hours
+        </h3>
+        <p className="text-[13px] text-on-surface-variant mb-4">
+          Set your team&apos;s availability hours. Outside these hours, auto-reply can be sent to customers.
+        </p>
+
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+              className="h-4 w-4 rounded border-outline-variant/30 accent-primary"
+            />
+            <span className="text-[13px] text-on-surface">Enable business hours</span>
+          </label>
+
+          {enabled && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-medium text-on-surface-variant">
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    value={startHour}
+                    onChange={(e) => setStartHour(e.target.value)}
+                    className="w-full rounded-lg border border-outline-variant/20 bg-surface px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-medium text-on-surface-variant">
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    value={endHour}
+                    onChange={(e) => setEndHour(e.target.value)}
+                    className="w-full rounded-lg border border-outline-variant/20 bg-surface px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[12px] font-medium text-on-surface-variant mb-2 block">
+                  Working Days
+                </label>
+                <div className="flex gap-2">
+                  {DAYS.map((day, i) => (
+                    <button
+                      key={day}
+                      onClick={() => toggleDay(i)}
+                      className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                        workDays[i]
+                          ? "bg-primary/10 text-primary"
+                          : "bg-surface-container text-on-surface-variant/50 hover:text-on-surface-variant"
+                      }`}
+                    >
+                      {day.slice(0, 3)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Auto-Reply */}
+      <div className="border-t border-outline-variant/15 pt-6">
+        <h3 className="text-[15px] font-semibold text-on-surface mb-1">
+          Auto-Reply (Outside Hours)
+        </h3>
+        <p className="text-[13px] text-on-surface-variant mb-4">
+          Automatically reply to customers when a message is received outside working hours.
+        </p>
+
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoReplyEnabled}
+              onChange={(e) => setAutoReplyEnabled(e.target.checked)}
+              className="h-4 w-4 rounded border-outline-variant/30 accent-primary"
+            />
+            <span className="text-[13px] text-on-surface">Enable auto-reply outside business hours</span>
+          </label>
+
+          {autoReplyEnabled && (
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-on-surface-variant">
+                Auto-Reply Message
+              </label>
+              <textarea
+                value={autoReplyMessage}
+                onChange={(e) => setAutoReplyMessage(e.target.value)}
+                rows={3}
+                className="w-full rounded-lg border border-outline-variant/20 bg-surface px-3 py-2 text-[13px] text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                placeholder="Enter your auto-reply message..."
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Save */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-on-primary hover:bg-primary/90 transition-colors"
+        >
+          <Save className="h-4 w-4" />
+          Save Working Hours
+        </button>
+        {saved && (
+          <span className="text-[12px] text-success flex items-center gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Saved
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Feature Flags Section ──────────────────────
 
 function FeatureFlagsSection() {
@@ -539,6 +777,83 @@ function FeatureFlagsSection() {
         {updateMutation.isSuccess && (
           <p className="text-[12px] text-primary pt-2">Updated!</p>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── AI Settings Section ──────────────────────
+
+function AiSettingsSection() {
+  const [aiPurchaseIntent, setAiPurchaseIntent] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load current setting
+  useEffect(() => {
+    import("@/lib/api/client").then(({ default: apiClient }) => {
+      apiClient
+        .get("/settings/config/resolve", {
+          params: { category: "ai", key: "auto_detect_purchase_intent" },
+        })
+        .then((r) => {
+          setAiPurchaseIntent(r.data?.value === "true");
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    });
+  }, []);
+
+  const togglePurchaseIntent = async () => {
+    const newValue = !aiPurchaseIntent;
+    setAiPurchaseIntent(newValue);
+    try {
+      const { default: apiClient } = await import("@/lib/api/client");
+      await apiClient.post("/settings/config", {
+        category: "ai",
+        key: "auto_detect_purchase_intent",
+        value: String(newValue),
+        type: "BOOLEAN",
+        scope: "ORG",
+      });
+    } catch {
+      setAiPurchaseIntent(!newValue); // revert on error
+    }
+  };
+
+  if (loading) return null;
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Zap className="h-5 w-5" />
+          AI Settings
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <p className="text-[13px] font-medium text-on-surface">
+              Auto-Detect Purchase Intent
+            </p>
+            <p className="text-[11px] text-on-surface-variant/60">
+              AI analyzes incoming messages and auto-creates deals when customers
+              show buying intent (e.g., "I want to buy", "send me pricing")
+            </p>
+          </div>
+          <button
+            onClick={togglePurchaseIntent}
+            className={`relative w-11 h-6 rounded-full transition-colors ${
+              aiPurchaseIntent ? "bg-primary" : "bg-outline-variant/30"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                aiPurchaseIntent ? "translate-x-5" : ""
+              }`}
+            />
+          </button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -1502,6 +1817,588 @@ function DeliveryRow({ delivery }: { delivery: WebhookDelivery }) {
       <span className="text-on-surface-variant/40 ml-auto shrink-0">
         {timestamp}
       </span>
+    </div>
+  );
+}
+
+// ─── Developer API Section ──────────────────────
+
+function DeveloperApiSection() {
+  const { data: stats, isLoading: statsLoading } = useDeveloperDashboard();
+  const { data: keys, isLoading: keysLoading } = useApiKeys();
+  const { data: logs } = useDeveloperLogs(10);
+  const createKey = useCreateApiKey();
+  const revokeKey = useRevokeApiKey();
+  const rotateKey = useRotateApiKey();
+
+  const [showCreateKey, setShowCreateKey] = useState(false);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(["read", "write", "messages"]);
+  const [newKeyExpiry, setNewKeyExpiry] = useState("");
+  const [createdKey, setCreatedKey] = useState<DeveloperApiKey | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<"overview" | "keys" | "docs" | "logs">("overview");
+
+  const AVAILABLE_SCOPES = ["read", "write", "contacts", "messages", "campaigns"];
+
+  const handleCreateKey = async () => {
+    if (!newKeyName.trim()) return;
+    const result = await createKey.mutateAsync({
+      name: newKeyName.trim(),
+      scopes: newKeyScopes,
+      expiresInDays: newKeyExpiry ? Number(newKeyExpiry) : undefined,
+    });
+    setCreatedKey(result);
+    setNewKeyName("");
+    setNewKeyExpiry("");
+    setShowCreateKey(false);
+  };
+
+  const handleCopyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
+
+  const usagePercent = stats?.messagesLimit
+    ? Math.min(100, Math.round((stats.messagesUsed / stats.messagesLimit) * 100))
+    : 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Sub-tabs */}
+      <div className="flex gap-1 p-1 bg-surface-container rounded-lg w-fit">
+        {(
+          [
+            { id: "overview", label: "Overview", icon: BarChart3 },
+            { id: "keys", label: "API Keys", icon: Key },
+            { id: "docs", label: "Quick Start", icon: FileCode },
+            { id: "logs", label: "API Logs", icon: Activity },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveSubTab(tab.id)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
+              activeSubTab === tab.id
+                ? "bg-primary text-on-primary"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            <tab.icon className="h-4 w-4" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Overview ── */}
+      {activeSubTab === "overview" && (
+        <div className="space-y-6">
+          {statsLoading ? (
+            <SectionLoader />
+          ) : stats ? (
+            <>
+              {/* Usage Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-5">
+                    <p className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wide">Messages Used</p>
+                    <p className="text-2xl font-bold text-on-surface mt-1">
+                      {stats.messagesUsed.toLocaleString()}
+                      <span className="text-[13px] font-normal text-on-surface-variant">
+                        {" / "}{stats.messagesLimit > 0 ? stats.messagesLimit.toLocaleString() : "∞"}
+                      </span>
+                    </p>
+                    {stats.messagesLimit > 0 && (
+                      <div className="mt-2 h-2 bg-surface-container rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            usagePercent > 90 ? "bg-error" : usagePercent > 70 ? "bg-warning" : "bg-primary"
+                          }`}
+                          style={{ width: `${usagePercent}%` }}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-5">
+                    <p className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wide">Active Sessions</p>
+                    <p className="text-2xl font-bold text-on-surface mt-1">{stats.activeSessions}</p>
+                    <p className="text-[12px] text-on-surface-variant mt-1">WhatsApp connected</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-5">
+                    <p className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wide">API Keys</p>
+                    <p className="text-2xl font-bold text-on-surface mt-1">{stats.activeApiKeys}</p>
+                    <p className="text-[12px] text-on-surface-variant mt-1">Active keys</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-5">
+                    <p className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wide">Contacts</p>
+                    <p className="text-2xl font-bold text-on-surface mt-1">{stats.totalContacts.toLocaleString()}</p>
+                    <p className="text-[12px] text-on-surface-variant mt-1">Total contacts</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-[15px]">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-wrap gap-3">
+                  <Button size="sm" onClick={() => setActiveSubTab("keys")}>
+                    <Key className="h-4 w-4 mr-2" />
+                    Manage API Keys
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setActiveSubTab("docs")}>
+                    <FileCode className="h-4 w-4 mr-2" />
+                    View API Docs
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setActiveSubTab("logs")}>
+                    <Activity className="h-4 w-4 mr-2" />
+                    View API Logs
+                  </Button>
+                </CardContent>
+              </Card>
+            </>
+          ) : null}
+        </div>
+      )}
+
+      {/* ── API Keys ── */}
+      {activeSubTab === "keys" && (
+        <div className="space-y-4">
+          {/* Created Key Banner */}
+          {createdKey?.rawKey && (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="pt-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-on-surface flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                      API Key Created — Copy it now, it won&apos;t be shown again!
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <code className="text-[13px] bg-surface-container px-3 py-1.5 rounded-lg font-mono break-all">
+                        {createdKey.rawKey}
+                      </code>
+                      <button
+                        onClick={() => handleCopyKey(createdKey.rawKey!)}
+                        className="shrink-0 p-1.5 rounded-lg hover:bg-surface-container transition-colors"
+                        title="Copy"
+                      >
+                        {copiedKey ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <button onClick={() => setCreatedKey(null)} className="p-1 hover:bg-surface-container rounded-lg">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Create Key Form */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-[15px]">API Keys</CardTitle>
+              <Button size="sm" onClick={() => setShowCreateKey(!showCreateKey)}>
+                <Plus className="h-4 w-4 mr-1" />
+                New API Key
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {showCreateKey && (
+                <div className="mb-6 p-4 border border-outline-variant/20 rounded-xl space-y-4">
+                  <div>
+                    <label className="text-[12px] font-medium text-on-surface-variant">Key Name</label>
+                    <input
+                      value={newKeyName}
+                      onChange={(e) => setNewKeyName(e.target.value)}
+                      placeholder="e.g., Production API Key"
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-outline-variant/30 bg-surface text-[13px] text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[12px] font-medium text-on-surface-variant">Scopes</label>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {AVAILABLE_SCOPES.map((scope) => (
+                        <button
+                          key={scope}
+                          onClick={() =>
+                            setNewKeyScopes((prev) =>
+                              prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope],
+                            )
+                          }
+                          className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
+                            newKeyScopes.includes(scope)
+                              ? "bg-primary text-on-primary border-primary"
+                              : "border-outline-variant/30 text-on-surface-variant hover:border-primary/50"
+                          }`}
+                        >
+                          {scope}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[12px] font-medium text-on-surface-variant">Expires In (days, optional)</label>
+                    <input
+                      value={newKeyExpiry}
+                      onChange={(e) => setNewKeyExpiry(e.target.value)}
+                      type="number"
+                      placeholder="Leave empty for no expiry"
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-outline-variant/30 bg-surface text-[13px] text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button size="sm" variant="outline" onClick={() => setShowCreateKey(false)}>Cancel</Button>
+                    <Button size="sm" onClick={handleCreateKey} disabled={createKey.isPending || !newKeyName.trim()}>
+                      {createKey.isPending ? <Spinner size="sm" className="mr-2" /> : null}
+                      Create Key
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Keys Table */}
+              {keysLoading ? (
+                <SectionLoader />
+              ) : keys && keys.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px]">
+                    <thead>
+                      <tr className="text-left text-on-surface-variant border-b border-outline-variant/15">
+                        <th className="pb-2 font-medium">Name</th>
+                        <th className="pb-2 font-medium">Key</th>
+                        <th className="pb-2 font-medium">Scopes</th>
+                        <th className="pb-2 font-medium">Status</th>
+                        <th className="pb-2 font-medium">Last Used</th>
+                        <th className="pb-2 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {keys.map((key) => (
+                        <tr key={key.id} className="border-b border-outline-variant/10">
+                          <td className="py-3 font-medium text-on-surface">{key.name}</td>
+                          <td className="py-3">
+                            <code className="text-[12px] bg-surface-container px-2 py-0.5 rounded font-mono">
+                              {key.keyPrefix}...
+                            </code>
+                          </td>
+                          <td className="py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {key.scopes.map((s) => (
+                                <span key={s} className="px-1.5 py-0.5 bg-surface-container rounded text-[11px]">{s}</span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-3">
+                            {key.isActive ? (
+                              <span className="flex items-center gap-1 text-primary text-[12px]">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Active
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-error text-[12px]">
+                                <XCircle className="h-3.5 w-3.5" /> Revoked
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 text-on-surface-variant">
+                            {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : "Never"}
+                          </td>
+                          <td className="py-3">
+                            {key.isActive && (
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => rotateKey.mutate(key.id)}
+                                  className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+                                  title="Rotate key"
+                                >
+                                  <RotateCw className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => revokeKey.mutate(key.id)}
+                                  className="p-1.5 rounded-lg hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors"
+                                  title="Revoke key"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-center py-8 text-on-surface-variant text-[13px]">
+                  No API keys yet. Create one to get started.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── Quick Start / Docs ── */}
+      {activeSubTab === "docs" && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-[15px]">Quick Start Guide</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Step 1 */}
+              <div>
+                <h4 className="text-[13px] font-semibold text-on-surface mb-2">1. Get your API Key</h4>
+                <p className="text-[13px] text-on-surface-variant mb-2">
+                  Go to the &quot;API Keys&quot; tab above and create a new key. Copy it immediately — it&apos;s shown only once.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div>
+                <h4 className="text-[13px] font-semibold text-on-surface mb-2">2. Connect WhatsApp</h4>
+                <p className="text-[13px] text-on-surface-variant mb-2">
+                  Go to Settings → WhatsApp and scan the QR code with your phone. Your session must be connected before sending messages.
+                </p>
+              </div>
+
+              {/* Step 3 — Send a Message */}
+              <div>
+                <h4 className="text-[13px] font-semibold text-on-surface mb-2">3. Send a Message</h4>
+
+                {/* cURL */}
+                <p className="text-[12px] font-medium text-on-surface-variant mb-1">cURL</p>
+                <pre className="bg-surface-container rounded-xl p-4 text-[12px] font-mono text-on-surface overflow-x-auto whitespace-pre">
+{`curl -X POST \\
+  ${typeof window !== "undefined" ? window.location.origin : "https://your-domain.com"}/api/v1/developer/messages/send \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: YOUR_API_KEY" \\
+  -d '{
+    "to": "+919876543210",
+    "type": "text",
+    "body": "Hello from CRM-WA API!"
+  }'`}
+                </pre>
+
+                {/* Node.js */}
+                <p className="text-[12px] font-medium text-on-surface-variant mt-4 mb-1">Node.js (axios)</p>
+                <pre className="bg-surface-container rounded-xl p-4 text-[12px] font-mono text-on-surface overflow-x-auto whitespace-pre">
+{`const axios = require("axios");
+
+const res = await axios.post(
+  "${typeof window !== "undefined" ? window.location.origin : "https://your-domain.com"}/api/v1/developer/messages/send",
+  {
+    to: "+919876543210",
+    type: "text",
+    body: "Hello from CRM-WA API!",
+  },
+  {
+    headers: { "X-API-Key": "YOUR_API_KEY" },
+  }
+);
+
+console.log(res.data);
+// { message: { id: "...", to: "+91...", status: "QUEUED" } }`}
+                </pre>
+
+                {/* Python */}
+                <p className="text-[12px] font-medium text-on-surface-variant mt-4 mb-1">Python (requests)</p>
+                <pre className="bg-surface-container rounded-xl p-4 text-[12px] font-mono text-on-surface overflow-x-auto whitespace-pre">
+{`import requests
+
+res = requests.post(
+    "${typeof window !== "undefined" ? window.location.origin : "https://your-domain.com"}/api/v1/developer/messages/send",
+    json={
+        "to": "+919876543210",
+        "type": "text",
+        "body": "Hello from CRM-WA API!",
+    },
+    headers={"X-API-Key": "YOUR_API_KEY"},
+)
+
+print(res.json())`}
+                </pre>
+              </div>
+
+              {/* Step 4 — Webhooks */}
+              <div>
+                <h4 className="text-[13px] font-semibold text-on-surface mb-2">4. Receive Messages (Webhooks)</h4>
+                <p className="text-[13px] text-on-surface-variant mb-2">
+                  Register a webhook URL to receive incoming messages. Go to Settings → Webhooks and add your endpoint with the <code className="bg-surface-container px-1 rounded text-[12px]">message.received</code> event.
+                </p>
+                <pre className="bg-surface-container rounded-xl p-4 text-[12px] font-mono text-on-surface overflow-x-auto whitespace-pre">
+{`// Webhook payload (POST to your URL):
+{
+  "event": "message.received",
+  "payload": {
+    "messageId": "uuid",
+    "from": "+919876543210",
+    "type": "text",
+    "body": "Hi, I need help!",
+    "timestamp": "2026-04-03T10:30:00Z"
+  }
+}`}
+                </pre>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* API Reference */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-[15px]">API Reference</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="text-left text-on-surface-variant border-b border-outline-variant/15">
+                      <th className="pb-2 font-medium">Method</th>
+                      <th className="pb-2 font-medium">Endpoint</th>
+                      <th className="pb-2 font-medium">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-mono text-[12px]">
+                    {[
+                      ["POST", "/developer/messages/send", "Send a WhatsApp message"],
+                      ["GET", "/developer/messages", "List sent/received messages"],
+                      ["GET", "/developer/messages/:id", "Get message status & events"],
+                      ["GET", "/developer/contacts", "List contacts"],
+                      ["POST", "/developer/contacts", "Create a contact"],
+                      ["GET", "/developer/session/status", "Check WhatsApp connection"],
+                      ["POST", "/developer/webhooks", "Register webhook URL"],
+                      ["GET", "/developer/webhooks", "List webhooks"],
+                      ["PUT", "/developer/webhooks/:id", "Update webhook"],
+                      ["DELETE", "/developer/webhooks/:id", "Delete webhook"],
+                    ].map(([method, path, desc]) => (
+                      <tr key={path} className="border-b border-outline-variant/10">
+                        <td className="py-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold ${
+                            method === "POST" ? "bg-primary/10 text-primary" :
+                            method === "DELETE" ? "bg-error/10 text-error" :
+                            method === "PUT" ? "bg-warning/10 text-warning" :
+                            "bg-surface-container text-on-surface"
+                          }`}>
+                            {method}
+                          </span>
+                        </td>
+                        <td className="py-2 text-on-surface">/api/v1{path}</td>
+                        <td className="py-2 text-on-surface-variant font-sans">{desc}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4 text-[12px] text-on-surface-variant">
+                All Developer API endpoints use <code className="bg-surface-container px-1 rounded">X-API-Key</code> header for authentication. No JWT required.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Message Types */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-[15px]">Supported Message Types</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[13px] font-semibold text-on-surface">Text Message</p>
+                  <pre className="mt-1 bg-surface-container rounded-xl p-3 text-[12px] font-mono text-on-surface overflow-x-auto">
+{`{ "to": "+91...", "type": "text", "body": "Hello!" }`}
+                  </pre>
+                </div>
+                <div>
+                  <p className="text-[13px] font-semibold text-on-surface">Image Message</p>
+                  <pre className="mt-1 bg-surface-container rounded-xl p-3 text-[12px] font-mono text-on-surface overflow-x-auto">
+{`{ "to": "+91...", "type": "image", "mediaUrl": "https://...", "caption": "Check this out" }`}
+                  </pre>
+                </div>
+                <div>
+                  <p className="text-[13px] font-semibold text-on-surface">Interactive Buttons</p>
+                  <pre className="mt-1 bg-surface-container rounded-xl p-3 text-[12px] font-mono text-on-surface overflow-x-auto">
+{`{
+  "to": "+91...",
+  "type": "interactive",
+  "interactive": {
+    "type": "button",
+    "body": "Choose an option:",
+    "buttons": [
+      { "id": "buy", "title": "Buy Now" },
+      { "id": "info", "title": "More Info" }
+    ]
+  }
+}`}
+                  </pre>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ── API Logs ── */}
+      {activeSubTab === "logs" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-[15px]">Recent API Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {logs?.data && logs.data.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="text-left text-on-surface-variant border-b border-outline-variant/15">
+                      <th className="pb-2 font-medium">To</th>
+                      <th className="pb-2 font-medium">Type</th>
+                      <th className="pb-2 font-medium">Status</th>
+                      <th className="pb-2 font-medium">Message</th>
+                      <th className="pb-2 font-medium">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.data.map((log) => (
+                      <tr key={log.id} className="border-b border-outline-variant/10">
+                        <td className="py-2.5 font-mono text-[12px]">{log.contactPhone}</td>
+                        <td className="py-2.5">
+                          <span className="px-1.5 py-0.5 bg-surface-container rounded text-[11px] uppercase">{log.type}</span>
+                        </td>
+                        <td className="py-2.5">
+                          <span className={`px-1.5 py-0.5 rounded text-[11px] font-medium ${
+                            log.status === "DELIVERED" || log.status === "READ" ? "bg-primary/10 text-primary" :
+                            log.status === "SENT" ? "bg-primary/10 text-primary" :
+                            log.status === "QUEUED" || log.status === "PROCESSING" ? "bg-warning/10 text-warning" :
+                            log.status === "FAILED" ? "bg-error/10 text-error" : "bg-surface-container text-on-surface"
+                          }`}>
+                            {log.status}
+                          </span>
+                        </td>
+                        <td className="py-2.5 text-on-surface-variant max-w-[200px] truncate">{log.body || "—"}</td>
+                        <td className="py-2.5 text-on-surface-variant text-[12px]">
+                          {new Date(log.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-center py-8 text-on-surface-variant text-[13px]">
+                No API activity yet. Send your first message using the API.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

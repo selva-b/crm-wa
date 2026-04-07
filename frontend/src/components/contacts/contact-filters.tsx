@@ -4,6 +4,7 @@ import { X, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useContactsStore } from "@/stores/contacts-store";
 import { useOrgMembers, useOrgTags } from "@/hooks/use-contacts";
+import { useProducts } from "@/hooks/use-products";
 import { useAuthStore } from "@/stores/auth-store";
 import type { LeadStatus, ContactSource } from "@/lib/types/contacts";
 
@@ -28,10 +29,12 @@ export function ContactFilters() {
     filterOwnerId,
     filterSource,
     filterTagIds,
+    filterProductIds,
     setFilterStatus,
     setFilterOwnerId,
     setFilterSource,
     setFilterTagIds,
+    setFilterProductIds,
     clearFilters,
   } = useContactsStore();
 
@@ -39,8 +42,9 @@ export function ContactFilters() {
   const isAdminOrManager = role === "ADMIN" || role === "MANAGER";
   const { data: members } = useOrgMembers();
   const { data: orgTags } = useOrgTags();
+  const { data: products } = useProducts();
 
-  const hasFilters = filterStatus || filterOwnerId || filterSource || filterTagIds.length > 0;
+  const hasFilters = filterStatus || filterOwnerId || filterSource || filterTagIds.length > 0 || filterProductIds.length > 0;
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
@@ -128,6 +132,45 @@ export function ContactFilters() {
                 setFilterTagIds(filterTagIds.filter((id) => id !== tagId))
               }
               className="rounded-full p-0.5 hover:bg-primary/20 transition-colors"
+            >
+              <X className="h-2.5 w-2.5" />
+            </button>
+          </span>
+        );
+      })}
+
+      {/* Products */}
+      {products && products.length > 0 && (
+        <select
+          value=""
+          onChange={(e) => {
+            if (e.target.value && !filterProductIds.includes(e.target.value)) {
+              setFilterProductIds([...filterProductIds, e.target.value]);
+            }
+          }}
+          className="h-8 rounded-lg bg-surface-container-low px-2.5 text-[12px] text-on-surface-variant outline-none focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer"
+        >
+          <option value="">Filter by Product</option>
+          {products
+            .filter((p) => p.status === "ACTIVE" && !filterProductIds.includes(p.id))
+            .map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+        </select>
+      )}
+
+      {/* Active product chips */}
+      {filterProductIds.map((productId) => {
+        const product = products?.find((p) => p.id === productId);
+        return (
+          <span
+            key={productId}
+            className="inline-flex items-center gap-1 rounded-full bg-tertiary/10 px-2 py-0.5 text-[11px] text-tertiary"
+          >
+            {product?.name ?? productId}
+            <button
+              onClick={() => setFilterProductIds(filterProductIds.filter((id) => id !== productId))}
+              className="rounded-full p-0.5 hover:bg-tertiary/20 transition-colors"
             >
               <X className="h-2.5 w-2.5" />
             </button>

@@ -457,6 +457,16 @@ export interface ConversationUpdatedEvent {
   unreadCount: number;
 }
 
+export interface ConversationClosedEvent {
+  conversationId: string;
+  orgId: string;
+  contactPhone: string;
+  assignedToId: string | null;
+  sessionId: string;
+  status: 'CLOSED' | 'ARCHIVED';
+  closedById: string;
+}
+
 export interface RateLimitExceededEvent {
   sessionId: string;
   orgId: string;

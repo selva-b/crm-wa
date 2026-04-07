@@ -57,6 +57,7 @@ export class ListContactsUseCase {
         ownerIds,
         source: query.source,
         tagIds: query.tagIds,
+        productIds: query.productIds,
         search: query.search,
         sortBy: query.sortBy,
         sortOrder: query.sortOrder,

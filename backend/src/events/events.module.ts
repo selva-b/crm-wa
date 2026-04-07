@@ -34,6 +34,24 @@ import { SlaModule } from '@/modules/sla/sla.module';
 import { ChannelEventsHandler } from './handlers/channel-events.handler';
 // Social Ads Lead Integration events
 import { LeadAdEventsHandler } from './handlers/lead-ad-events.handler';
+// CSAT events
+import { CsatEventsHandler } from './handlers/csat-events.handler';
+import { CsatModule } from '@/modules/csat/csat.module';
+// Lead Scoring events
+import { LeadScoringEventsHandler } from './handlers/lead-scoring-events.handler';
+import { LeadScoringModule } from '@/modules/lead-scoring/lead-scoring.module';
+// Developer API webhook events
+import { DeveloperWebhookHandler } from './handlers/developer-webhook.handler';
+// Chatbot trigger events
+import { ChatbotTriggerHandler } from './handlers/chatbot-trigger.handler';
+import { ChatbotModule } from '@/modules/chatbot/chatbot.module';
+// Drip Sequence events
+import { SequenceEventsHandler } from './handlers/sequence-events.handler';
+import { SequencesModule } from '@/modules/sequences/sequences.module';
+// Purchase Intent detection
+import { PurchaseIntentHandler } from './handlers/purchase-intent.handler';
+import { DealsModule } from '@/modules/deals/deals.module';
+import { AiModule } from '@/modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -48,6 +66,12 @@ import { LeadAdEventsHandler } from './handlers/lead-ad-events.handler';
     UsersModule,
     SettingsModule,
     SlaModule,
+    CsatModule,
+    LeadScoringModule,
+    SequencesModule,
+    ChatbotModule,
+    DealsModule,
+    AiModule,
   ],
   providers: [
     AuthEventsHandler,
@@ -75,6 +99,18 @@ import { LeadAdEventsHandler } from './handlers/lead-ad-events.handler';
     ChannelEventsHandler,
     // Social Ads Lead Integration events
     LeadAdEventsHandler,
+    // CSAT events
+    CsatEventsHandler,
+    // Lead Scoring events
+    LeadScoringEventsHandler,
+    // Drip Sequence events
+    SequenceEventsHandler,
+    // Developer API webhook events
+    DeveloperWebhookHandler,
+    // Chatbot trigger events
+    ChatbotTriggerHandler,
+    // Purchase intent detection
+    PurchaseIntentHandler,
   ],
 })
 export class EventsModule {}
