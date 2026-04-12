@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class ListConversationsQueryDto {
@@ -23,6 +23,11 @@ export class ListConversationsQueryDto {
   @IsOptional()
   @Transform(({ value }) => value === 'true')
   teamView?: boolean;
+
+  /** Filter by contact phone number (used to open a specific conversation) */
+  @IsOptional()
+  @IsString()
+  contactPhone?: string;
 
   @IsOptional()
   @Type(() => Number)

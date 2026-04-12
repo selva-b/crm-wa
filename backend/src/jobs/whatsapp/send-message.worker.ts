@@ -219,6 +219,23 @@ export class SendMessageWorker implements OnModuleInit {
         whatsappMessageId: result.whatsappMessageId,
       });
 
+      // Enqueue SLA evaluation for outbound reply
+      if (message.conversationId) {
+        const conversation = await this.conversationRepo.findById(message.conversationId);
+        await this.queueService.publishOnce(
+          QUEUE_NAMES.SLA_EVALUATE,
+          {
+            type: 'outbound_reply',
+            orgId,
+            conversationId: message.conversationId,
+            sessionId,
+            assignedUserId: conversation?.assignedToId ?? null,
+            messageCreatedAt: new Date().toISOString(),
+          },
+          `sla:outbound:${messageId}`,
+        );
+      }
+
       this.logger.log(`Message ${messageId} sent successfully (waId=${result.whatsappMessageId})`);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);

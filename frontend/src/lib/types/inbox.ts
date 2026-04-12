@@ -144,6 +144,8 @@ export interface ListConversationsParams {
   limit?: number;
   // EPIC 16 — Multi-Channel filter
   channelType?: ChannelType;
+  /** Filter by contact phone — used to open a specific contact's conversation */
+  contactPhone?: string;
 }
 
 export interface ListMessagesParams {

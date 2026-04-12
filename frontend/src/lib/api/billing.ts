@@ -18,6 +18,12 @@ export const billingApi = {
       .get<{ plans: Plan[] }>("/billing/plans")
       .then((r) => r.data.plans),
 
+  createPlan: (data: Partial<Plan>) =>
+    apiClient.post<{ plan: Plan }>("/billing/plans", data).then((r) => r.data.plan),
+
+  updatePlan: (id: string, data: Partial<Plan>) =>
+    apiClient.patch<{ plan: Plan }>(`/billing/plans/${id}`, data).then((r) => r.data.plan),
+
   // ─── Subscription + Usage (single endpoint) ───
 
   getSubscription: () =>
@@ -31,6 +37,25 @@ export const billingApi = {
         planId,
         idempotencyKey,
       })
+      .then((r) => r.data),
+
+  createOrder: (planId: string) =>
+    apiClient
+      .post<{ orderId: string; amount: number; currency: string; planName: string }>(
+        "/billing/create-order",
+        { planId },
+      )
+      .then((r) => r.data),
+
+  verifyPayment: (data: {
+    planId: string;
+    orderId: string;
+    razorpayPaymentId: string;
+    signature: string;
+    idempotencyKey?: string;
+  }) =>
+    apiClient
+      .post<{ subscription: any; deduplicated: boolean }>("/billing/verify-payment", data)
       .then((r) => r.data),
 
   changePlan: (newPlanId: string, idempotencyKey?: string) =>

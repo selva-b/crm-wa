@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Key, Plus, RotateCcw, Trash2, Copy, Check, Eye, EyeOff } from "lucide-react";
+import { Key, Plus, RotateCcw, Trash2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Table, TableHeader, TableHeaderRow, TableHead, TableBody, TableRow, TableCell,
 } from "@/components/ui/table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listApiKeys, createApiKey, revokeApiKey, rotateApiKey } from "@/lib/api/api-keys";
 import { usePageTitle } from "@/hooks/use-page-title";
-
 const SCOPES = ["read", "write", "contacts", "messages", "campaigns"];
+
+type ConfirmAction = { type: "rotate" | "revoke"; id: string; name: string } | null;
 
 export default function ApiKeysPage() {
   usePageTitle("API Keys");
@@ -23,6 +25,7 @@ export default function ApiKeysPage() {
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({ name: "", scopes: ["read"] as string[], expiresInDays: "" });
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
 
   const { data: keys, isLoading } = useQuery({
     queryKey: ["api-keys"],
@@ -48,7 +51,8 @@ export default function ApiKeysPage() {
     mutationFn: (id: string) => rotateApiKey(id),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["api-keys"] });
-      if (result) setNewKey(result.rawKey);
+      setNewKey(result.rawKey ?? null);
+      setCopied(false);
     },
   });
 
@@ -85,7 +89,7 @@ export default function ApiKeysPage() {
       {/* New key display banner */}
       {newKey && (
         <div className="rounded-2xl border border-success/30 bg-success/5 p-4">
-          <p className="text-[13px] font-medium text-success mb-2">API key created. Copy it now — it won't be shown again.</p>
+          <p className="text-[13px] font-medium text-success mb-2">New API key generated. Copy it now — it will never be shown again.</p>
           <div className="flex items-center gap-2">
             <code className="flex-1 rounded-lg bg-surface px-3 py-2 text-[12px] font-mono text-on-surface break-all">
               {newKey}
@@ -159,18 +163,20 @@ export default function ApiKeysPage() {
                   {k.isActive && (
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => rotateMut.mutate(k.id)}
-                        className="p-1 rounded text-on-surface-variant hover:text-primary"
-                        title="Rotate"
+                        onClick={() => setConfirmAction({ type: "rotate", id: k.id, name: k.name })}
+                        disabled={rotateMut.isPending}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-colors disabled:opacity-40"
                       >
-                        <RotateCcw className="h-3.5 w-3.5" />
+                        <RotateCcw className="h-3 w-3" />
+                        Rotate
                       </button>
                       <button
-                        onClick={() => revokeMut.mutate(k.id)}
-                        className="p-1 rounded text-on-surface-variant hover:text-error"
-                        title="Revoke"
+                        onClick={() => setConfirmAction({ type: "revoke", id: k.id, name: k.name })}
+                        disabled={revokeMut.isPending}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-on-surface-variant hover:text-error hover:bg-error/8 transition-colors disabled:opacity-40"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" />
+                        Revoke
                       </button>
                     </div>
                   )}
@@ -238,6 +244,37 @@ export default function ApiKeysPage() {
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={!!confirmAction}
+        title={confirmAction?.type === "rotate" ? "Rotate API Key" : "Revoke API Key"}
+        message={
+          confirmAction?.type === "rotate"
+            ? `"${confirmAction.name}" will be revoked and a new key will be generated. Copy the new key immediately — it won't be shown again.`
+            : `"${confirmAction?.name}" will be permanently disabled. Any integrations using this key will stop working immediately.`
+        }
+        confirmLabel={confirmAction?.type === "rotate" ? "Rotate Key" : "Revoke Key"}
+        variant={confirmAction?.type === "revoke" ? "danger" : "warning"}
+        loading={rotateMut.isPending || revokeMut.isPending}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => {
+          if (!confirmAction) return;
+          if (confirmAction.type === "rotate") {
+            rotateMut.mutate(confirmAction.id, {
+              onSuccess: (result) => {
+                setNewKey(result.rawKey);
+                setCopied(false);
+                setConfirmAction(null);
+              },
+            });
+          } else {
+            revokeMut.mutate(confirmAction.id, {
+              onSuccess: () => setConfirmAction(null),
+            });
+          }
+        }}
+      />
     </div>
   );
 }

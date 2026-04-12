@@ -49,6 +49,28 @@ export function useInvoices(params?: ListInvoicesParams) {
 
 // ─── Mutation Hooks ───
 
+export function useCreatePlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof billingApi.createPlan>[0]) =>
+      billingApi.createPlan(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billingKeys.plans() });
+    },
+  });
+}
+
+export function useUpdatePlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof billingApi.updatePlan>[1] }) =>
+      billingApi.updatePlan(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billingKeys.plans() });
+    },
+  });
+}
+
 export function useSubscribeToPlan() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -83,6 +105,23 @@ export function useReactivateSubscription() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => billingApi.reactivateSubscription(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billingKeys.all });
+    },
+  });
+}
+
+export function useCreateOrder() {
+  return useMutation({
+    mutationFn: (planId: string) => billingApi.createOrder(planId),
+  });
+}
+
+export function useVerifyPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof billingApi.verifyPayment>[0]) =>
+      billingApi.verifyPayment(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: billingKeys.all });
     },

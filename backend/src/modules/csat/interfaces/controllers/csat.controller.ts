@@ -9,15 +9,21 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { Public } from '@/common/decorators/public.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
 import { CsatRepository } from '../../infrastructure/repositories/csat.repository';
+import { WhatsAppApiService } from '@/infrastructure/external/whatsapp/whatsapp-api.service';
 
 @Controller('csat')
 export class CsatController {
-  constructor(private readonly csatRepo: CsatRepository) {}
+  constructor(
+    private readonly csatRepo: CsatRepository,
+    private readonly whatsappApi: WhatsAppApiService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /**
    * GET /csat/stats — CSAT dashboard statistics
@@ -66,15 +72,52 @@ export class CsatController {
     @CurrentUser() user: JwtPayload,
     @Body('conversationId') conversationId: string,
     @Body('contactPhone') contactPhone: string,
+    @Body('sessionId') sessionId?: string,
     @Body('channelType') channelType?: string,
   ) {
-    return this.csatRepo.create({
+    const survey = await this.csatRepo.create({
       orgId: user.orgId,
       conversationId,
       contactPhone,
       agentId: user.sub,
       channelType,
     });
+
+    // Send survey link via WhatsApp if sessionId provided
+    if (sessionId && contactPhone) {
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+      const surveyUrl = `${frontendUrl}/csat/${conversationId}`;
+      const message =
+        `⭐ How was your experience with us?\n\n` +
+        `Please rate your satisfaction (1–5 stars):\n${surveyUrl}\n\n` +
+        `Thank you for your feedback!`;
+      try {
+        await this.whatsappApi.sendTextMessage(sessionId, contactPhone, message);
+      } catch {
+        // Non-blocking — survey record already created
+      }
+    }
+
+    return survey;
+  }
+
+  /**
+   * GET /csat/respond/:conversationId — Public endpoint to fetch survey state
+   */
+  @Public()
+  @Get('respond/:conversationId')
+  async getSurvey(
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+  ) {
+    const survey = await this.csatRepo.findByConversation(conversationId);
+    if (!survey) {
+      return { error: 'Survey not found or link has expired.' };
+    }
+    return {
+      conversationId: survey.conversationId,
+      alreadySubmitted: !!survey.respondedAt,
+      rating: survey.rating ?? null,
+    };
   }
 
   /**

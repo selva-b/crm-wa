@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Save,
+  ExternalLink,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
@@ -156,6 +157,15 @@ export function ContactDetailDrawer({
             Contact Details
           </h2>
           <div className="flex items-center gap-1">
+            {contactId && (
+              <button
+                onClick={() => router.push(`/contacts/${contactId}`)}
+                className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
+                title="Open full profile"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </button>
+            )}
             <div className="relative">
               <button
                 onClick={() => setShowActions(!showActions)}

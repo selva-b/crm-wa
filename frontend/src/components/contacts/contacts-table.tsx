@@ -1,6 +1,7 @@
 "use client";
 
-import { Users } from "lucide-react";
+import { Users, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -200,6 +201,17 @@ export function ContactsTable({
 
               <TableCell className="text-[11px] text-on-surface-variant/60">
                 {timeAgo(contact.createdAt)}
+              </TableCell>
+
+              <TableCell>
+                <Link
+                  href={`/contacts/${contact.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors inline-flex"
+                  title="View full profile"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
               </TableCell>
             </TableRow>
           ))}

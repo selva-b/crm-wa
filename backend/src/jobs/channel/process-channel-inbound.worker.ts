@@ -179,6 +179,20 @@ export class ProcessChannelInboundWorker implements OnModuleInit {
       unreadCount: conversation.unreadCount,
     });
 
+    // Enqueue SLA evaluation for inbound channel message
+    await this.queueService.publishOnce(
+      QUEUE_NAMES.SLA_EVALUATE,
+      {
+        type: 'inbound_message',
+        orgId,
+        conversationId: conversation.id,
+        sessionId: channelId,
+        assignedUserId: conversation.assignedToId ?? null,
+        messageCreatedAt: new Date().toISOString(),
+      },
+      `sla:inbound:${message.id}`,
+    );
+
     this.logger.debug(
       `Processed inbound ${channelType} message ${message.id} for conversation ${conversation.id}`,
     );

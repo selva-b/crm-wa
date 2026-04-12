@@ -4,6 +4,7 @@ import type {
   UpdateOrgSettingsRequest,
   WhatsAppConfig,
   UpdateWhatsAppConfigRequest,
+  WorkingHoursConfig,
   FeatureFlags,
   UpdateFeatureFlagsRequest,
   Webhook,
@@ -22,12 +23,42 @@ export const settingsApi = {
   // ─── Organization ───
 
   getOrgSettings: () =>
-    apiClient.get<OrgSettings>("/settings/organization").then((r) => r.data),
+    apiClient.get<OrgSettings>("/org/settings").then((r) => {
+      const d = r.data as any;
+      // Normalize backend Organization model → OrgSettings shape
+      return {
+        id: d.id,
+        orgId: d.id,
+        name: d.name,
+        timezone: d.timezone ?? "UTC",
+        language: d.branding?.language ?? "en",
+        brandColors: d.branding?.brandColors,
+        updatedAt: d.updatedAt,
+      } as OrgSettings;
+    }),
 
   updateOrgSettings: (data: UpdateOrgSettingsRequest) =>
     apiClient
-      .patch<OrgSettings>("/settings/organization", data)
-      .then((r) => r.data),
+      .patch<OrgSettings>("/org/settings", {
+        name: data.name,
+        timezone: data.timezone,
+        branding: {
+          ...(data.language ? { language: data.language } : {}),
+          ...(data.brandColors ? { brandColors: data.brandColors } : {}),
+        },
+      })
+      .then((r) => {
+        const d = r.data as any;
+        return {
+          id: d.id,
+          orgId: d.id,
+          name: d.name,
+          timezone: d.timezone ?? "UTC",
+          language: d.branding?.language ?? "en",
+          brandColors: d.branding?.brandColors,
+          updatedAt: d.updatedAt,
+        } as OrgSettings;
+      }),
 
   // ─── WhatsApp Config ───
 
@@ -39,6 +70,18 @@ export const settingsApi = {
   updateWhatsAppConfig: (data: UpdateWhatsAppConfigRequest) =>
     apiClient
       .patch<WhatsAppConfig>("/settings/whatsapp-config", data)
+      .then((r) => r.data),
+
+  // ─── Working Hours ───
+
+  getWorkingHours: () =>
+    apiClient
+      .get<WorkingHoursConfig>("/settings/working-hours")
+      .then((r) => r.data),
+
+  updateWorkingHours: (data: WorkingHoursConfig) =>
+    apiClient
+      .patch<WorkingHoursConfig>("/settings/working-hours", data)
       .then((r) => r.data),
 
   // ─── Feature Flags ───

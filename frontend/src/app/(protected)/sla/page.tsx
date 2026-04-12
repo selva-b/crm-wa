@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Settings2 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePageTitle } from "@/hooks/use-page-title";
 import {
@@ -108,9 +108,10 @@ export default function SlaPage() {
         <div className="flex items-center gap-3">
           {isAdmin && (
             <a
-              href="/sla/policies"
-              className="text-[12px] text-primary hover:text-primary/80 font-medium"
+              href="/settings?tab=sla"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-[13px] font-medium hover:bg-primary/90 transition-colors"
             >
+              <Settings2 className="h-3.5 w-3.5" />
               Manage Policies
             </a>
           )}
@@ -145,10 +146,12 @@ export default function SlaPage() {
             icon={<ShieldCheck className="h-12 w-12" />}
             title="No SLA data yet"
             description={
-              isAdmin
-                ? "Create SLA policies to start tracking response times."
-                : "SLA tracking will appear here once policies are configured."
+              (policies?.length ?? 0) === 0
+                ? "Create SLA policies first to start tracking response times."
+                : "Policies are active. SLA data will appear once conversations come in."
             }
+            actionLabel={(policies?.length ?? 0) === 0 && isAdmin ? "Create SLA Policy" : undefined}
+            onAction={(policies?.length ?? 0) === 0 && isAdmin ? () => window.location.href = "/settings?tab=sla" : undefined}
           />
         )}
 

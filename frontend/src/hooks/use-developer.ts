@@ -50,6 +50,9 @@ export function useRotateApiKey() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => rotateApiKey(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["developer", "api-keys"] }),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["developer", "api-keys"] });
+      return result;
+    },
   });
 }

@@ -18,8 +18,10 @@ export const rbacApi = {
 
   // ─── Role Permissions ────────────────────────
   getRolePermissions: async () => {
-    const r = await apiClient.get<RolePermissionsMap>("/rbac/role-permissions");
-    return r.data as RolePermissionsMap;
+    const r = await apiClient.get<{ rolePermissions: RolePermissionsMap } | RolePermissionsMap>("/rbac/role-permissions");
+    // Backend wraps response in { rolePermissions: {...} }
+    const data = r.data as any;
+    return (data.rolePermissions ?? data) as RolePermissionsMap;
   },
 
   updateRolePermissions: async (data: UpdateRolePermissionsRequest) => {

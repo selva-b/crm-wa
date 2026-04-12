@@ -41,6 +41,17 @@ export interface UpdateWhatsAppConfigRequest {
   sessionTimeout?: number;
 }
 
+// ─── Working Hours ───
+
+export interface WorkingHoursConfig {
+  enabled: boolean;
+  startHour: string;
+  endHour: string;
+  workDays: boolean[];
+  autoReplyEnabled: boolean;
+  autoReplyMessage: string;
+}
+
 // ─── Feature Flags ───
 
 export interface FeatureFlags {

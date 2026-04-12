@@ -65,7 +65,8 @@ const navItems: NavItemDef[] = [
   { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
   { href: "/settings/channels", icon: <Radio className="h-5 w-5" />, label: "Channels", roles: ["ADMIN", "MANAGER"] },
   { href: "/settings/products", icon: <Package className="h-5 w-5" />, label: "Products", roles: ["ADMIN"] },
-  { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN"] },
+  { href: "/settings/sla", icon: <Shield className="h-5 w-5" />, label: "SLA Policies", roles: ["ADMIN"] },
+  { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN", "MANAGER"] },
 ];
 
 const adminNavItems = [
@@ -73,6 +74,7 @@ const adminNavItems = [
   { href: "/admin/teams", icon: <UsersRound className="h-5 w-5" />, label: "Teams" },
   { href: "/admin/whatsapp-sessions", icon: <Wifi className="h-5 w-5" />, label: "WA Sessions" },
   { href: "/admin/roles-permissions", icon: <Shield className="h-5 w-5" />, label: "Permissions" },
+  { href: "/admin/plans", icon: <Package className="h-5 w-5" />, label: "Plans" },
   { href: "/admin/audit-logs", icon: <FileText className="h-5 w-5" />, label: "Audit Logs" },
   { href: "/admin/gdpr", icon: <ShieldCheck className="h-5 w-5" />, label: "GDPR" },
   { href: "/admin/observability", icon: <Activity className="h-5 w-5" />, label: "Observability" },

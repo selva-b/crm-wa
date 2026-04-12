@@ -72,6 +72,7 @@ export class ListConversationsUseCase {
       assignedToId: query.assignedToId,
       sessionId,
       sessionIds,
+      contactPhone: query.contactPhone,
     });
   }
 }

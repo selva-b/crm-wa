@@ -37,10 +37,31 @@ export function useSendCsatSurvey() {
     mutationFn: (data: {
       conversationId: string;
       contactPhone: string;
+      sessionId?: string;
       channelType?: string;
     }) => csatApi.sendSurvey(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: csatKeys.all });
+    },
+  });
+}
+
+export function useSurvey(conversationId: string) {
+  return useQuery({
+    queryKey: ["csat", "survey", conversationId],
+    queryFn: () => csatApi.getSurvey(conversationId),
+    enabled: !!conversationId,
+    retry: false,
+  });
+}
+
+export function useSubmitSurvey(conversationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ rating, comment }: { rating: number; comment?: string }) =>
+      csatApi.submitSurvey(conversationId, rating, comment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["csat", "survey", conversationId] });
     },
   });
 }

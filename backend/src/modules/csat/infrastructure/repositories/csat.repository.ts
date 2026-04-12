@@ -12,6 +12,15 @@ export class CsatRepository {
     agentId: string;
     channelType?: string;
   }) {
+    const existing = await this.prisma.csatSurvey.findFirst({
+      where: { conversationId: data.conversationId },
+    });
+    if (existing) {
+      return this.prisma.csatSurvey.update({
+        where: { id: existing.id },
+        data: { agentId: data.agentId, sentAt: new Date() },
+      });
+    }
     return this.prisma.csatSurvey.create({ data });
   }
 

@@ -10,7 +10,6 @@ import { PlanRepository } from '../../infrastructure/repositories/plan.repositor
 import { SubscriptionRepository } from '../../infrastructure/repositories/subscription.repository';
 import { UsageRepository } from '../../infrastructure/repositories/usage.repository';
 import { AuditService } from '@/modules/audit/domain/services/audit.service';
-import { StripePaymentService } from '../../domain/services/stripe-payment.service';
 import { PaymentRepository } from '../../infrastructure/repositories/payment.repository';
 import { SubscribeDto } from '../dto/subscribe.dto';
 import { EVENT_NAMES } from '@/common/constants';
@@ -29,7 +28,6 @@ export class SubscribeUseCase {
     private readonly subscriptionRepo: SubscriptionRepository,
     private readonly usageRepo: UsageRepository,
     private readonly paymentRepo: PaymentRepository,
-    private readonly stripePayment: StripePaymentService,
     private readonly auditService: AuditService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -37,7 +35,7 @@ export class SubscribeUseCase {
   async execute(
     orgId: string,
     userId: string,
-    dto: SubscribeDto,
+    dto: SubscribeDto & { razorpayPaymentId?: string },
     ipAddress: string,
     userAgent: string,
   ) {
@@ -80,42 +78,24 @@ export class SubscribeUseCase {
       initialStatus = SubscriptionStatus.TRIAL;
       trialEndsAt = new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000);
     } else {
-      // Paid plan without trial — process payment via Stripe
-      if (!dto.paymentMethodToken) {
+      // Paid plan without trial — payment must be pre-verified via Razorpay
+      if (!dto.razorpayPaymentId) {
         throw new BadRequestException(
-          'Payment method is required for paid plans without a trial period',
+          'Payment is required for paid plans without a trial period. Complete checkout first.',
         );
       }
 
-      // Create payment record
+      // Record the already-captured Razorpay payment
       const payment = await this.paymentRepo.createPayment({
         orgId,
-        subscriptionId: '', // Will be updated after subscription creation
+        subscriptionId: '', // Temporary — updated after subscription creation
         amountInCents: plan.priceInCents,
         currency: plan.currency,
         idempotencyKey: `subscribe-${dto.idempotencyKey || `${orgId}-${dto.planId}-${Date.now()}`}`,
       });
 
-      // Charge via Stripe
-      const result = await this.stripePayment.chargePayment(
-        plan.priceInCents,
-        plan.currency,
-        dto.paymentMethodToken, // Stripe customer ID or payment method
-        dto.paymentMethodToken,
-        payment.idempotencyKey || payment.id,
-        `CRM-WA subscription: ${plan.name}`,
-      );
-
-      if (result.success) {
-        await this.paymentRepo.transitionPaymentStatus(payment.id, 'PENDING', 'SUCCEEDED');
-        initialStatus = SubscriptionStatus.ACTIVE;
-      } else if (result.retryable) {
-        await this.paymentRepo.transitionPaymentStatus(payment.id, 'PENDING', 'FAILED');
-        throw new BadRequestException(`Payment failed (retryable): ${result.error}`);
-      } else {
-        await this.paymentRepo.transitionPaymentStatus(payment.id, 'PENDING', 'FAILED');
-        throw new BadRequestException(`Payment failed: ${result.error}`);
-      }
+      await this.paymentRepo.transitionPaymentStatus(payment.id, 'PENDING', 'SUCCEEDED');
+      initialStatus = SubscriptionStatus.ACTIVE;
     }
 
     // 6. Create subscription

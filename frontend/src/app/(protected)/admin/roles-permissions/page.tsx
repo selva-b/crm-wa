@@ -41,7 +41,7 @@ export default function RolesPermissionsPage() {
     if (rolePermissions) {
       for (const role of ALL_ROLES) {
         const rps: RolePermission[] = rolePermissions[role] ?? [];
-        map[role] = new Set(rps.map((rp) => rp.permissionId));
+        map[role] = new Set(rps.map((rp) => rp.permissionId ?? (rp as any).id));
       }
     }
     return map;

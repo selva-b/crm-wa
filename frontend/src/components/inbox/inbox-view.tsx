@@ -172,6 +172,13 @@ export function InboxView({
     return Object.keys(params).length > 0 ? params : undefined;
   }, [targetUserId, filter]);
 
+  // When auto-selecting by phone, also fetch that specific conversation directly
+  const phoneFilterParams = useMemo(
+    () => autoSelectPhone ? { contactPhone: autoSelectPhone, limit: 1 } : undefined,
+    [autoSelectPhone],
+  );
+  const phoneFilterQuery = useConversations(phoneFilterParams);
+
   const conversationsQuery = useConversations(conversationParams);
   const messagesQuery = useMessages(selectedId);
   const sendMessage = useSendMessage();
@@ -226,14 +233,21 @@ export function InboxView({
 
   // ─── Auto-select conversation by phone (from contacts page) ───
   useEffect(() => {
-    if (!autoSelectPhone || !conversationsQuery.data?.data?.length) return;
-    const match = conversationsQuery.data.data.find(
+    if (!autoSelectPhone) return;
+    // Prefer the direct phone-filtered result (exact match, any session)
+    const directMatch = phoneFilterQuery.data?.data?.[0];
+    if (directMatch && directMatch.id !== selectedId) {
+      setSelectedId(directMatch.id);
+      return;
+    }
+    // Fallback: search within already-loaded list
+    const match = conversationsQuery.data?.data?.find(
       (c) => c.contactPhone === autoSelectPhone,
     );
     if (match && match.id !== selectedId) {
       setSelectedId(match.id);
     }
-  }, [autoSelectPhone, conversationsQuery.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [autoSelectPhone, phoneFilterQuery.data, conversationsQuery.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isDisconnected =
     waStatus === "disconnected" || waStatus === "reconnecting";
@@ -498,17 +512,19 @@ export function InboxView({
                 {/* Send CSAT */}
                 <button
                   onClick={() => {
-                    if (!selectedId || !selectedConversation) return;
+                    if (!selectedId || !selectedRawConv) return;
                     sendCsatSurvey.mutate({
                       conversationId: selectedId,
-                      contactPhone: selectedConversation.contactPhone,
+                      contactPhone: selectedRawConv.contactPhone,
+                      sessionId: selectedRawConv.sessionId ?? undefined,
                     });
                   }}
                   disabled={sendCsatSurvey.isPending}
-                  className="p-2 rounded-lg text-on-surface-variant hover:text-tertiary hover:bg-tertiary/10 transition-colors"
-                  title="Send CSAT survey"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 disabled:opacity-50 transition-colors"
+                  title="Send CSAT survey to customer"
                 >
-                  <Star className="h-4 w-4" />
+                  <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                  <span>{sendCsatSurvey.isPending ? "Sending…" : "Send Survey"}</span>
                 </button>
                 {/* Delete */}
                 <button
@@ -654,7 +670,7 @@ export function InboxView({
       <ConfirmDialog
         open={showCloseConfirm}
         title="Close Conversation"
-        message="This will close the conversation and automatically send a CSAT survey to the customer. You can reopen it later."
+        message="This will close the conversation. You can reopen it anytime, or send a CSAT survey separately using the survey button."
         confirmLabel="Close"
         variant="default"
         loading={closeConversation.isPending}

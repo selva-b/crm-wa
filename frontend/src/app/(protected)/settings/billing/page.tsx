@@ -112,14 +112,16 @@ export default function BillingPage() {
 
   // Upgrade/downgrade confirmation modal state
   const [confirmPlan, setConfirmPlan] = useState<Plan | null>(null);
+  // Billing cycle toggle for plan display
+  const [showYearly, setShowYearly] = useState(false);
 
-  if (user?.role !== "ADMIN") {
+  if (user?.role !== "ADMIN" && user?.role !== "MANAGER") {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center">
           <ShieldAlert className="h-12 w-12 text-on-surface-variant/40 mx-auto mb-3" />
           <p className="text-[14px] text-on-surface-variant">
-            You don&apos;t have permission to manage billing.
+            You don&apos;t have permission to view billing.
           </p>
         </div>
       </div>
@@ -138,13 +140,17 @@ export default function BillingPage() {
     );
   }
 
+  const isAdmin = user?.role === "ADMIN";
+
   const canReactivate =
+    isAdmin &&
     subscription &&
     ["CANCELLED", "EXPIRED", "GRACE_PERIOD", "PAST_DUE"].includes(
       subscription.status,
     );
 
   const handlePlanAction = (plan: Plan) => {
+    if (!isAdmin) return;
     if (subscription && subscription.plan.id !== plan.id) {
       setConfirmPlan(plan);
     } else if (!subscription) {
@@ -152,10 +158,29 @@ export default function BillingPage() {
     }
   };
 
+  const [planChangeError, setPlanChangeError] = useState<string | null>(null);
+
   const handleConfirmChange = () => {
     if (!confirmPlan) return;
+    setPlanChangeError(null);
     changePlanMutation.mutate(confirmPlan.id, {
       onSuccess: () => setConfirmPlan(null),
+      onError: (err: any) => {
+        const msg =
+          err?.response?.data?.message ??
+          err?.message ??
+          "Failed to change plan. Please try again.";
+        const violations: { metric: string; currentValue: number; newLimit: number }[] =
+          err?.response?.data?.violations ?? [];
+        if (violations.length > 0) {
+          const details = violations
+            .map((v) => `${v.metric.replace("_", " ")}: ${v.currentValue} active (limit: ${v.newLimit})`)
+            .join(", ");
+          setPlanChangeError(`Cannot downgrade: ${details}. Please reduce usage first.`);
+        } else {
+          setPlanChangeError(typeof msg === "string" ? msg : "Failed to change plan.");
+        }
+      },
     });
   };
 
@@ -233,7 +258,7 @@ export default function BillingPage() {
                     Reactivate
                   </Button>
                 )}
-                {subscription.status === "ACTIVE" && (
+                {isAdmin && subscription.status === "ACTIVE" && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -302,34 +327,63 @@ export default function BillingPage() {
         {/* Subscription Tiers */}
         {plans && plans.length > 0 && (
           <div>
-            <h3 className="text-[14px] font-semibold text-on-surface mb-3">
-              Subscription Tiers
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[14px] font-semibold text-on-surface">
+                Subscription Tiers
+              </h3>
+              {/* Monthly / Yearly toggle */}
+              <div className="flex items-center gap-2.5">
+                <span className={`text-[13px] font-medium ${!showYearly ? "text-on-surface" : "text-on-surface-variant"}`}>
+                  Monthly
+                </span>
+                <button
+                  onClick={() => setShowYearly((v) => !v)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${showYearly ? "bg-primary" : "bg-surface-container-high"}`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${showYearly ? "translate-x-5" : "translate-x-0"}`}
+                  />
+                </button>
+                <span className={`text-[13px] font-medium ${showYearly ? "text-on-surface" : "text-on-surface-variant"}`}>
+                  Yearly
+                  <span className="ml-1.5 bg-success/10 text-success text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                    Save 17%
+                  </span>
+                </span>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {plans
-                .filter((p) => p.isActive)
+                .filter((p) => p.isActive && p.billingCycle === (showYearly ? "YEARLY" : "MONTHLY"))
                 .sort((a, b) => a.sortOrder - b.sortOrder)
                 .map((plan) => {
                   const isCurrent = subscription?.plan.id === plan.id;
+                  const isEnterprise = plan.name === "Enterprise";
                   const hasSubscription = !!subscription;
                   return (
                     <PlanCard
                       key={plan.id}
                       plan={plan}
                       isCurrent={isCurrent}
+                      isEnterprise={isEnterprise}
                       onSelect={() => handlePlanAction(plan)}
                       isLoading={
                         subscribeMutation.isPending || changePlanMutation.isPending
                       }
+                      disabled={!isAdmin || isEnterprise}
                       buttonLabel={
                         isCurrent
                           ? "Active Plan"
-                          : hasSubscription
-                            ? plan.priceInCents >
-                              (subscription?.plan.priceInCents ?? 0)
-                              ? "Upgrade"
-                              : "Downgrade"
-                            : "Select Plan"
+                          : isEnterprise
+                            ? "Contact Us"
+                            : !isAdmin
+                              ? "View Only"
+                              : hasSubscription
+                                ? plan.priceInCents >
+                                  (subscription?.plan.priceInCents ?? 0)
+                                  ? "Upgrade"
+                                  : "Downgrade"
+                                : "Select Plan"
                       }
                     />
                   );
@@ -538,8 +592,9 @@ export default function BillingPage() {
           newPlan={confirmPlan}
           isUpgrade={isUpgrade}
           isLoading={changePlanMutation.isPending}
+          error={planChangeError}
           onConfirm={handleConfirmChange}
-          onCancel={() => setConfirmPlan(null)}
+          onCancel={() => { setConfirmPlan(null); setPlanChangeError(null); }}
         />
       )}
     </div>
@@ -618,14 +673,18 @@ function UsageCard({
 function PlanCard({
   plan,
   isCurrent,
+  isEnterprise,
   onSelect,
   isLoading,
+  disabled,
   buttonLabel,
 }: {
   plan: Plan;
   isCurrent: boolean;
+  isEnterprise?: boolean;
   onSelect: () => void;
   isLoading: boolean;
+  disabled?: boolean;
   buttonLabel: string;
 }) {
   const features = getPlanFeatures(plan);
@@ -635,13 +694,22 @@ function PlanCard({
       className={`!p-0 overflow-hidden flex flex-col ${
         isCurrent
           ? "border-primary/30 ring-1 ring-primary/20"
-          : "hover:border-outline-variant/30 transition-colors"
+          : isEnterprise
+            ? "border-on-surface/10 bg-surface-container-low"
+            : "hover:border-outline-variant/30 transition-colors"
       }`}
     >
       {isCurrent && (
         <div className="bg-primary/10 px-4 py-1.5 text-center">
           <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">
             Active Plan
+          </span>
+        </div>
+      )}
+      {isEnterprise && !isCurrent && (
+        <div className="bg-on-surface/5 px-4 py-1.5 text-center">
+          <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+            Custom Pricing
           </span>
         </div>
       )}
@@ -660,12 +728,23 @@ function PlanCard({
 
         {/* Price */}
         <div className="mb-4">
-          <span className="text-2xl font-bold text-on-surface">
-            {formatPlanPrice(plan)}
-          </span>
-          <span className="text-[13px] text-on-surface-variant">
-            /{plan.billingCycle === "MONTHLY" ? "mo" : "yr"}
-          </span>
+          {isEnterprise ? (
+            <span className="text-2xl font-bold text-on-surface">Custom</span>
+          ) : (
+            <>
+              <span className="text-2xl font-bold text-on-surface">
+                {formatPlanPrice(plan)}
+              </span>
+              <span className="text-[13px] text-on-surface-variant">
+                /{plan.billingCycle === "MONTHLY" ? "mo" : "yr"}
+              </span>
+            </>
+          )}
+          {plan.trialDays > 0 && (
+            <p className="text-[11px] text-success font-medium mt-1">
+              {plan.trialDays}-day free trial
+            </p>
+          )}
         </div>
 
         {/* Limits */}
@@ -700,31 +779,40 @@ function PlanCard({
         )}
 
         {/* Action Button */}
-        <Button
-          className="w-full mt-4"
-          variant={isCurrent ? "secondary" : buttonLabel === "Upgrade" ? "primary" : "secondary"}
-          size="sm"
-          disabled={isCurrent || isLoading}
-          onClick={onSelect}
-        >
-          {isCurrent ? (
-            "Active Plan"
-          ) : isLoading ? (
-            "Processing..."
-          ) : buttonLabel === "Upgrade" ? (
-            <>
-              <ArrowUpCircle className="h-3.5 w-3.5 mr-1.5" />
-              {buttonLabel}
-            </>
-          ) : buttonLabel === "Downgrade" ? (
-            <>
-              <ArrowDownCircle className="h-3.5 w-3.5 mr-1.5" />
-              {buttonLabel}
-            </>
-          ) : (
-            buttonLabel
-          )}
-        </Button>
+        {isEnterprise && !isCurrent ? (
+          <a
+            href="mailto:sales@crm-wa.com"
+            className="mt-4 w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-on-surface/20 px-3 py-2 text-[13px] font-medium text-on-surface hover:bg-surface-container transition-colors"
+          >
+            Contact Us
+          </a>
+        ) : (
+          <Button
+            className="w-full mt-4"
+            variant={isCurrent ? "secondary" : buttonLabel === "Upgrade" ? "primary" : "secondary"}
+            size="sm"
+            disabled={isCurrent || isLoading || disabled}
+            onClick={onSelect}
+          >
+            {isCurrent ? (
+              "Active Plan"
+            ) : isLoading ? (
+              "Processing..."
+            ) : buttonLabel === "Upgrade" ? (
+              <>
+                <ArrowUpCircle className="h-3.5 w-3.5 mr-1.5" />
+                {buttonLabel}
+              </>
+            ) : buttonLabel === "Downgrade" ? (
+              <>
+                <ArrowDownCircle className="h-3.5 w-3.5 mr-1.5" />
+                {buttonLabel}
+              </>
+            ) : (
+              buttonLabel
+            )}
+          </Button>
+        )}
       </div>
     </Card>
   );
@@ -737,6 +825,7 @@ function UpgradeConfirmModal({
   newPlan,
   isUpgrade,
   isLoading,
+  error,
   onConfirm,
   onCancel,
 }: {
@@ -744,6 +833,7 @@ function UpgradeConfirmModal({
   newPlan: Plan;
   isUpgrade: boolean;
   isLoading: boolean;
+  error?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -902,6 +992,11 @@ function UpgradeConfirmModal({
           )}
 
           {/* Actions */}
+          {error && (
+            <div className="rounded-lg bg-error/10 border border-error/20 px-4 py-3 text-[13px] text-error">
+              {error}
+            </div>
+          )}
           <div className="flex items-center justify-end gap-3 pt-1">
             <Button variant="ghost" size="sm" onClick={onCancel}>
               Cancel
@@ -911,6 +1006,7 @@ function UpgradeConfirmModal({
               size="sm"
               onClick={onConfirm}
               loading={isLoading}
+              disabled={!!error}
             >
               {isUpgrade ? "Confirm Upgrade" : "Confirm Downgrade"}
             </Button>

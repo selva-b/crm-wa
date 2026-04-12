@@ -10,6 +10,8 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -20,6 +22,7 @@ import { CreatePlanDto } from '../../application/dto/create-plan.dto';
 import { UpdatePlanDto } from '../../application/dto/update-plan.dto';
 import { SubscribeDto, ChangePlanDto, CancelSubscriptionDto } from '../../application/dto/subscribe.dto';
 import { ListInvoicesQueryDto, ListPaymentsQueryDto } from '../../application/dto/list-billing-query.dto';
+import { CreateOrderDto, VerifyPaymentDto } from '../../application/dto/create-order.dto';
 import { CreatePlanUseCase } from '../../application/use-cases/create-plan.use-case';
 import { UpdatePlanUseCase } from '../../application/use-cases/update-plan.use-case';
 import { ListPlansUseCase } from '../../application/use-cases/list-plans.use-case';
@@ -29,6 +32,8 @@ import { CancelSubscriptionUseCase } from '../../application/use-cases/cancel-su
 import { ReactivateSubscriptionUseCase } from '../../application/use-cases/reactivate-subscription.use-case';
 import { GetSubscriptionUseCase } from '../../application/use-cases/get-subscription.use-case';
 import { ListInvoicesUseCase, ListPaymentsUseCase } from '../../application/use-cases/list-invoices.use-case';
+import { RazorpayPaymentService } from '../../domain/services/razorpay-payment.service';
+import { PlanRepository } from '../../infrastructure/repositories/plan.repository';
 
 @Controller('billing')
 export class BillingController {
@@ -43,6 +48,8 @@ export class BillingController {
     private readonly getSubscriptionUseCase: GetSubscriptionUseCase,
     private readonly listInvoicesUseCase: ListInvoicesUseCase,
     private readonly listPaymentsUseCase: ListPaymentsUseCase,
+    private readonly razorpayPayment: RazorpayPaymentService,
+    private readonly planRepo: PlanRepository,
   ) {}
 
   // ── Plan Management (system/admin only) ──
@@ -87,6 +94,79 @@ export class BillingController {
   @Permissions(PERMISSIONS.BILLING_READ)
   async listPlans() {
     return this.listPlansUseCase.execute();
+  }
+
+  // ── Razorpay Payment Flow ──
+
+  /**
+   * Step 1: Create a Razorpay order before checkout.
+   * Returns orderId + amount so the frontend can open the Razorpay widget.
+   */
+  @Post('create-order')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
+  @Permissions(PERMISSIONS.BILLING_READ)
+  @HttpCode(HttpStatus.OK)
+  async createOrder(
+    @Body() dto: CreateOrderDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const plan = await this.planRepo.findById(dto.planId);
+    if (!plan || !plan.isActive || plan.deletedAt) {
+      throw new NotFoundException('Plan not found or is no longer available');
+    }
+    if (plan.priceInCents === 0) {
+      throw new BadRequestException('Free plans do not require a payment order');
+    }
+
+    const receiptId = `sub-${user.orgId}-${Date.now()}`;
+    const order = await this.razorpayPayment.createOrder(
+      plan.priceInCents,
+      plan.currency,
+      receiptId,
+      { orgId: user.orgId, planId: dto.planId },
+    );
+
+    return {
+      orderId: order.orderId,
+      amount: order.amount,
+      currency: order.currency,
+      planName: plan.name,
+    };
+  }
+
+  /**
+   * Step 2: Verify the Razorpay payment signature after checkout, then subscribe.
+   * Frontend calls this after the Razorpay widget fires onSuccess.
+   */
+  @Post('verify-payment')
+  @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
+  @Permissions(PERMISSIONS.BILLING_READ)
+  @HttpCode(HttpStatus.CREATED)
+  async verifyPayment(
+    @Body() dto: VerifyPaymentDto,
+    @CurrentUser() user: JwtPayload,
+    @Req() req: Request,
+  ) {
+    const isValid = this.razorpayPayment.verifyPaymentSignature(
+      dto.orderId,
+      dto.razorpayPaymentId,
+      dto.signature,
+    );
+    if (!isValid) {
+      throw new BadRequestException('Payment verification failed: invalid signature');
+    }
+
+    return this.subscribeUseCase.execute(
+      user.orgId,
+      user.sub,
+      {
+        planId: dto.planId,
+        razorpayPaymentId: dto.razorpayPaymentId,
+        idempotencyKey: dto.idempotencyKey,
+      },
+      this.extractIp(req),
+      this.extractUserAgent(req),
+    );
   }
 
   // ── Subscription Management ──

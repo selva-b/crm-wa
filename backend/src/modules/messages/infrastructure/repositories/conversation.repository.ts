@@ -111,6 +111,7 @@ export class ConversationRepository {
       assignedToId?: string;
       sessionId?: string;
       sessionIds?: string[];
+      contactPhone?: string;
     },
   ) {
     const where: Prisma.ConversationWhereInput = {
@@ -120,6 +121,7 @@ export class ConversationRepository {
       ...(options.assignedToId && { assignedToId: options.assignedToId }),
       ...(options.sessionId && { sessionId: options.sessionId }),
       ...(options.sessionIds && { sessionId: { in: options.sessionIds } }),
+      ...(options.contactPhone && { contactPhone: options.contactPhone }),
     };
 
     const [data, total] = await Promise.all([

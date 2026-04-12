@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Building2,
   MessageSquare,
@@ -35,12 +35,15 @@ import {
   BarChart3,
   FileCode,
   Activity,
+  Shield,
 } from "lucide-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useAuthStore } from "@/stores/auth-store";
 import {
   useOrgSettings,
   useWhatsAppConfig,
+  useWorkingHours,
+  useUpdateWorkingHours,
   useFeatureFlags,
   useWebhooks,
   useUpdateOrgSettings,
@@ -72,6 +75,7 @@ import {
 import type { DeveloperApiKey } from "@/lib/types/developer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import type {
   UpdateOrgSettingsRequest,
@@ -88,6 +92,15 @@ import type {
   NotificationType,
   NotificationPreference,
 } from "@/lib/types/notifications";
+import { SlaPolicyList } from "@/components/sla/sla-policy-list";
+import { SlaPolicyForm } from "@/components/sla/sla-policy-form";
+import {
+  useSlaPolicies,
+  useCreateSlaPolicy,
+  useUpdateSlaPolicy,
+  useDeleteSlaPolicy,
+} from "@/hooks/use-sla";
+import type { SlaPolicy } from "@/lib/types/sla";
 
 type SettingsTab =
   | "organization"
@@ -97,7 +110,8 @@ type SettingsTab =
   | "notifications"
   | "integrations"
   | "webhooks"
-  | "developer-api";
+  | "developer-api"
+  | "sla";
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: "organization", label: "Organization", icon: Building2 },
@@ -108,6 +122,7 @@ const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: "integrations", label: "Integrations", icon: Plug },
   { id: "webhooks", label: "Webhooks", icon: Webhook },
   { id: "developer-api", label: "Developer API", icon: Code },
+  { id: "sla", label: "SLA Policies", icon: Shield },
 ];
 
 const TIMEZONES = [
@@ -146,7 +161,15 @@ export default function SettingsPage() {
   usePageTitle("Settings");
 
   const user = useAuthStore((s) => s.user);
-  const [activeTab, setActiveTab] = useState<SettingsTab>("organization");
+  const searchParams = useSearchParams();
+  const VALID_TABS: SettingsTab[] = ["organization","whatsapp","working-hours","features","notifications","integrations","webhooks","developer-api","sla"];
+  const rawTab = searchParams.get("tab");
+  const tabParam: SettingsTab | null = rawTab && VALID_TABS.includes(rawTab as SettingsTab) ? (rawTab as SettingsTab) : null;
+  const [activeTab, setActiveTab] = useState<SettingsTab>(tabParam ?? "organization");
+
+  useEffect(() => {
+    if (tabParam) setActiveTab(tabParam);
+  }, [tabParam]);
 
   if (user?.role !== "ADMIN") {
     return <EmployeeSettingsRedirect />;
@@ -201,6 +224,7 @@ export default function SettingsPage() {
           {activeTab === "integrations" && <IntegrationsSection />}
           {activeTab === "webhooks" && <WebhooksSection />}
           {activeTab === "developer-api" && <DeveloperApiSection />}
+          {activeTab === "sla" && <SlaSection />}
         </div>
       </div>
     </div>
@@ -532,6 +556,9 @@ function WhatsAppSection() {
 function WorkingHoursSection() {
   const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+  const { data, isLoading } = useWorkingHours();
+  const updateMutation = useUpdateWorkingHours();
+
   const [enabled, setEnabled] = useState(true);
   const [startHour, setStartHour] = useState("09:00");
   const [endHour, setEndHour] = useState("18:00");
@@ -540,7 +567,17 @@ function WorkingHoursSection() {
   const [autoReplyMessage, setAutoReplyMessage] = useState(
     "Thanks for reaching out! We're currently outside business hours. We'll get back to you as soon as we're open."
   );
-  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (data) {
+      setEnabled(data.enabled ?? true);
+      setStartHour(data.startHour ?? "09:00");
+      setEndHour(data.endHour ?? "18:00");
+      setWorkDays(data.workDays ?? [true, true, true, true, true, false, false]);
+      setAutoReplyEnabled(data.autoReplyEnabled ?? false);
+      setAutoReplyMessage(data.autoReplyMessage ?? "");
+    }
+  }, [data]);
 
   const toggleDay = (idx: number) => {
     const next = [...workDays];
@@ -549,10 +586,10 @@ function WorkingHoursSection() {
   };
 
   const handleSave = () => {
-    // TODO: Save via settings API (PUT /settings with category: "messaging")
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    updateMutation.mutate({ enabled, startHour, endHour, workDays, autoReplyEnabled, autoReplyMessage });
   };
+
+  if (isLoading) return <SectionLoader />;
 
   return (
     <div className="space-y-6">
@@ -669,12 +706,13 @@ function WorkingHoursSection() {
       <div className="flex items-center gap-3">
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-on-primary hover:bg-primary/90 transition-colors"
+          disabled={updateMutation.isPending}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-on-primary hover:bg-primary/90 disabled:opacity-60 transition-colors"
         >
           <Save className="h-4 w-4" />
-          Save Working Hours
+          {updateMutation.isPending ? "Saving…" : "Save Working Hours"}
         </button>
-        {saved && (
+        {updateMutation.isSuccess && (
           <span className="text-[12px] text-success flex items-center gap-1">
             <CheckCircle2 className="h-3.5 w-3.5" />
             Saved
@@ -1838,6 +1876,7 @@ function DeveloperApiSection() {
   const [createdKey, setCreatedKey] = useState<DeveloperApiKey | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<"overview" | "keys" | "docs" | "logs">("overview");
+  const [keyConfirm, setKeyConfirm] = useState<{ type: "rotate" | "revoke"; id: string; name: string } | null>(null);
 
   const AVAILABLE_SCOPES = ["read", "write", "contacts", "messages", "campaigns"];
 
@@ -1980,7 +2019,7 @@ function DeveloperApiSection() {
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-on-surface flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-primary" />
-                      API Key Created — Copy it now, it won&apos;t be shown again!
+                      New API Key — Copy it now, it will never be shown again!
                     </p>
                     <div className="mt-2 flex items-center gap-2">
                       <code className="text-[13px] bg-surface-container px-3 py-1.5 rounded-lg font-mono break-all">
@@ -2116,18 +2155,20 @@ function DeveloperApiSection() {
                             {key.isActive && (
                               <div className="flex gap-1">
                                 <button
-                                  onClick={() => rotateKey.mutate(key.id)}
-                                  className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
-                                  title="Rotate key"
+                                  onClick={() => setKeyConfirm({ type: "rotate", id: key.id, name: key.name })}
+                                  disabled={rotateKey.isPending}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-on-surface-variant hover:text-primary hover:bg-primary/8 transition-colors disabled:opacity-40"
                                 >
-                                  <RotateCw className="h-3.5 w-3.5" />
+                                  <RotateCw className="h-3 w-3" />
+                                  Rotate
                                 </button>
                                 <button
-                                  onClick={() => revokeKey.mutate(key.id)}
-                                  className="p-1.5 rounded-lg hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors"
-                                  title="Revoke key"
+                                  onClick={() => setKeyConfirm({ type: "revoke", id: key.id, name: key.name })}
+                                  disabled={revokeKey.isPending}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-on-surface-variant hover:text-error hover:bg-error/8 transition-colors disabled:opacity-40"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <Trash2 className="h-3 w-3" />
+                                  Revoke
                                 </button>
                               </div>
                             )}
@@ -2280,7 +2321,7 @@ print(res.json())`}
                       ["PUT", "/developer/webhooks/:id", "Update webhook"],
                       ["DELETE", "/developer/webhooks/:id", "Delete webhook"],
                     ].map(([method, path, desc]) => (
-                      <tr key={path} className="border-b border-outline-variant/10">
+                      <tr key={`${method}-${path}`} className="border-b border-outline-variant/10">
                         <td className="py-2">
                           <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold ${
                             method === "POST" ? "bg-primary/10 text-primary" :
@@ -2399,6 +2440,36 @@ print(res.json())`}
           </CardContent>
         </Card>
       )}
+
+      {/* Confirm Dialog for rotate/revoke */}
+      <ConfirmDialog
+        open={!!keyConfirm}
+        title={keyConfirm?.type === "rotate" ? "Rotate API Key" : "Revoke API Key"}
+        message={
+          keyConfirm?.type === "rotate"
+            ? `"${keyConfirm.name}" will be revoked and a new key generated. Copy the new key immediately — it won't be shown again.`
+            : `"${keyConfirm?.name}" will be permanently disabled. Any integrations using this key will stop working immediately.`
+        }
+        confirmLabel={keyConfirm?.type === "rotate" ? "Rotate Key" : "Revoke Key"}
+        variant={keyConfirm?.type === "revoke" ? "danger" : "warning"}
+        loading={rotateKey.isPending || revokeKey.isPending}
+        onCancel={() => setKeyConfirm(null)}
+        onConfirm={() => {
+          if (!keyConfirm) return;
+          if (keyConfirm.type === "rotate") {
+            rotateKey.mutate(keyConfirm.id, {
+              onSuccess: (result) => {
+                if (result) { setCreatedKey(result); setCopiedKey(false); setActiveSubTab("keys"); }
+                setKeyConfirm(null);
+              },
+            });
+          } else {
+            revokeKey.mutate(keyConfirm.id, {
+              onSuccess: () => setKeyConfirm(null),
+            });
+          }
+        }}
+      />
     </div>
   );
 }
@@ -2412,5 +2483,78 @@ function SectionLoader() {
         <Spinner size="lg" className="text-primary" />
       </div>
     </Card>
+  );
+}
+
+// ─── SLA Section ──────────────────────────────────
+function SlaSection() {
+  const { data: policies, isLoading } = useSlaPolicies();
+  const createPolicy = useCreateSlaPolicy();
+  const updatePolicy = useUpdateSlaPolicy();
+  const deletePolicy = useDeleteSlaPolicy();
+
+  const [showForm, setShowForm] = useState(false);
+  const [editPolicy, setEditPolicy] = useState<SlaPolicy | null>(null);
+
+  if (isLoading) return <SectionLoader />;
+
+  return (
+    <div className="space-y-5 max-w-3xl">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-[17px] font-semibold text-on-surface flex items-center gap-2">
+            <Shield className="h-5 w-5 text-primary" />
+            SLA Policies
+          </h2>
+          <p className="text-[13px] text-on-surface-variant mt-0.5">
+            Set response time targets. Agents get warned before breach.
+          </p>
+        </div>
+        {!showForm && !editPolicy && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-on-primary text-[13px] font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Policy
+          </button>
+        )}
+      </div>
+
+      {showForm && (
+        <SlaPolicyForm
+          onSubmit={(data) => createPolicy.mutate(data as any, { onSuccess: () => setShowForm(false) })}
+          onCancel={() => setShowForm(false)}
+          isSubmitting={createPolicy.isPending}
+        />
+      )}
+
+      {editPolicy && (
+        <SlaPolicyForm
+          policy={editPolicy}
+          onSubmit={(data) => updatePolicy.mutate({ id: editPolicy.id, data: data as any }, { onSuccess: () => setEditPolicy(null) })}
+          onCancel={() => setEditPolicy(null)}
+          isSubmitting={updatePolicy.isPending}
+        />
+      )}
+
+      <SlaPolicyList
+        policies={policies ?? []}
+        onToggle={(id, isActive) => updatePolicy.mutate({ id, data: { isActive } })}
+        onEdit={(p) => { setEditPolicy(p); setShowForm(false); }}
+        onDelete={(id) => { if (confirm("Delete this SLA policy?")) deletePolicy.mutate(id); }}
+        isUpdating={updatePolicy.isPending || deletePolicy.isPending}
+      />
+
+      {(policies?.length ?? 0) > 0 && (
+        <div className="rounded-xl bg-primary/5 border border-primary/15 p-4">
+          <p className="text-[12px] text-on-surface-variant">
+            <strong className="text-on-surface">How it works:</strong> When a conversation starts,
+            the timer begins. If no reply within the warning threshold, the agent gets alerted.
+            Exceeding the breach threshold marks it as an SLA breach visible in SLA Tracking.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }

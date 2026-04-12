@@ -3,7 +3,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AuditAction, ConversationStatus } from '@prisma/client';
 import { ConversationRepository } from '../../infrastructure/repositories/conversation.repository';
 import { AuditService } from '@/modules/audit/domain/services/audit.service';
-import { EVENT_NAMES } from '@/common/constants';
+import { QueueService } from '@/infrastructure/queue/queue.service';
+import { EVENT_NAMES, QUEUE_NAMES } from '@/common/constants';
 import type { ConversationClosedEvent } from '@/events/event-bus';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class CloseConversationUseCase {
     private readonly conversationRepo: ConversationRepository,
     private readonly auditService: AuditService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly queueService: QueueService,
   ) {}
 
   async execute(
@@ -62,6 +64,20 @@ export class CloseConversationUseCase {
       closedById: userId,
     };
     this.eventEmitter.emit(EVENT_NAMES.CONVERSATION_CLOSED, event);
+
+    // Enqueue SLA evaluation for conversation resolved
+    await this.queueService.publishOnce(
+      QUEUE_NAMES.SLA_EVALUATE,
+      {
+        type: 'conversation_resolved',
+        orgId,
+        conversationId,
+        sessionId: conversation.sessionId ?? '',
+        assignedUserId: conversation.assignedToId ?? null,
+        messageCreatedAt: new Date().toISOString(),
+      },
+      `sla:resolved:${conversationId}:${Date.now()}`,
+    );
 
     this.logger.log(`Conversation ${conversationId} ${status.toLowerCase()} by user ${userId}`);
 

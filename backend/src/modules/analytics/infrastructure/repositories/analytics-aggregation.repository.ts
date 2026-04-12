@@ -30,7 +30,9 @@ export class AnalyticsAggregationRepository {
         COUNT(*) FILTER (WHERE m.status IN ('SENT', 'DELIVERED', 'READ')),
         COUNT(*) FILTER (WHERE m.status IN ('DELIVERED', 'READ')),
         COUNT(*) FILTER (WHERE m.status = 'READ'),
-        COUNT(*) FILTER (WHERE m.status = 'FAILED')
+        COUNT(*) FILTER (WHERE m.status = 'FAILED'),
+        NOW(),
+        NOW()
       FROM messages m
       JOIN whatsapp_sessions ws ON ws.id = m.session_id
       WHERE m.created_at >= ${dateStr}::date

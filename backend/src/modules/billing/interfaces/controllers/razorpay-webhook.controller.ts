@@ -118,9 +118,23 @@ export class RazorpayWebhookController {
         const rpSubscription = payload?.subscription?.entity;
         if (!rpSubscription) break;
 
-        this.logger.log(
-          `Razorpay subscription cancelled: ${rpSubscription.id}`,
+        const subscription = await this.subscriptionRepo.findByExternalId(
+          rpSubscription.id,
         );
+        if (subscription) {
+          await this.subscriptionRepo.transitionStatus(
+            subscription.id,
+            subscription.status,
+            'CANCELLED' as any,
+          );
+          this.logger.log(
+            `Razorpay subscription cancelled: ${rpSubscription.id} → local ${subscription.id}`,
+          );
+        } else {
+          this.logger.warn(
+            `Razorpay subscription cancelled but no local record found: ${rpSubscription.id}`,
+          );
+        }
         break;
       }
 

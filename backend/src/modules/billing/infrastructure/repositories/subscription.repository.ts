@@ -54,6 +54,12 @@ export class SubscriptionRepository {
     });
   }
 
+  async findByExternalId(externalId: string): Promise<Subscription | null> {
+    return this.prisma.subscription.findUnique({
+      where: { externalId },
+    });
+  }
+
   async findActiveByOrg(orgId: string): Promise<Subscription | null> {
     return this.prisma.subscription.findFirst({
       where: {
