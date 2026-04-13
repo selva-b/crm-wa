@@ -90,7 +90,7 @@ export default function ChatbotPage() {
               <Sparkles className="h-4 w-4 mr-2" />
               Create AI Chatbot (Recommended)
             </Button>
-            <Button variant="outline" onClick={handleCreate} disabled={createFlow.isPending} className="w-full max-w-[280px]">
+            <Button variant="secondary" onClick={handleCreate} disabled={createFlow.isPending} className="w-full max-w-[280px]">
               <Zap className="h-4 w-4 mr-2" />
               Create Custom Flow
             </Button>
@@ -114,7 +114,7 @@ export default function ChatbotPage() {
           <Badge variant="muted">{flows.length}</Badge>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={handleCreate} disabled={createFlow.isPending}>
+          <Button size="sm" variant="secondary" onClick={handleCreate} disabled={createFlow.isPending}>
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Custom Flow
           </Button>

@@ -32,7 +32,20 @@ import {
   useChangePlan,
   useCancelSubscription,
   useReactivateSubscription,
+  useCreateOrder,
+  useVerifyPayment,
 } from "@/hooks/use-billing";
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && (window as any).Razorpay) return resolve(true);
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -109,11 +122,15 @@ export default function BillingPage() {
   const changePlanMutation = useChangePlan();
   const cancelMutation = useCancelSubscription();
   const reactivateMutation = useReactivateSubscription();
+  const createOrder = useCreateOrder();
+  const verifyPayment = useVerifyPayment();
 
   // Upgrade/downgrade confirmation modal state
   const [confirmPlan, setConfirmPlan] = useState<Plan | null>(null);
   // Billing cycle toggle for plan display
   const [showYearly, setShowYearly] = useState(false);
+  // Plan change error (must be declared before any early returns)
+  const [planChangeError, setPlanChangeError] = useState<string | null>(null);
 
   if (user?.role !== "ADMIN" && user?.role !== "MANAGER") {
     return (
@@ -149,16 +166,67 @@ export default function BillingPage() {
       subscription.status,
     );
 
-  const handlePlanAction = (plan: Plan) => {
+  const handlePlanAction = async (plan: Plan) => {
     if (!isAdmin) return;
-    if (subscription && subscription.plan.id !== plan.id) {
-      setConfirmPlan(plan);
-    } else if (!subscription) {
+    // No subscription yet — direct subscribe (trial or paid via onboarding)
+    if (!subscription) {
       subscribeMutation.mutate(plan.id);
+      return;
     }
-  };
+    // Same plan on trial → "Pay Now" to activate current plan
+    // Different plan on trial → "Pay & Upgrade" to switch and activate
+    // Both need Razorpay payment flow
+    if (subscription.status === "TRIAL" && plan.priceInCents > 0) {
+      setPlanChangeError(null);
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        setPlanChangeError("Failed to load payment gateway. Check your connection.");
+        return;
+      }
+      createOrder.mutate(plan.id, {
+        onSuccess: (order) => {
+          const options = {
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+            amount: order.amount,
+            currency: order.currency,
+            name: "CRM-WA",
+            description: subscription?.plan.id === plan.id ? `Activate ${order.planName} Plan` : `Upgrade to ${order.planName}`,
+            order_id: order.orderId,
+            handler: (response: any) => {
+              verifyPayment.mutate(
+                {
+                  planId: plan.id,
+                  orderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  signature: response.razorpay_signature,
+                  idempotencyKey: `upgrade-${user?.orgId ?? ""}-${plan.id}`,
+                },
+                {
+                  onError: (err: any) => {
+                    setPlanChangeError(err?.response?.data?.message ?? "Payment verification failed.");
+                  },
+                },
+              );
+            },
+            prefill: {
+              name: user ? `${user.firstName} ${user.lastName}` : "",
+              email: user?.email ?? "",
+            },
+            theme: { color: "#d97706" },
+            modal: { ondismiss: () => setPlanChangeError("Payment cancelled. Try again.") },
+          };
+          new (window as any).Razorpay(options).open();
+        },
+        onError: (err: any) => {
+          setPlanChangeError(err?.response?.data?.message ?? "Failed to create payment order.");
+        },
+      });
+      return;
+    }
 
-  const [planChangeError, setPlanChangeError] = useState<string | null>(null);
+    // Active subscription — show upgrade/downgrade confirm modal
+    setConfirmPlan(plan);
+  };
 
   const handleConfirmChange = () => {
     if (!confirmPlan) return;
@@ -227,7 +295,7 @@ export default function BillingPage() {
                   </span>
                 </p>
                 <p className="text-3xl font-bold text-primary mt-2">
-                  ${(subscription.plan.priceInCents / 100).toFixed(2)}
+                  ₹{(subscription.plan.priceInCents / 100).toLocaleString("en-IN")}
                   <span className="text-sm font-normal text-on-surface-variant">
                     /{subscription.plan.billingCycle === "MONTHLY" ? "mo" : "yr"}
                   </span>
@@ -256,6 +324,17 @@ export default function BillingPage() {
                   >
                     <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                     Reactivate
+                  </Button>
+                )}
+                {isAdmin && subscription.status === "TRIAL" && subscription.plan.priceInCents > 0 && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    loading={createOrder.isPending || verifyPayment.isPending}
+                    onClick={() => handlePlanAction(subscription.plan as any)}
+                  >
+                    <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                    Pay Now & Activate
                   </Button>
                 )}
                 {isAdmin && subscription.status === "ACTIVE" && (
@@ -327,6 +406,12 @@ export default function BillingPage() {
         {/* Subscription Tiers */}
         {plans && plans.length > 0 && (
           <div>
+            {planChangeError && !confirmPlan && (
+              <div className="mb-3 rounded-xl bg-error/10 border border-error/30 px-4 py-3 text-sm text-error flex items-center justify-between">
+                <span>{planChangeError}</span>
+                <button onClick={() => setPlanChangeError(null)} className="ml-3 text-error/60 hover:text-error">✕</button>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-[14px] font-semibold text-on-surface">
                 Subscription Tiers
@@ -368,22 +453,24 @@ export default function BillingPage() {
                       isEnterprise={isEnterprise}
                       onSelect={() => handlePlanAction(plan)}
                       isLoading={
-                        subscribeMutation.isPending || changePlanMutation.isPending
+                        subscribeMutation.isPending || changePlanMutation.isPending ||
+                        createOrder.isPending || verifyPayment.isPending
                       }
                       disabled={!isAdmin || isEnterprise}
                       buttonLabel={
                         isCurrent
-                          ? "Active Plan"
+                          ? subscription?.status === "TRIAL" ? "On Trial" : "Active Plan"
                           : isEnterprise
                             ? "Contact Us"
                             : !isAdmin
                               ? "View Only"
-                              : hasSubscription
-                                ? plan.priceInCents >
-                                  (subscription?.plan.priceInCents ?? 0)
-                                  ? "Upgrade"
-                                  : "Downgrade"
-                                : "Select Plan"
+                              : !hasSubscription
+                                ? "Select Plan"
+                                : subscription?.status === "TRIAL" && plan.priceInCents > 0
+                                  ? "Pay & Upgrade"
+                                  : plan.priceInCents > (subscription?.plan.priceInCents ?? 0)
+                                    ? "Upgrade"
+                                    : "Downgrade"
                       }
                     />
                   );
@@ -452,7 +539,7 @@ export default function BillingPage() {
                               {formatDate(payment.createdAt)}
                             </td>
                             <td className="px-6 py-3.5 text-[13px] text-on-surface font-medium">
-                              ${(payment.amountInCents / 100).toFixed(2)}{" "}
+                              ₹{(payment.amountInCents / 100).toLocaleString("en-IN")}{" "}
                               <span className="text-[11px] text-on-surface-variant font-normal">
                                 {payment.currency}
                               </span>
@@ -536,7 +623,7 @@ export default function BillingPage() {
                               {formatDate(invoice.periodEnd)}
                             </td>
                             <td className="px-6 py-3.5 text-[13px] text-on-surface font-medium">
-                              ${(invoice.amountInCents / 100).toFixed(2)}{" "}
+                              ₹{(invoice.amountInCents / 100).toLocaleString("en-IN")}{" "}
                               <span className="text-[11px] text-on-surface-variant font-normal">
                                 {invoice.currency}
                               </span>
@@ -888,7 +975,7 @@ function UpgradeConfirmModal({
                 {currentPlan.name}
               </p>
               <p className="text-sm text-on-surface-variant mt-0.5">
-                ${currentPrice.toFixed(2)}/{cycleSuffix}
+                ₹{currentPrice.toLocaleString("en-IN")}/{cycleSuffix}
               </p>
             </div>
             <div className="text-on-surface-variant/50">→</div>
@@ -900,7 +987,7 @@ function UpgradeConfirmModal({
                 {newPlan.name}
               </p>
               <p className="text-sm text-primary mt-0.5">
-                ${newPrice.toFixed(2)}/{cycleSuffix}
+                ₹{newPrice.toLocaleString("en-IN")}/{cycleSuffix}
               </p>
             </div>
           </div>
@@ -957,7 +1044,7 @@ function UpgradeConfirmModal({
                   Credit for remaining period
                 </span>
                 <span className="text-success font-medium">
-                  -${credit.toFixed(2)}
+                  -₹{credit.toLocaleString("en-IN")}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[13px]">
@@ -965,13 +1052,13 @@ function UpgradeConfirmModal({
                   New plan charge (prorated)
                 </span>
                 <span className="text-on-surface font-medium">
-                  ${charge.toFixed(2)}
+                  ₹{charge.toLocaleString("en-IN")}
                 </span>
               </div>
               <div className="border-t border-outline-variant/15 pt-2 mt-2">
                 <div className="flex items-center justify-between text-[14px] font-semibold">
                   <span className="text-on-surface">Amount due today</span>
-                  <span className="text-primary">${net.toFixed(2)}</span>
+                  <span className="text-primary">₹{net.toLocaleString("en-IN")}</span>
                 </div>
               </div>
               <p className="text-[11px] text-on-surface-variant/60 mt-1">

@@ -183,7 +183,7 @@ export default function KnowledgeBasePage() {
               ))}
             </TableBody>
           </Table>
-          {data.total > take && <Pagination total={data.total} pageSize={take} currentPage={page} onPageChange={setPage} />}
+          {data.total > take && <Pagination total={data.total} totalPages={Math.ceil(data.total / take)} page={page} onPageChange={setPage} />}
         </>
       )}
 

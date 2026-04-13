@@ -12,8 +12,10 @@ export const billingKeys = {
   subscription: () => ["billing", "subscription"] as const,
   payments: (params?: ListPaymentsParams) =>
     ["billing", "payments", params] as const,
+  payment: (id: string) => ["billing", "payment", id] as const,
   invoices: (params?: ListInvoicesParams) =>
     ["billing", "invoices", params] as const,
+  invoice: (id: string) => ["billing", "invoice", id] as const,
 };
 
 // ─── Query Hooks ───
@@ -44,6 +46,22 @@ export function useInvoices(params?: ListInvoicesParams) {
   return useQuery({
     queryKey: billingKeys.invoices(params),
     queryFn: () => billingApi.listInvoices(params),
+  });
+}
+
+export function useInvoice(id: string | null) {
+  return useQuery({
+    queryKey: billingKeys.invoice(id ?? ""),
+    queryFn: () => billingApi.getInvoice(id!),
+    enabled: !!id,
+  });
+}
+
+export function usePayment(id: string | null) {
+  return useQuery({
+    queryKey: billingKeys.payment(id ?? ""),
+    queryFn: () => billingApi.getPayment(id!),
+    enabled: !!id,
   });
 }
 

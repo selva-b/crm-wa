@@ -13,6 +13,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { SubscriptionStatus, PaymentStatus, InvoiceStatus } from '@prisma/client';
 import { Request } from 'express';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
@@ -34,6 +35,8 @@ import { GetSubscriptionUseCase } from '../../application/use-cases/get-subscrip
 import { ListInvoicesUseCase, ListPaymentsUseCase } from '../../application/use-cases/list-invoices.use-case';
 import { RazorpayPaymentService } from '../../domain/services/razorpay-payment.service';
 import { PlanRepository } from '../../infrastructure/repositories/plan.repository';
+import { SubscriptionRepository } from '../../infrastructure/repositories/subscription.repository';
+import { PaymentRepository } from '../../infrastructure/repositories/payment.repository';
 
 @Controller('billing')
 export class BillingController {
@@ -50,6 +53,8 @@ export class BillingController {
     private readonly listPaymentsUseCase: ListPaymentsUseCase,
     private readonly razorpayPayment: RazorpayPaymentService,
     private readonly planRepo: PlanRepository,
+    private readonly subscriptionRepo: SubscriptionRepository,
+    private readonly paymentRepo: PaymentRepository,
   ) {}
 
   // ── Plan Management (system/admin only) ──
@@ -118,7 +123,8 @@ export class BillingController {
       throw new BadRequestException('Free plans do not require a payment order');
     }
 
-    const receiptId = `sub-${user.orgId}-${Date.now()}`;
+    // Razorpay receipt must be ≤ 40 chars
+    const receiptId = `sub-${user.orgId.slice(0, 8)}-${Date.now().toString(36)}`;
     const order = await this.razorpayPayment.createOrder(
       plan.priceInCents,
       plan.currency,
@@ -137,6 +143,7 @@ export class BillingController {
   /**
    * Step 2: Verify the Razorpay payment signature after checkout, then subscribe.
    * Frontend calls this after the Razorpay widget fires onSuccess.
+   * Handles both: new subscription and TRIAL → ACTIVE upgrade.
    */
   @Post('verify-payment')
   @Roles('ADMIN', 'MANAGER', 'EMPLOYEE')
@@ -154,6 +161,74 @@ export class BillingController {
     );
     if (!isValid) {
       throw new BadRequestException('Payment verification failed: invalid signature');
+    }
+
+    // Check if the org already has a trial subscription — if so, activate it
+    const existing = await this.subscriptionRepo.findActiveByOrg(user.orgId);
+    if (existing && existing.status === SubscriptionStatus.TRIAL) {
+      // Transition trial → active on payment
+      const plan = await this.planRepo.findById(dto.planId);
+      if (!plan) throw new NotFoundException('Plan not found');
+
+      const now = new Date();
+      const periodEnd = new Date(now);
+      periodEnd.setMonth(periodEnd.getMonth() + (plan.billingCycle === 'YEARLY' ? 12 : 1));
+
+      const activated = await this.subscriptionRepo.transitionStatus(
+        existing.id,
+        SubscriptionStatus.TRIAL,
+        SubscriptionStatus.ACTIVE,
+        {
+          planId: plan.id,
+          priceInCents: plan.priceInCents,
+          trialEndsAt: null,
+          currentPeriodStart: now,
+          currentPeriodEnd: periodEnd,
+        },
+      );
+
+      await this.subscriptionRepo.recordEvent({
+        orgId: user.orgId,
+        subscriptionId: existing.id,
+        previousStatus: SubscriptionStatus.TRIAL,
+        newStatus: SubscriptionStatus.ACTIVE,
+        triggeredById: user.sub,
+        metadata: {
+          planName: plan.name,
+          razorpayPaymentId: dto.razorpayPaymentId,
+          orderId: dto.orderId,
+        },
+      });
+
+      // Record payment in history
+      const payment = await this.paymentRepo.createPayment({
+        orgId: user.orgId,
+        subscriptionId: existing.id,
+        amountInCents: plan.priceInCents,
+        currency: plan.currency,
+        externalId: dto.razorpayPaymentId,
+        paymentMethod: 'razorpay',
+        idempotencyKey: dto.idempotencyKey || `rzp-${dto.razorpayPaymentId}`,
+      });
+      await this.paymentRepo.transitionPaymentStatus(payment.id, PaymentStatus.PENDING, PaymentStatus.SUCCEEDED);
+
+      // Create invoice and mark as PAID immediately
+      const invoiceNumber = await this.paymentRepo.getNextInvoiceNumber();
+      const invoice = await this.paymentRepo.createInvoice({
+        orgId: user.orgId,
+        subscriptionId: existing.id,
+        paymentId: payment.id,
+        invoiceNumber,
+        amountInCents: plan.priceInCents,
+        currency: plan.currency,
+        periodStart: now,
+        periodEnd,
+        lineItems: [{ description: `${plan.name} — ${plan.billingCycle}`, amount: plan.priceInCents, currency: plan.currency }],
+        dueDate: now,
+      });
+      await this.paymentRepo.transitionInvoiceStatus(invoice.id, InvoiceStatus.DRAFT, InvoiceStatus.PAID);
+
+      return { subscription: activated, deduplicated: false };
     }
 
     return this.subscribeUseCase.execute(
@@ -268,6 +343,34 @@ export class BillingController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.listPaymentsUseCase.execute(user.orgId, query);
+  }
+
+  @Get('payments/:id')
+  @Roles('ADMIN', 'MANAGER')
+  @Permissions(PERMISSIONS.BILLING_INVOICES_READ)
+  async getPayment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const payment = await this.paymentRepo.findPaymentById(id);
+    if (!payment || payment.orgId !== user.orgId) {
+      throw new NotFoundException('Payment not found');
+    }
+    return payment;
+  }
+
+  @Get('invoices/:id')
+  @Roles('ADMIN', 'MANAGER')
+  @Permissions(PERMISSIONS.BILLING_INVOICES_READ)
+  async getInvoice(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const invoice = await this.paymentRepo.findInvoiceById(id);
+    if (!invoice || invoice.orgId !== user.orgId) {
+      throw new NotFoundException('Invoice not found');
+    }
+    return invoice;
   }
 
   private extractIp(req: Request): string {

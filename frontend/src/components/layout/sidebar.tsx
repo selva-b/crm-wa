@@ -27,6 +27,7 @@ import {
   Workflow,
   BookOpen,
   Package,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavItem } from "./nav-item";
@@ -67,6 +68,7 @@ const navItems: NavItemDef[] = [
   { href: "/settings/products", icon: <Package className="h-5 w-5" />, label: "Products", roles: ["ADMIN"] },
   { href: "/settings/sla", icon: <Shield className="h-5 w-5" />, label: "SLA Policies", roles: ["ADMIN"] },
   { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN", "MANAGER"] },
+  { href: "/support", icon: <LifeBuoy className="h-5 w-5" />, label: "Support" },
 ];
 
 const adminNavItems = [

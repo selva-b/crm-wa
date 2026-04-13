@@ -71,7 +71,8 @@ export class AnalyticsAggregationRepository {
         m.org_id,
         ${hourStart}::timestamptz,
         COUNT(*) FILTER (WHERE m.direction = 'INBOUND'),
-        COUNT(*) FILTER (WHERE m.direction = 'OUTBOUND')
+        COUNT(*) FILTER (WHERE m.direction = 'OUTBOUND'),
+        NOW()
       FROM messages m
       WHERE m.created_at >= ${hourStart}::timestamptz
         AND m.created_at < ${hourEnd}::timestamptz

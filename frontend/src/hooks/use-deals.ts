@@ -47,8 +47,8 @@ export function useCreatePipeline() {
 export function useCreateDeal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ pipelineId, ...data }: CreateDealRequest & { pipelineId: string }) =>
-      dealsApi.createDeal(pipelineId, data),
+    mutationFn: (data: CreateDealRequest) =>
+      dealsApi.createDeal(data.pipelineId, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: dealKeys.all }),
   });
 }

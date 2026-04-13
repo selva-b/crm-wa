@@ -486,6 +486,7 @@ model Organization {
   kbDocuments              KbDocument[]
   sequenceTemplates        SequenceTemplate[]
   products                 Product[]
+  helpTickets              HelpTicket[]
 
   @@index([slug])
   @@index([deletedAt])
@@ -533,6 +534,8 @@ model User {
   createdSlaPolicies      SlaPolicy[]              @relation("SlaPolicyCreator")
   twoFactor               UserTwoFactor?
   assignedDeals           Deal[]                   @relation("DealAssignee")
+  helpTickets             HelpTicket[]
+  ticketReplies           TicketReply[]            @relation("TicketReplyUser")
 
   @@unique([email, deletedAt], name: "unique_email_active")
   @@index([orgId])
@@ -1848,6 +1851,29 @@ enum NotificationType {
   SUBSCRIPTION_EXPIRING
   SYSTEM_ALERT
   SLA_BREACH
+  TICKET_REPLY
+  TICKET_RESOLVED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketCategory {
+  BILLING
+  TECHNICAL
+  GENERAL
+  FEATURE_REQUEST
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 enum NotificationPriority {
@@ -3025,3 +3051,63 @@ model ApiKey {
   @@index([orgId, isActive])
   @@map("api_keys")
 }
+
+// ─────────────────────────────────────────────
+// SUPER ADMIN
+// ─────────────────────────────────────────────
+
+model SuperAdmin {
+  id           String        @id @default(uuid()) @db.Uuid
+  email        String        @unique @db.VarChar(320)
+  passwordHash String        @map("password_hash") @db.VarChar(255)
+  name         String        @db.VarChar(255)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  ticketReplies TicketReply[]
+
+  @@map("super_admins")
+}
+
+// ─────────────────────────────────────────────
+// HELP TICKETS
+// ─────────────────────────────────────────────
+
+model HelpTicket {
+  id          String         @id @default(uuid()) @db.Uuid
+  orgId       String         @map("org_id") @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  title       String         @db.VarChar(255)
+  description String         @db.Text
+  category    TicketCategory
+  priority    TicketPriority @default(MEDIUM)
+  status      TicketStatus   @default(OPEN)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  closedAt    DateTime?      @map("closed_at")
+
+  organization Organization  @relation(fields: [orgId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  replies      TicketReply[]
+
+  @@index([orgId, status])
+  @@index([status, createdAt])
+  @@map("help_tickets")
+}
+
+model TicketReply {
+  id           String      @id @default(uuid()) @db.Uuid
+  ticketId     String      @map("ticket_id") @db.Uuid
+  body         String      @db.Text
+  userId       String?     @map("user_id") @db.Uuid
+  superAdminId String?     @map("super_admin_id") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  ticket       HelpTicket  @relation(fields: [ticketId], references: [id])
+  user         User?       @relation("TicketReplyUser", fields: [userId], references: [id])
+  superAdmin   SuperAdmin? @relation(fields: [superAdminId], references: [id])
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_replies")
+}
+

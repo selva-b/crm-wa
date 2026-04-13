@@ -62,6 +62,11 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('Access denied');
     }
 
+    // Super admin bypass — cross-org platform access
+    if (user.isSuperAdmin) {
+      return true;
+    }
+
     // ADMIN bypass — full access within their org
     if (user.role === 'ADMIN') {
       return true;

@@ -238,7 +238,7 @@ export default function ProductsPage() {
       ) : (
         !showForm && (
           <EmptyState
-            icon={Package}
+            icon={<Package className="h-8 w-8" />}
             title="No products yet"
             description="Create products to assign to contacts, deals, chatbot flows, and sequences"
             actionLabel="Create Product"

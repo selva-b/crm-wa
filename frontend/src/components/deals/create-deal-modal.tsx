@@ -73,7 +73,7 @@ export function CreateDealModal({
 
   const createDeal = useCreateDeal();
   const { data: contactsData } = useContacts(
-    contactSearch.length >= 2 ? { search: contactSearch, limit: 5 } : undefined,
+    contactSearch.length >= 2 ? { search: contactSearch, take: 5 } : undefined,
   );
 
   const handleSubmit = () => {
@@ -143,9 +143,9 @@ export function CreateDealModal({
                 onChange={(e) => setContactSearch(e.target.value)}
                 placeholder="Search contacts..."
               />
-              {contactsData?.data && contactsData.data.length > 0 && (
+              {contactsData?.contacts && contactsData.contacts.length > 0 && (
                 <div className="border border-outline-variant/10 rounded-lg overflow-hidden mt-1">
-                  {contactsData.data.map((c) => (
+                  {contactsData.contacts.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => {

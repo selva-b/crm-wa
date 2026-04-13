@@ -326,13 +326,13 @@ export default function AdminPlansPage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {plan.campaignsEnabled && (
-                            <Badge variant="secondary" className="text-xs">Campaigns</Badge>
+                            <Badge variant="muted" className="text-xs">Campaigns</Badge>
                           )}
                           {plan.automationEnabled && (
-                            <Badge variant="secondary" className="text-xs">Auto</Badge>
+                            <Badge variant="muted" className="text-xs">Auto</Badge>
                           )}
                           {(plan as any).apiEnabled && (
-                            <Badge variant="secondary" className="text-xs">API</Badge>
+                            <Badge variant="muted" className="text-xs">API</Badge>
                           )}
                         </div>
                       </td>
@@ -340,7 +340,7 @@ export default function AdminPlansPage() {
                         {plan.isActive ? (
                           <Badge className="text-xs bg-green-50 text-green-700 border-green-200">Active</Badge>
                         ) : (
-                          <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                          <Badge variant="muted" className="text-xs">Inactive</Badge>
                         )}
                         {plan.isDefault && (
                           <Badge className="text-xs ml-1 bg-indigo-50 text-indigo-700 border-indigo-200">Default</Badge>

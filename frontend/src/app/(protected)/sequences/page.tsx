@@ -120,8 +120,8 @@ export default function SequencesPage() {
           {(data?.total ?? 0) > take && (
             <Pagination
               total={data?.total ?? 0}
-              pageSize={take}
-              currentPage={page}
+              totalPages={Math.ceil((data?.total ?? 0) / take)}
+              page={page}
               onPageChange={setPage}
             />
           )}

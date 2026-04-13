@@ -685,7 +685,7 @@ function ContactDealsTab({ contactId, contactName }: { contactId: string; contac
           <div key={deal.id} className="p-3 rounded-lg bg-surface-container border border-outline-variant/10 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-medium text-on-surface">{deal.title}</span>
-              <Badge variant={deal.status === "WON" ? "success" : deal.status === "LOST" ? "danger" : "default"}>
+              <Badge variant={deal.status === "WON" ? "success" : deal.status === "LOST" ? "error" : "default"}>
                 {deal.status}
               </Badge>
             </div>

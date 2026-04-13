@@ -46,24 +46,24 @@ function Steps({ current }: { current: number }) {
             <div
               className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
                 i < current
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-primary text-on-primary"
                   : i === current
-                  ? "bg-indigo-100 text-indigo-700 border-2 border-indigo-600"
-                  : "bg-gray-100 text-gray-400"
+                  ? "bg-primary/10 text-primary border-2 border-primary"
+                  : "bg-surface-container text-on-surface-variant"
               }`}
             >
               {i < current ? <Check className="w-3.5 h-3.5" /> : i + 1}
             </div>
             <span
               className={`text-sm font-medium hidden sm:block ${
-                i === current ? "text-gray-900" : "text-gray-400"
+                i === current ? "text-on-surface" : "text-on-surface-variant"
               }`}
             >
               {label}
             </span>
           </div>
           {i < steps.length - 1 && (
-            <div className={`w-10 h-px ${i < current ? "bg-indigo-300" : "bg-gray-200"}`} />
+            <div className={`w-10 h-px ${i < current ? "bg-primary/40" : "bg-outline-variant"}`} />
           )}
         </div>
       ))}
@@ -76,13 +76,13 @@ function Steps({ current }: { current: number }) {
 function WelcomeStep({ orgName, onNext }: { orgName: string; onNext: () => void }) {
   return (
     <div className="text-center">
-      <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-        <Sparkles className="w-8 h-8 text-indigo-600" />
+      <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <Sparkles className="w-8 h-8 text-primary" />
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+      <h1 className="text-2xl font-bold text-on-surface mb-2">
         Welcome to CRM-WA{orgName ? `, ${orgName}` : ""}!
       </h1>
-      <p className="text-gray-500 mb-8 max-w-md mx-auto">
+      <p className="text-on-surface-variant mb-8 max-w-md mx-auto">
         You're one step away from transforming your WhatsApp into a powerful sales and support engine.
         Let's get you set up in under 2 minutes.
       </p>
@@ -93,17 +93,17 @@ function WelcomeStep({ orgName, onNext }: { orgName: string; onNext: () => void 
           { icon: Zap, title: "Campaigns", desc: "Broadcast messages to thousands at once" },
           { icon: Bot, title: "Automation", desc: "Auto-reply and workflow rules" },
         ].map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="bg-gray-50 rounded-xl p-4">
-            <Icon className="w-5 h-5 text-indigo-600 mb-2" />
-            <div className="font-semibold text-sm text-gray-900">{title}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{desc}</div>
+          <div key={title} className="bg-surface-container rounded-xl p-4">
+            <Icon className="w-5 h-5 text-primary mb-2" />
+            <div className="font-semibold text-sm text-on-surface">{title}</div>
+            <div className="text-xs text-on-surface-variant mt-0.5">{desc}</div>
           </div>
         ))}
       </div>
 
       <button
         onClick={onNext}
-        className="bg-indigo-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-indigo-700 transition-colors inline-flex items-center gap-2"
+        className="bg-primary text-on-primary font-semibold px-8 py-3 rounded-xl hover:bg-primary/90 transition-colors inline-flex items-center gap-2"
       >
         Choose Your Plan
         <ChevronRight className="w-4 h-4" />
@@ -134,30 +134,30 @@ function PlanCard({
       onClick={onSelect}
       className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${
         selected
-          ? "border-indigo-600 bg-indigo-50 shadow-md"
-          : "border-gray-200 bg-white hover:border-gray-300"
+          ? "border-primary bg-primary/5 shadow-md"
+          : "border-outline-variant bg-surface-container hover:border-primary/40"
       }`}
     >
       <div className="flex items-start justify-between mb-3">
         <div>
-          <div className="font-semibold text-gray-900">{plan.name}</div>
-          <div className="text-xs text-gray-500 mt-0.5">{plan.description}</div>
+          <div className="font-semibold text-on-surface">{plan.name}</div>
+          <div className="text-xs text-on-surface-variant mt-0.5">{plan.description}</div>
         </div>
         <div className="text-right flex-shrink-0 ml-3">
-          <div className="font-bold text-gray-900">{formatINR(perMonth)}<span className="text-xs font-normal text-gray-400">/mo</span></div>
+          <div className="font-bold text-on-surface">{formatINR(perMonth)}<span className="text-xs font-normal text-on-surface-variant">/mo</span></div>
           {plan.trialDays > 0 && (
-            <div className="text-xs text-green-600 font-medium">{plan.trialDays}-day free trial</div>
+            <div className="text-xs text-success font-medium">{plan.trialDays}-day free trial</div>
           )}
         </div>
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-on-surface-variant">
         <span className="flex items-center gap-1"><Users className="w-3 h-3" />{formatLimit(plan.maxUsers)} agents</span>
         <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{formatLimit(plan.maxMessagesPerMonth)} msgs/mo</span>
         {plan.automationEnabled && <span className="flex items-center gap-1"><Bot className="w-3 h-3" />Automation</span>}
         {(plan as any).apiEnabled && <span className="flex items-center gap-1"><Code2 className="w-3 h-3" />API</span>}
       </div>
       {selected && (
-        <div className="mt-2 flex items-center gap-1 text-xs text-indigo-600 font-medium">
+        <div className="mt-2 flex items-center gap-1 text-xs text-primary font-medium">
           <Check className="w-3.5 h-3.5" /> Selected
         </div>
       )}
@@ -190,24 +190,24 @@ function ChoosePlanStep({
   return (
     <div>
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Choose your plan</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <h2 className="text-xl font-bold text-on-surface">Choose your plan</h2>
+        <p className="text-sm text-on-surface-variant mt-1">
           Starter &amp; Growth include a free trial — no card needed
         </p>
       </div>
 
       {/* Cycle toggle */}
       <div className="flex items-center justify-center gap-3 mb-6">
-        <span className={`text-sm font-medium ${!yearly ? "text-gray-900" : "text-gray-400"}`}>Monthly</span>
+        <span className={`text-sm font-medium ${!yearly ? "text-on-surface" : "text-on-surface-variant"}`}>Monthly</span>
         <button
           onClick={onYearlyToggle}
-          className={`relative w-11 h-6 rounded-full transition-colors ${yearly ? "bg-indigo-600" : "bg-gray-200"}`}
+          className={`relative w-11 h-6 rounded-full transition-colors ${yearly ? "bg-primary" : "bg-surface-container-high"}`}
         >
-          <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${yearly ? "translate-x-5" : "translate-x-0"}`} />
+          <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-on-primary shadow transition-transform ${yearly ? "translate-x-5" : "translate-x-0"}`} />
         </button>
-        <span className={`text-sm font-medium ${yearly ? "text-gray-900" : "text-gray-400"}`}>
+        <span className={`text-sm font-medium ${yearly ? "text-on-surface" : "text-on-surface-variant"}`}>
           Yearly
-          <span className="ml-1.5 bg-green-100 text-green-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Save 17%</span>
+          <span className="ml-1.5 bg-success/10 text-success text-xs font-semibold px-1.5 py-0.5 rounded-full">Save 17%</span>
         </span>
       </div>
 
@@ -226,14 +226,14 @@ function ChoosePlanStep({
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          className="px-5 py-2.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors"
         >
           Back
         </button>
         <button
           onClick={onNext}
           disabled={!selectedId}
-          className="flex-1 bg-indigo-600 text-white font-semibold py-2.5 rounded-xl hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center gap-2"
+          className="flex-1 bg-primary text-on-primary font-semibold py-2.5 rounded-xl hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center gap-2"
         >
           Continue
           <ChevronRight className="w-4 h-4" />
@@ -262,45 +262,45 @@ function ConfirmStep({
 
   return (
     <div className="text-center">
-      <div className={`w-16 h-16 ${hasTrial ? "bg-green-100" : "bg-indigo-100"} rounded-2xl flex items-center justify-center mx-auto mb-6`}>
-        {hasTrial ? <Check className="w-8 h-8 text-green-600" /> : <CreditCard className="w-8 h-8 text-indigo-600" />}
+      <div className={`w-16 h-16 ${hasTrial ? "bg-success/10" : "bg-primary/10"} rounded-2xl flex items-center justify-center mx-auto mb-6`}>
+        {hasTrial ? <Check className="w-8 h-8 text-success" /> : <CreditCard className="w-8 h-8 text-primary" />}
       </div>
-      <h2 className="text-xl font-bold text-gray-900 mb-2">
+      <h2 className="text-xl font-bold text-on-surface mb-2">
         {hasTrial ? "Ready to start your free trial!" : `Subscribe to ${plan.name}`}
       </h2>
-      <p className="text-gray-500 mb-6">
+      <p className="text-on-surface-variant mb-6">
         {hasTrial
           ? <>You're starting a <strong>{plan.trialDays}-day free trial</strong> on the <strong>{plan.name}</strong> plan. No payment needed today.</>
           : <>Complete payment to activate your <strong>{plan.name}</strong> plan instantly.</>}
       </p>
 
-      <div className="bg-gray-50 rounded-xl p-4 text-left mb-6 max-w-sm mx-auto space-y-2">
+      <div className="bg-surface-container rounded-xl p-4 text-left mb-6 max-w-sm mx-auto space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Plan</span>
-          <span className="font-medium text-gray-900">{plan.name}</span>
+          <span className="text-on-surface-variant">Plan</span>
+          <span className="font-medium text-on-surface">{plan.name}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Agents</span>
-          <span className="font-medium text-gray-900">{formatLimit(plan.maxUsers)}</span>
+          <span className="text-on-surface-variant">Agents</span>
+          <span className="font-medium text-on-surface">{formatLimit(plan.maxUsers)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Messages/mo</span>
-          <span className="font-medium text-gray-900">{formatLimit(plan.maxMessagesPerMonth)}</span>
+          <span className="text-on-surface-variant">Messages/mo</span>
+          <span className="font-medium text-on-surface">{formatLimit(plan.maxMessagesPerMonth)}</span>
         </div>
         {hasTrial && (
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Trial period</span>
-            <span className="font-medium text-green-600">{plan.trialDays} days free</span>
+            <span className="text-on-surface-variant">Trial period</span>
+            <span className="font-medium text-success">{plan.trialDays} days free</span>
           </div>
         )}
-        <div className="flex justify-between text-sm border-t border-gray-200 pt-2 mt-2">
-          <span className="text-gray-500">Due today</span>
-          <span className="font-bold text-gray-900">{hasTrial ? "₹0" : formatINR(plan.priceInCents)}</span>
+        <div className="flex justify-between text-sm border-t border-outline-variant pt-2 mt-2">
+          <span className="text-on-surface-variant">Due today</span>
+          <span className="font-bold text-on-surface">{hasTrial ? "₹0" : formatINR(plan.priceInCents)}</span>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 text-left max-w-sm mx-auto">
+        <div className="mb-4 rounded-xl bg-error/10 border border-error/30 px-4 py-3 text-sm text-error text-left max-w-sm mx-auto">
           {error}
         </div>
       )}
@@ -309,14 +309,14 @@ function ConfirmStep({
         <button
           onClick={onBack}
           disabled={loading}
-          className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          className="px-5 py-2.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors"
         >
           Back
         </button>
         <button
           onClick={onConfirm}
           disabled={loading}
-          className="flex-1 bg-indigo-600 text-white font-semibold py-2.5 rounded-xl hover:bg-indigo-700 disabled:opacity-60 transition-colors inline-flex items-center justify-center gap-2"
+          className="flex-1 bg-primary text-on-primary font-semibold py-2.5 rounded-xl hover:bg-primary/90 disabled:opacity-60 transition-colors inline-flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
@@ -357,7 +357,6 @@ export default function OnboardingPage() {
     if (!selectedPlanId || !selectedPlan) return;
     setError(null);
 
-    // Trial plans: subscribe directly, no payment needed
     if (selectedPlan.trialDays > 0) {
       subscribeTrial.mutate(selectedPlanId, {
         onSuccess: () => router.push("/inbox"),
@@ -368,7 +367,6 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Paid plans: open Razorpay checkout
     const loaded = await loadRazorpayScript();
     if (!loaded) {
       setError("Failed to load payment gateway. Please check your connection and try again.");
@@ -406,7 +404,7 @@ export default function OnboardingPage() {
             name: user ? `${user.firstName} ${user.lastName}` : "",
             email: user?.email ?? "",
           },
-          theme: { color: "#4f46e5" },
+          theme: { color: "#d97706" },
           modal: {
             ondismiss: () => {
               setError("Payment was cancelled. Please try again.");
@@ -424,16 +422,16 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-start justify-center pt-12 px-4 pb-12">
+    <div className="min-h-screen bg-surface flex items-start justify-center pt-12 px-4 pb-12">
       <div className="w-full max-w-xl">
         {/* Logo */}
         <div className="text-center mb-8">
-          <span className="font-bold text-gray-900 text-xl">CRM-WA</span>
+          <span className="font-bold text-on-surface text-xl">CRM-<span className="text-primary">WA</span></span>
         </div>
 
         <Steps current={step} />
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <div className="bg-surface-container-low rounded-2xl shadow-xl border border-outline-variant p-8">
           {plansLoading ? (
             <div className="flex items-center justify-center h-40">
               <Spinner />
@@ -471,9 +469,9 @@ export default function OnboardingPage() {
           ) : null}
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
+        <p className="text-center text-xs text-on-surface-variant mt-4">
           Already have an account?{" "}
-          <a href="/auth/login" className="text-indigo-600 hover:underline">
+          <a href="/auth/login" className="text-primary hover:underline">
             Sign in
           </a>
         </p>

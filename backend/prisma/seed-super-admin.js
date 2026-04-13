@@ -1,0 +1,25 @@
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const email = process.env.SUPER_ADMIN_EMAIL || 'superadmin@crm-wa.com';
+  const password = process.env.SUPER_ADMIN_PASSWORD || 'changeme123';
+  const name = process.env.SUPER_ADMIN_NAME || 'Super Admin';
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const superAdmin = await prisma.superAdmin.upsert({
+    where: { email },
+    update: { passwordHash, name },
+    create: { email, passwordHash, name },
+  });
+
+  console.log(`✓ Super admin seeded: ${superAdmin.email} [${superAdmin.id}]`);
+  console.log(`  Login at: /super-admin/login`);
+}
+
+main()
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());

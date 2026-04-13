@@ -1,17 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Razorpay from 'razorpay';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const Razorpay = require('razorpay');
 import { createHmac } from 'crypto';
 import type { PaymentResult } from './stripe-payment.service';
 
 @Injectable()
 export class RazorpayPaymentService {
   private readonly logger = new Logger(RazorpayPaymentService.name);
-  private _razorpay: Razorpay | null = null;
+  private _razorpay: InstanceType<typeof Razorpay> | null = null;
 
   constructor(private readonly configService: ConfigService) {}
 
-  private get razorpay(): Razorpay {
+  private get razorpay(): InstanceType<typeof Razorpay> {
     if (!this._razorpay) {
       const keyId = this.configService.get<string>('RAZORPAY_KEY_ID');
       const keySecret = this.configService.get<string>('RAZORPAY_KEY_SECRET');
@@ -20,6 +21,7 @@ export class RazorpayPaymentService {
           'RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are not configured. Set them in your environment variables to use Razorpay payments.',
         );
       }
+      this.logger.log(`Initializing Razorpay with key_id: ${keyId.slice(0, 12)}...`);
       this._razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
     }
     return this._razorpay;
@@ -59,8 +61,13 @@ export class RazorpayPaymentService {
         currency: order.currency,
       };
     } catch (error: any) {
-      this.logger.error(`Razorpay order creation failed: ${error.message}`, error.stack);
-      throw error;
+      this.logger.error(
+        `Razorpay order creation failed: ${error.message ?? JSON.stringify(error)}`,
+        error.stack,
+      );
+      throw new Error(
+        error.error?.description || error.message || JSON.stringify(error),
+      );
     }
   }
 

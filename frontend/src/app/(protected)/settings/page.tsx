@@ -1993,11 +1993,11 @@ function DeveloperApiSection() {
                     <Key className="h-4 w-4 mr-2" />
                     Manage API Keys
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setActiveSubTab("docs")}>
+                  <Button size="sm" variant="secondary" onClick={() => setActiveSubTab("docs")}>
                     <FileCode className="h-4 w-4 mr-2" />
                     View API Docs
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setActiveSubTab("logs")}>
+                  <Button size="sm" variant="secondary" onClick={() => setActiveSubTab("logs")}>
                     <Activity className="h-4 w-4 mr-2" />
                     View API Logs
                   </Button>
@@ -2096,7 +2096,7 @@ function DeveloperApiSection() {
                     />
                   </div>
                   <div className="flex gap-2 justify-end">
-                    <Button size="sm" variant="outline" onClick={() => setShowCreateKey(false)}>Cancel</Button>
+                    <Button size="sm" variant="secondary" onClick={() => setShowCreateKey(false)}>Cancel</Button>
                     <Button size="sm" onClick={handleCreateKey} disabled={createKey.isPending || !newKeyName.trim()}>
                       {createKey.isPending ? <Spinner size="sm" className="mr-2" /> : null}
                       Create Key

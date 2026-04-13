@@ -20,7 +20,7 @@ export default function ChatWidgetSettingsPage() {
   const { data: config, isLoading } = useWidgetConfig();
   const updateConfig = useUpdateWidgetConfig();
   const user = useAuthStore((s) => s.user);
-  const orgSlug = user?.orgSlug || "";
+  const orgSlug = user?.orgId || "";
 
   const [form, setForm] = useState({
     enabled: false,
