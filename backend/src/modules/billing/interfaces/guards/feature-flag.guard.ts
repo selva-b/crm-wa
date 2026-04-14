@@ -32,7 +32,7 @@ export class FeatureFlagGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const feature = this.reflector.get<'campaigns' | 'automation'>(
+    const feature = this.reflector.get<'campaigns' | 'automation' | 'api'>(
       FEATURE_FLAG_KEY,
       context.getHandler(),
     );
@@ -40,22 +40,22 @@ export class FeatureFlagGuard implements CanActivate {
     if (!feature) return true;
 
     const request = context.switchToHttp().getRequest();
-    const user = request.user;
+    const orgId = request.user?.orgId ?? request.apiKeyAuth?.orgId;
 
-    if (!user?.orgId) return true;
+    if (!orgId) return true;
 
-    const enabled = await this.usageTrackingService.isFeatureEnabled(user.orgId, feature);
+    const enabled = await this.usageTrackingService.isFeatureEnabled(orgId, feature);
 
     if (!enabled) {
       this.logger.warn(
-        `Feature "${feature}" not available for org ${user.orgId} on current plan`,
+        `Feature "${feature}" not available for org ${orgId} on current plan`,
       );
 
       throw new ForbiddenException({
         statusCode: 403,
         error: 'FEATURE_NOT_AVAILABLE',
         message: `The "${feature}" feature is not included in your current plan. Please upgrade to access this feature.`,
-        details: { feature },
+        details: { feature, orgId },
       });
     }
 

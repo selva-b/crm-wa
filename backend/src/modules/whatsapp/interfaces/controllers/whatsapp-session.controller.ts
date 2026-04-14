@@ -10,6 +10,8 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
@@ -17,6 +19,8 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
+import { UsageLimitGuard, USAGE_LIMIT_KEY } from '@/modules/billing/interfaces/guards/usage-limit.guard';
+import { UsageMetricType } from '@prisma/client';
 import {
   InitiateSessionDto,
   DisconnectSessionDto,
@@ -46,6 +50,8 @@ export class WhatsAppSessionController {
 
   @Post('sessions')
   @Permissions(PERMISSIONS.WHATSAPP_SESSION_OWN)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.WHATSAPP_SESSIONS)
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.CREATED)
   async initiateSession(

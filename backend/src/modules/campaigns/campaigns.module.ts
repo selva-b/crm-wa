@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { AuditModule } from '@/modules/audit/audit.module';
 import { WhatsAppModule } from '@/modules/whatsapp/whatsapp.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
+import { BillingModule } from '@/modules/billing/billing.module';
 
 // Repositories
 import { CampaignRepository } from './infrastructure/repositories/campaign.repository';
@@ -30,6 +31,7 @@ import { CampaignController } from './interfaces/controllers/campaign.controller
 @Module({
   imports: [
     AuditModule,
+    BillingModule,
     forwardRef(() => WhatsAppModule),
     forwardRef(() => MessagesModule),
   ],

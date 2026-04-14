@@ -11,7 +11,8 @@ import { CampaignStateMachineService } from '../../domain/services/campaign-stat
 import { QueueService } from '@/infrastructure/queue/queue.service';
 import { AuditService } from '@/modules/audit/domain/services/audit.service';
 import { QUEUE_NAMES, EVENT_NAMES } from '@/common/constants';
-import { AuditAction, CampaignStatus } from '@prisma/client';
+import { AuditAction, CampaignStatus, UsageMetricType } from '@prisma/client';
+import { UsageTrackingService } from '@/modules/billing/domain/services/usage-tracking.service';
 
 @Injectable()
 export class ExecuteCampaignUseCase {
@@ -24,6 +25,7 @@ export class ExecuteCampaignUseCase {
     private readonly queueService: QueueService,
     private readonly auditService: AuditService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly usageTracking: UsageTrackingService,
   ) {}
 
   async execute(
@@ -109,6 +111,9 @@ export class ExecuteCampaignUseCase {
       ipAddress,
       userAgent,
     });
+
+    // Increment campaign execution usage counter
+    await this.usageTracking.incrementUsage(orgId, UsageMetricType.CAMPAIGN_EXECUTIONS, 1);
 
     this.logger.log(`Campaign ${campaignId} execution started by user ${userId}`);
 

@@ -430,9 +430,10 @@ model Organization {
   timezone  String    @default("UTC") @db.VarChar(100)
   orgType   OrgType   @default(CRM) @map("org_type")
   branding  Json?     @db.JsonB
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  trialUsedAt DateTime? @map("trial_used_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   users                   User[]
   invitations             Invitation[]
@@ -1633,6 +1634,12 @@ model Plan {
   maxWhatsappSessions  Int @default(1) @map("max_whatsapp_sessions")
   maxMessagesPerMonth  Int @default(1000) @map("max_messages_per_month")
   maxCampaignsPerMonth Int @default(0) @map("max_campaigns_per_month")
+
+  // ── Trial Limits (override during TRIAL period; NULL = use plan limit) ──
+  trialMaxUsers             Int? @map("trial_max_users")
+  trialMaxWhatsappSessions  Int? @map("trial_max_whatsapp_sessions")
+  trialMaxMessagesPerMonth  Int? @map("trial_max_messages_per_month")
+  trialMaxCampaignsPerMonth Int? @map("trial_max_campaigns_per_month")
 
   // ── Feature Flags ──
   campaignsEnabled  Boolean @default(false) @map("campaigns_enabled")

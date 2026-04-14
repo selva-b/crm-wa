@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { AuditModule } from '@/modules/audit/audit.module';
+import { BillingModule } from '@/modules/billing/billing.module';
 
 // Repository
 import { AutomationRepository } from './infrastructure/repositories/automation.repository';
@@ -26,7 +27,7 @@ import {
 import { AutomationController } from './interfaces/controllers/automation.controller';
 
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, BillingModule],
   controllers: [AutomationController],
   providers: [
     // Repository

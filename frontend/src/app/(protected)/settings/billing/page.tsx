@@ -4,8 +4,6 @@ import { useState } from "react";
 import {
   CreditCard,
   Check,
-  ChevronLeft,
-  ChevronRight,
   ShieldAlert,
   Zap,
   Users,
@@ -28,6 +26,8 @@ import {
   useSubscription,
   usePayments,
   useInvoices,
+  usePayment,
+  useInvoice,
   useSubscribeToPlan,
   useChangePlan,
   useCancelSubscription,
@@ -35,6 +35,8 @@ import {
   useCreateOrder,
   useVerifyPayment,
 } from "@/hooks/use-billing";
+import { PaymentDetailModal } from "@/components/billing/payment-detail-modal";
+import { InvoiceDetailModal } from "@/components/billing/invoice-detail-modal";
 
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -51,6 +53,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs } from "@/components/ui/tabs";
+import {
+  Table,
+  TableHeader,
+  TableHeaderRow,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import { Pagination } from "@/components/ui/pagination";
 import type {
   Plan,
   SubscriptionStatus,
@@ -110,6 +122,10 @@ export default function BillingPage() {
   const [paymentPage, setPaymentPage] = useState(1);
   const [invoicePage, setInvoicePage] = useState(1);
   const [historyTab, setHistoryTab] = useState("payments");
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const { data: selectedPayment } = usePayment(selectedPaymentId);
+  const { data: selectedInvoice } = useInvoice(selectedInvoiceId);
   const { data: payments, isLoading: paymentsLoading } = usePayments({
     page: paymentPage,
     limit: 10,
@@ -168,15 +184,12 @@ export default function BillingPage() {
 
   const handlePlanAction = async (plan: Plan) => {
     if (!isAdmin) return;
-    // No subscription yet — direct subscribe (trial or paid via onboarding)
-    if (!subscription) {
-      subscribeMutation.mutate(plan.id);
-      return;
-    }
-    // Same plan on trial → "Pay Now" to activate current plan
-    // Different plan on trial → "Pay & Upgrade" to switch and activate
-    // Both need Razorpay payment flow
-    if (subscription.status === "TRIAL" && plan.priceInCents > 0) {
+
+    // No subscription OR on trial — both require Razorpay payment for paid plans
+    const needsPayment =
+      (!subscription || subscription.status === "TRIAL") && plan.priceInCents > 0;
+
+    if (needsPayment) {
       setPlanChangeError(null);
       const loaded = await loadRazorpayScript();
       if (!loaded) {
@@ -190,7 +203,9 @@ export default function BillingPage() {
             amount: order.amount,
             currency: order.currency,
             name: "CRM-WA",
-            description: subscription?.plan.id === plan.id ? `Activate ${order.planName} Plan` : `Upgrade to ${order.planName}`,
+            description: subscription?.plan.id === plan.id
+              ? `Activate ${order.planName} Plan`
+              : `Subscribe to ${order.planName}`,
             order_id: order.orderId,
             handler: (response: any) => {
               verifyPayment.mutate(
@@ -199,7 +214,7 @@ export default function BillingPage() {
                   orderId: response.razorpay_order_id,
                   razorpayPaymentId: response.razorpay_payment_id,
                   signature: response.razorpay_signature,
-                  idempotencyKey: `upgrade-${user?.orgId ?? ""}-${plan.id}`,
+                  idempotencyKey: `billing-${user?.orgId ?? ""}-${plan.id}`,
                 },
                 {
                   onError: (err: any) => {
@@ -212,7 +227,7 @@ export default function BillingPage() {
               name: user ? `${user.firstName} ${user.lastName}` : "",
               email: user?.email ?? "",
             },
-            theme: { color: "#d97706" },
+            theme: { color: "#6366F1" },
             modal: { ondismiss: () => setPlanChangeError("Payment cancelled. Try again.") },
           };
           new (window as any).Razorpay(options).open();
@@ -221,6 +236,12 @@ export default function BillingPage() {
           setPlanChangeError(err?.response?.data?.message ?? "Failed to create payment order.");
         },
       });
+      return;
+    }
+
+    // No subscription + free plan (edge case) — direct subscribe
+    if (!subscription) {
+      subscribeMutation.mutate(plan.id);
       return;
     }
 
@@ -326,15 +347,17 @@ export default function BillingPage() {
                     Reactivate
                   </Button>
                 )}
-                {isAdmin && subscription.status === "TRIAL" && subscription.plan.priceInCents > 0 && (
+                {isAdmin && subscription.status === "TRIAL" && (
                   <Button
                     variant="primary"
                     size="sm"
-                    loading={createOrder.isPending || verifyPayment.isPending}
-                    onClick={() => handlePlanAction(subscription.plan as any)}
+                    onClick={() => {
+                      // Scroll to plan tiers
+                      document.getElementById("plan-tiers")?.scrollIntoView({ behavior: "smooth" });
+                    }}
                   >
                     <CreditCard className="h-3.5 w-3.5 mr-1.5" />
-                    Pay Now & Activate
+                    Upgrade to a Plan
                   </Button>
                 )}
                 {isAdmin && subscription.status === "ACTIVE" && (
@@ -371,33 +394,44 @@ export default function BillingPage() {
         {/* Usage Metrics */}
         {usage && (
           <div>
-            <h3 className="text-[14px] font-semibold text-on-surface mb-3">
-              Current Usage
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[14px] font-semibold text-on-surface">
+                Current Usage
+              </h3>
+              {subscription?.status === "TRIAL" && (
+                <span className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5">
+                  Trial limits active — upgrade to unlock full capacity
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <UsageCard
                 icon={Users}
                 label="Users"
                 current={usage.activeUsers.current}
                 limit={usage.activeUsers.limit}
+                isTrial={subscription?.status === "TRIAL"}
               />
               <UsageCard
                 icon={Smartphone}
                 label="Sessions"
                 current={usage.whatsappSessions.current}
                 limit={usage.whatsappSessions.limit}
+                isTrial={subscription?.status === "TRIAL"}
               />
               <UsageCard
                 icon={MessageSquare}
                 label="Messages"
                 current={usage.messagesSent.current}
                 limit={usage.messagesSent.limit}
+                isTrial={subscription?.status === "TRIAL"}
               />
               <UsageCard
                 icon={Zap}
                 label="Campaigns"
                 current={usage.campaignExecutions.current}
                 limit={usage.campaignExecutions.limit}
+                isTrial={subscription?.status === "TRIAL"}
               />
             </div>
           </div>
@@ -405,7 +439,7 @@ export default function BillingPage() {
 
         {/* Subscription Tiers */}
         {plans && plans.length > 0 && (
-          <div>
+          <div id="plan-tiers">
             {planChangeError && !confirmPlan && (
               <div className="mb-3 rounded-xl bg-error/10 border border-error/30 px-4 py-3 text-sm text-error flex items-center justify-between">
                 <span>{planChangeError}</span>
@@ -439,7 +473,7 @@ export default function BillingPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {plans
-                .filter((p) => p.isActive && p.billingCycle === (showYearly ? "YEARLY" : "MONTHLY"))
+                .filter((p) => p.isActive && p.slug !== "free-trial" && p.billingCycle === (showYearly ? "YEARLY" : "MONTHLY"))
                 .sort((a, b) => a.sortOrder - b.sortOrder)
                 .map((plan) => {
                   const isCurrent = subscription?.plan.id === plan.id;
@@ -457,6 +491,7 @@ export default function BillingPage() {
                         createOrder.isPending || verifyPayment.isPending
                       }
                       disabled={!isAdmin || isEnterprise}
+                      isTrial={isCurrent && subscription?.status === "TRIAL"}
                       buttonLabel={
                         isCurrent
                           ? subscription?.status === "TRIAL" ? "On Trial" : "Active Plan"
@@ -511,62 +546,53 @@ export default function BillingPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-surface-container/40 border-b border-outline-variant/15">
-                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            Date
-                          </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            Amount
-                          </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            Method
-                          </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {payments.data.map((payment) => (
-                          <tr
-                            key={payment.id}
-                            className="border-b border-outline-variant/10 last:border-0 hover:bg-surface-container-low/30 transition-colors"
-                          >
-                            <td className="px-6 py-3.5 text-[13px] text-on-surface">
-                              {formatDate(payment.createdAt)}
-                            </td>
-                            <td className="px-6 py-3.5 text-[13px] text-on-surface font-medium">
-                              ₹{(payment.amountInCents / 100).toLocaleString("en-IN")}{" "}
-                              <span className="text-[11px] text-on-surface-variant font-normal">
-                                {payment.currency}
-                              </span>
-                            </td>
-                            <td className="px-6 py-3.5 text-[13px] text-on-surface-variant">
-                              {payment.paymentMethod ?? "—"}
-                            </td>
-                            <td className="px-6 py-3.5">
-                              <span
-                                className={`text-[12px] font-medium ${getPaymentStatusColor(payment.status)}`}
-                              >
-                                {payment.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {payments.totalPages > 1 && (
-                    <Paginator
-                      page={paymentPage}
-                      totalPages={payments.totalPages}
-                      onPageChange={setPaymentPage}
-                    />
-                  )}
+                  <Table>
+                    <TableHeader>
+                      <TableHeaderRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Method</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead align="right">&nbsp;</TableHead>
+                      </TableHeaderRow>
+                    </TableHeader>
+                    <TableBody>
+                      {payments.data.map((payment) => (
+                        <TableRow
+                          key={payment.id}
+                          className="cursor-pointer"
+                          onClick={() => setSelectedPaymentId(payment.id)}
+                        >
+                          <TableCell className="text-[13px] text-on-surface">
+                            {formatDate(payment.createdAt)}
+                          </TableCell>
+                          <TableCell className="text-[13px] text-on-surface font-medium">
+                            ₹{(payment.amountInCents / 100).toLocaleString("en-IN")}{" "}
+                            <span className="text-[11px] text-on-surface-variant font-normal">
+                              {payment.currency}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-[13px] text-on-surface-variant capitalize">
+                            {payment.paymentMethod?.replace("_", " ") ?? "—"}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`text-[12px] font-medium ${getPaymentStatusColor(payment.status)}`}>
+                              {payment.status}
+                            </span>
+                          </TableCell>
+                          <TableCell align="right">
+                            <span className="text-[12px] text-primary font-medium">View →</span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <Pagination
+                    page={paymentPage}
+                    totalPages={payments.totalPages}
+                    total={payments.total}
+                    onPageChange={setPaymentPage}
+                  />
                 </>
               )}
             </div>
@@ -588,83 +614,56 @@ export default function BillingPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-surface-container/40 border-b border-outline-variant/15">
-                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            Invoice
-                          </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            Period
-                          </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            Amount
-                          </th>
-                          <th className="px-6 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            Status
-                          </th>
-                          <th className="px-6 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                            Action
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {invoices.data.map((invoice) => (
-                          <tr
-                            key={invoice.id}
-                            className="border-b border-outline-variant/10 last:border-0 hover:bg-surface-container-low/30 transition-colors"
-                          >
-                            <td className="px-6 py-3.5 text-[13px] text-on-surface font-medium">
-                              {invoice.invoiceNumber}
-                            </td>
-                            <td className="px-6 py-3.5 text-[13px] text-on-surface-variant">
-                              {formatDate(invoice.periodStart)} —{" "}
-                              {formatDate(invoice.periodEnd)}
-                            </td>
-                            <td className="px-6 py-3.5 text-[13px] text-on-surface font-medium">
-                              ₹{(invoice.amountInCents / 100).toLocaleString("en-IN")}{" "}
-                              <span className="text-[11px] text-on-surface-variant font-normal">
-                                {invoice.currency}
-                              </span>
-                            </td>
-                            <td className="px-6 py-3.5">
-                              <span
-                                className={`text-[12px] font-medium ${getInvoiceStatusColor(invoice.status)}`}
-                              >
-                                {invoice.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-3.5 text-right">
-                              {invoice.pdfUrl ? (
-                                <a
-                                  href={invoice.pdfUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 text-[12px] text-primary hover:text-primary/80 transition-colors"
-                                >
-                                  <Download className="h-3.5 w-3.5" />
-                                  Download
-                                </a>
-                              ) : (
-                                <span className="text-[12px] text-on-surface-variant/40">
-                                  —
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {invoices.totalPages > 1 && (
-                    <Paginator
-                      page={invoicePage}
-                      totalPages={invoices.totalPages}
-                      onPageChange={setInvoicePage}
-                    />
-                  )}
+                  <Table>
+                    <TableHeader>
+                      <TableHeaderRow>
+                        <TableHead>Invoice</TableHead>
+                        <TableHead>Period</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead align="right">Action</TableHead>
+                      </TableHeaderRow>
+                    </TableHeader>
+                    <TableBody>
+                      {invoices.data.map((invoice) => (
+                        <TableRow
+                          key={invoice.id}
+                          className="cursor-pointer"
+                          onClick={() => setSelectedInvoiceId(invoice.id)}
+                        >
+                          <TableCell className="text-[13px] text-on-surface font-medium">
+                            {invoice.invoiceNumber}
+                          </TableCell>
+                          <TableCell className="text-[13px] text-on-surface-variant">
+                            {formatDate(invoice.periodStart)} — {formatDate(invoice.periodEnd)}
+                          </TableCell>
+                          <TableCell className="text-[13px] text-on-surface font-medium">
+                            ₹{(invoice.amountInCents / 100).toLocaleString("en-IN")}{" "}
+                            <span className="text-[11px] text-on-surface-variant font-normal">
+                              {invoice.currency}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`text-[12px] font-medium ${getInvoiceStatusColor(invoice.status)}`}>
+                              {invoice.status}
+                            </span>
+                          </TableCell>
+                          <TableCell align="right">
+                            <span className="inline-flex items-center gap-1.5 text-[12px] text-primary font-medium">
+                              <Download className="h-3.5 w-3.5" />
+                              View &amp; Download
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <Pagination
+                    page={invoicePage}
+                    totalPages={invoices.totalPages}
+                    total={invoices.total}
+                    onPageChange={setInvoicePage}
+                  />
                 </>
               )}
             </div>
@@ -684,6 +683,23 @@ export default function BillingPage() {
           onCancel={() => { setConfirmPlan(null); setPlanChangeError(null); }}
         />
       )}
+
+      {/* Payment detail modal */}
+      {selectedPaymentId && selectedPayment && (
+        <PaymentDetailModal
+          payment={selectedPayment}
+          onClose={() => setSelectedPaymentId(null)}
+        />
+      )}
+
+      {/* Invoice detail + PDF modal */}
+      {selectedInvoiceId && selectedInvoice && (
+        <InvoiceDetailModal
+          invoice={selectedInvoice}
+          user={user}
+          onClose={() => setSelectedInvoiceId(null)}
+        />
+      )}
     </div>
   );
 }
@@ -695,11 +711,13 @@ function UsageCard({
   label,
   current,
   limit,
+  isTrial = false,
 }: {
   icon: typeof Users;
   label: string;
   current: number;
   limit: number;
+  isTrial?: boolean;
 }) {
   const pct = limit > 0 ? Math.min((current / limit) * 100, 100) : 0;
   const isNearLimit = pct >= 80;
@@ -736,6 +754,11 @@ function UsageCard({
           <span className="text-[11px] text-on-surface-variant/60">
             {pct.toFixed(0)}% used
           </span>
+          {isTrial && (
+            <span className="text-[10px] font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+              trial limit
+            </span>
+          )}
         </div>
       </div>
       {/* Progress bar at bottom edge */}
@@ -765,6 +788,7 @@ function PlanCard({
   isLoading,
   disabled,
   buttonLabel,
+  isTrial,
 }: {
   plan: Plan;
   isCurrent: boolean;
@@ -773,6 +797,7 @@ function PlanCard({
   isLoading: boolean;
   disabled?: boolean;
   buttonLabel: string;
+  isTrial?: boolean;
 }) {
   const features = getPlanFeatures(plan);
 
@@ -827,7 +852,12 @@ function PlanCard({
               </span>
             </>
           )}
-          {plan.trialDays > 0 && (
+          {isTrial ? (
+            <p className="text-[11px] text-amber-600 font-medium mt-1 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Trial active — limited capacity
+            </p>
+          ) : !isCurrent && plan.trialDays > 0 && (
             <p className="text-[11px] text-success font-medium mt-1">
               {plan.trialDays}-day free trial
             </p>
@@ -836,18 +866,25 @@ function PlanCard({
 
         {/* Limits */}
         <div className="space-y-2.5 flex-1">
-          <LimitRow label="Users" value={formatLimit(plan.maxUsers)} />
+          <LimitRow
+            label="Users"
+            value={formatLimit(plan.maxUsers)}
+            trialValue={isTrial && plan.trialMaxUsers != null ? plan.trialMaxUsers : undefined}
+          />
           <LimitRow
             label="Sessions"
             value={formatLimit(plan.maxWhatsappSessions)}
+            trialValue={isTrial && plan.trialMaxWhatsappSessions != null ? plan.trialMaxWhatsappSessions : undefined}
           />
           <LimitRow
             label="Messages/mo"
             value={formatLimit(plan.maxMessagesPerMonth)}
+            trialValue={isTrial && plan.trialMaxMessagesPerMonth != null ? plan.trialMaxMessagesPerMonth : undefined}
           />
           <LimitRow
             label="Campaigns/mo"
             value={formatLimit(plan.maxCampaignsPerMonth)}
+            trialValue={isTrial && plan.trialMaxCampaignsPerMonth != null ? plan.trialMaxCampaignsPerMonth : undefined}
           />
         </div>
 
@@ -1126,46 +1163,27 @@ function CompareRow({
   );
 }
 
-function LimitRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-[12px] text-on-surface-variant">{label}</span>
-      <span className="text-[12px] font-medium text-on-surface">{value}</span>
-    </div>
-  );
-}
-
-// ─── Paginator ──────────────────────────────────
-
-function Paginator({
-  page,
-  totalPages,
-  onPageChange,
+function LimitRow({
+  label,
+  value,
+  trialValue,
 }: {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
+  label: string;
+  value: string;
+  trialValue?: number;
 }) {
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-t border-outline-variant/15">
-      <span className="text-[12px] text-on-surface-variant">
-        Page {page} of {totalPages}
-      </span>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPageChange(Math.max(1, page - 1))}
-          disabled={page <= 1}
-          className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-          disabled={page >= totalPages}
-          className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-[12px] text-on-surface-variant">{label}</span>
+      <div className="flex items-center gap-1.5">
+        {trialValue !== undefined ? (
+          <span className="flex items-center gap-1">
+            <span className="text-[12px] font-medium text-amber-700">{trialValue.toLocaleString()}</span>
+            <span className="text-[10px] text-on-surface-variant/50 line-through">{value}</span>
+          </span>
+        ) : (
+          <span className="text-[12px] font-medium text-on-surface">{value}</span>
+        )}
       </div>
     </div>
   );

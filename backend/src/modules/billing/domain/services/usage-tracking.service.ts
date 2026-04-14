@@ -137,13 +137,14 @@ export class UsageTrackingService {
   /**
    * Check if a feature is enabled for the org's current plan.
    */
-  async isFeatureEnabled(orgId: string, feature: 'campaigns' | 'automation'): Promise<boolean> {
+  async isFeatureEnabled(orgId: string, feature: 'campaigns' | 'automation' | 'api'): Promise<boolean> {
     const subscription = await this.subscriptionRepo.findByOrgWithPlan(orgId);
     if (!subscription) return false;
 
     const plan = subscription.plan;
     if (feature === 'campaigns') return plan.campaignsEnabled;
     if (feature === 'automation') return plan.automationEnabled;
+    if (feature === 'api') return (plan as any).apiEnabled ?? false;
     return false;
   }
 

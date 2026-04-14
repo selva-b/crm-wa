@@ -9,6 +9,8 @@ import {
   Query,
   Req,
   ParseUUIDPipe,
+  UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -16,6 +18,8 @@ import { Permissions } from '@/common/decorators/permissions.decorator';
 import { Public } from '@/common/decorators/public.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
+import { UsageLimitGuard, USAGE_LIMIT_KEY } from '@/modules/billing/interfaces/guards/usage-limit.guard';
+import { UsageMetricType } from '@prisma/client';
 import {
   InviteUserDto,
   CreateUserDto,
@@ -61,6 +65,8 @@ export class UsersController {
   @Post('invite')
   @Roles('ADMIN')
   @Permissions(PERMISSIONS.USERS_INVITE)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.ACTIVE_USERS)
   async inviteUser(
     @CurrentUser() user: JwtPayload,
     @Body() dto: InviteUserDto,
@@ -132,6 +138,8 @@ export class UsersController {
   @Post()
   @Roles('ADMIN')
   @Permissions(PERMISSIONS.USERS_CREATE)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.ACTIVE_USERS)
   async createUser(
     @CurrentUser() user: JwtPayload,
     @Body() dto: CreateUserDto,

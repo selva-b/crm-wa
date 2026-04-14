@@ -11,6 +11,8 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -18,6 +20,7 @@ import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
+import { FeatureFlagGuard, FEATURE_FLAG_KEY } from '@/modules/billing/interfaces/guards/feature-flag.guard';
 import {
   CreateAutomationRuleDto,
   UpdateAutomationRuleDto,
@@ -49,6 +52,8 @@ export class AutomationController {
   @Post('rules')
   @Roles('ADMIN', 'MANAGER')
   @Permissions(PERMISSIONS.AUTOMATION_CREATE)
+  @UseGuards(FeatureFlagGuard)
+  @SetMetadata(FEATURE_FLAG_KEY, 'automation')
   @HttpCode(HttpStatus.CREATED)
   async createRule(
     @Body() dto: CreateAutomationRuleDto,
@@ -87,6 +92,8 @@ export class AutomationController {
   @Patch('rules/:id')
   @Roles('ADMIN', 'MANAGER')
   @Permissions(PERMISSIONS.AUTOMATION_UPDATE)
+  @UseGuards(FeatureFlagGuard)
+  @SetMetadata(FEATURE_FLAG_KEY, 'automation')
   async updateRule(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAutomationRuleDto,

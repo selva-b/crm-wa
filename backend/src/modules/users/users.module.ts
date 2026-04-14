@@ -26,10 +26,12 @@ import { UsersController } from './interfaces/controllers/users.controller';
 // Dependent modules
 import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
+import { BillingModule } from '../billing/billing.module';
 
 @Module({
   imports: [
     AuditModule,
+    BillingModule,
     forwardRef(() => AuthModule),
   ],
   controllers: [UsersController],

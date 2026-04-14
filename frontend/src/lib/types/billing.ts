@@ -32,6 +32,12 @@ export interface Plan {
   // Feature flags
   campaignsEnabled: boolean;
   automationEnabled: boolean;
+  apiEnabled: boolean;
+  // Trial limits (null = use plan limit)
+  trialMaxUsers?: number | null;
+  trialMaxWhatsappSessions?: number | null;
+  trialMaxMessagesPerMonth?: number | null;
+  trialMaxCampaignsPerMonth?: number | null;
   // Thresholds
   softLimitPercent: number;
   gracePeriodDays: number;
@@ -72,6 +78,7 @@ export interface SubscriptionPlanSummary {
   currency: string;
   campaignsEnabled: boolean;
   automationEnabled: boolean;
+  apiEnabled?: boolean;
 }
 
 export interface Subscription {

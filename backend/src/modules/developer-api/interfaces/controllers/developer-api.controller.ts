@@ -20,6 +20,7 @@ import { Request } from 'express';
 import { Public } from '@/common/decorators/public.decorator';
 import { ApiKeyGuard } from '@/modules/api-keys/interfaces/guards/api-key.guard';
 import { UsageLimitGuard, USAGE_LIMIT_KEY } from '@/modules/billing/interfaces/guards/usage-limit.guard';
+import { FeatureFlagGuard, FEATURE_FLAG_KEY } from '@/modules/billing/interfaces/guards/feature-flag.guard';
 import { UsageMetricType } from '@prisma/client';
 import { DeveloperApiRepository } from '../../infrastructure/repositories/developer-api.repository';
 import { DevSendMessageUseCase } from '../../application/use-cases/send-message.use-case';
@@ -39,7 +40,8 @@ import { randomBytes } from 'crypto';
  */
 @Controller('developer')
 @Public() // Skip JWT auth
-@UseGuards(ApiKeyGuard) // Use API key auth instead
+@UseGuards(ApiKeyGuard, FeatureFlagGuard) // API key auth + feature flag check
+@SetMetadata(FEATURE_FLAG_KEY, 'api')
 export class DeveloperApiController {
   private readonly logger = new Logger(DeveloperApiController.name);
 

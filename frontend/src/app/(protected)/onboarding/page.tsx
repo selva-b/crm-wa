@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronRight, Users, MessageSquare, Zap, Bot, Code2, Sparkles, CreditCard } from "lucide-react";
-import { usePlans, useSubscribeToPlan, useCreateOrder, useVerifyPayment } from "@/hooks/use-billing";
+import {
+  Check, ChevronRight, Users, MessageSquare, Zap, Bot, Code2,
+  Sparkles, CreditCard, Clock, ArrowRight,
+} from "lucide-react";
+import { usePlans, useSubscribeToPlan, useCreateOrder, useVerifyPayment, useSubscription } from "@/hooks/use-billing";
 import { useAuthStore } from "@/stores/auth-store";
 import { Spinner } from "@/components/ui/spinner";
 import type { Plan, BillingCycle } from "@/lib/types/billing";
@@ -21,6 +24,12 @@ function formatLimit(val: number) {
   return `${val}`;
 }
 
+function daysRemaining(endsAt?: string | null) {
+  if (!endsAt) return 0;
+  const diff = new Date(endsAt).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / 86400000));
+}
+
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     if (typeof window !== "undefined" && (window as any).Razorpay) {
@@ -36,11 +45,10 @@ function loadRazorpayScript(): Promise<boolean> {
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
-function Steps({ current }: { current: number }) {
-  const steps = ["Welcome", "Choose Plan", "Confirm"];
+function Steps({ current, labels }: { current: number; labels: string[] }) {
   return (
     <div className="flex items-center justify-center gap-2 mb-8">
-      {steps.map((label, i) => (
+      {labels.map((label, i) => (
         <div key={label} className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
             <div
@@ -62,11 +70,64 @@ function Steps({ current }: { current: number }) {
               {label}
             </span>
           </div>
-          {i < steps.length - 1 && (
+          {i < labels.length - 1 && (
             <div className={`w-10 h-px ${i < current ? "bg-primary/40" : "bg-outline-variant"}`} />
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─── Trial Active Step (auto-assigned on signup) ──────────────────────────────
+
+function TrialActiveStep({
+  firstName,
+  daysLeft,
+  onContinue,
+}: {
+  firstName: string;
+  daysLeft: number;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="text-center">
+      <div className="w-16 h-16 bg-success/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <Sparkles className="w-8 h-8 text-success" />
+      </div>
+      <h1 className="text-2xl font-bold text-on-surface mb-2">
+        Your free trial is active{firstName ? `, ${firstName}` : ""}!
+      </h1>
+      <p className="text-on-surface-variant mb-6 max-w-md mx-auto">
+        You have <strong className="text-on-surface">{daysLeft} days</strong> to explore all features — no card required.
+        Start by connecting your WhatsApp number.
+      </p>
+
+      <div className="bg-surface-container rounded-xl p-4 mb-6 max-w-sm mx-auto space-y-2 text-left">
+        {[
+          { icon: Users, label: "Agents included", value: "3 users" },
+          { icon: MessageSquare, label: "Messages/month", value: "1,000" },
+          { icon: Zap, label: "Campaigns/month", value: "5" },
+          { icon: Bot, label: "Automation", value: "Included" },
+          { icon: Clock, label: "Trial duration", value: `${daysLeft} days remaining` },
+        ].map(({ icon: Icon, label, value }) => (
+          <div key={label} className="flex items-center justify-between text-sm">
+            <span className="flex items-center gap-2 text-on-surface-variant">
+              <Icon className="w-4 h-4" />
+              {label}
+            </span>
+            <span className="font-medium text-on-surface">{value}</span>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={onContinue}
+        className="bg-primary text-on-primary font-semibold px-8 py-3 rounded-xl hover:bg-primary/90 transition-colors inline-flex items-center gap-2"
+      >
+        Go to Dashboard
+        <ArrowRight className="w-4 h-4" />
+      </button>
     </div>
   );
 }
@@ -83,8 +144,7 @@ function WelcomeStep({ orgName, onNext }: { orgName: string; onNext: () => void 
         Welcome to CRM-WA{orgName ? `, ${orgName}` : ""}!
       </h1>
       <p className="text-on-surface-variant mb-8 max-w-md mx-auto">
-        You're one step away from transforming your WhatsApp into a powerful sales and support engine.
-        Let's get you set up in under 2 minutes.
+        Your free trial has expired. Choose a paid plan to continue using all features.
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-left max-w-lg mx-auto">
@@ -105,14 +165,14 @@ function WelcomeStep({ orgName, onNext }: { orgName: string; onNext: () => void 
         onClick={onNext}
         className="bg-primary text-on-primary font-semibold px-8 py-3 rounded-xl hover:bg-primary/90 transition-colors inline-flex items-center gap-2"
       >
-        Choose Your Plan
+        Choose a Plan
         <ChevronRight className="w-4 h-4" />
       </button>
     </div>
   );
 }
 
-// ─── Step 1: Choose Plan ──────────────────────────────────────────────────────
+// ─── Plan Card ────────────────────────────────────────────────────────────────
 
 function PlanCard({
   plan,
@@ -144,10 +204,9 @@ function PlanCard({
           <div className="text-xs text-on-surface-variant mt-0.5">{plan.description}</div>
         </div>
         <div className="text-right flex-shrink-0 ml-3">
-          <div className="font-bold text-on-surface">{formatINR(perMonth)}<span className="text-xs font-normal text-on-surface-variant">/mo</span></div>
-          {plan.trialDays > 0 && (
-            <div className="text-xs text-success font-medium">{plan.trialDays}-day free trial</div>
-          )}
+          <div className="font-bold text-on-surface">
+            {formatINR(perMonth)}<span className="text-xs font-normal text-on-surface-variant">/mo</span>
+          </div>
         </div>
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-on-surface-variant">
@@ -164,6 +223,8 @@ function PlanCard({
     </button>
   );
 }
+
+// ─── Step 1: Choose Plan ──────────────────────────────────────────────────────
 
 function ChoosePlanStep({
   plans,
@@ -183,8 +244,9 @@ function ChoosePlanStep({
   onBack: () => void;
 }) {
   const cycle: BillingCycle = yearly ? "YEARLY" : "MONTHLY";
+  // Filter out free-trial plan — it's only auto-assigned on signup
   const filtered = plans
-    .filter((p) => p.billingCycle === cycle && p.isActive)
+    .filter((p) => p.billingCycle === cycle && p.isActive && p.slug !== "free-trial")
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
@@ -192,7 +254,7 @@ function ChoosePlanStep({
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-on-surface">Choose your plan</h2>
         <p className="text-sm text-on-surface-variant mt-1">
-          Starter &amp; Growth include a free trial — no card needed
+          All plans include full access — cancel anytime
         </p>
       </div>
 
@@ -258,20 +320,16 @@ function ConfirmStep({
   loading: boolean;
   error: string | null;
 }) {
-  const hasTrial = plan.trialDays > 0;
-
   return (
     <div className="text-center">
-      <div className={`w-16 h-16 ${hasTrial ? "bg-success/10" : "bg-primary/10"} rounded-2xl flex items-center justify-center mx-auto mb-6`}>
-        {hasTrial ? <Check className="w-8 h-8 text-success" /> : <CreditCard className="w-8 h-8 text-primary" />}
+      <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <CreditCard className="w-8 h-8 text-primary" />
       </div>
       <h2 className="text-xl font-bold text-on-surface mb-2">
-        {hasTrial ? "Ready to start your free trial!" : `Subscribe to ${plan.name}`}
+        Subscribe to {plan.name}
       </h2>
       <p className="text-on-surface-variant mb-6">
-        {hasTrial
-          ? <>You're starting a <strong>{plan.trialDays}-day free trial</strong> on the <strong>{plan.name}</strong> plan. No payment needed today.</>
-          : <>Complete payment to activate your <strong>{plan.name}</strong> plan instantly.</>}
+        Complete payment to activate your <strong>{plan.name}</strong> plan instantly.
       </p>
 
       <div className="bg-surface-container rounded-xl p-4 text-left mb-6 max-w-sm mx-auto space-y-2">
@@ -287,15 +345,9 @@ function ConfirmStep({
           <span className="text-on-surface-variant">Messages/mo</span>
           <span className="font-medium text-on-surface">{formatLimit(plan.maxMessagesPerMonth)}</span>
         </div>
-        {hasTrial && (
-          <div className="flex justify-between text-sm">
-            <span className="text-on-surface-variant">Trial period</span>
-            <span className="font-medium text-success">{plan.trialDays} days free</span>
-          </div>
-        )}
         <div className="flex justify-between text-sm border-t border-outline-variant pt-2 mt-2">
           <span className="text-on-surface-variant">Due today</span>
-          <span className="font-bold text-on-surface">{hasTrial ? "₹0" : formatINR(plan.priceInCents)}</span>
+          <span className="font-bold text-on-surface">{formatINR(plan.priceInCents)}</span>
         </div>
       </div>
 
@@ -321,12 +373,12 @@ function ConfirmStep({
           {loading ? (
             <>
               <Spinner className="w-4 h-4" />
-              {hasTrial ? "Starting trial..." : "Processing..."}
+              Processing...
             </>
           ) : (
             <>
-              {hasTrial ? <Sparkles className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
-              {hasTrial ? "Start my free trial" : `Pay ${formatINR(plan.priceInCents)}`}
+              <CreditCard className="w-4 h-4" />
+              Pay {formatINR(plan.priceInCents)}
             </>
           )}
         </button>
@@ -340,8 +392,8 @@ function ConfirmStep({
 export default function OnboardingPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const { data: subData, isLoading: subLoading } = useSubscription();
   const { data: plans, isLoading: plansLoading } = usePlans();
-  const subscribeTrial = useSubscribeToPlan();
   const createOrder = useCreateOrder();
   const verifyPayment = useVerifyPayment();
 
@@ -351,21 +403,34 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const selectedPlan = plans?.find((p) => p.id === selectedPlanId) ?? null;
-  const isLoading = subscribeTrial.isPending || createOrder.isPending || verifyPayment.isPending;
+  const isLoading = createOrder.isPending || verifyPayment.isPending;
+
+  const isOnTrial = subData?.subscription?.status === "TRIAL";
+  const trialDaysLeft = daysRemaining(subData?.subscription?.trialEndsAt);
+
+  // If on active trial → show trial welcome screen
+  if (!subLoading && isOnTrial) {
+    return (
+      <div className="min-h-screen bg-surface flex items-start justify-center pt-12 px-4 pb-12">
+        <div className="w-full max-w-xl">
+          <div className="text-center mb-8">
+            <span className="font-bold text-on-surface text-xl">CRM-<span className="text-primary">WA</span></span>
+          </div>
+          <div className="bg-surface-container-low rounded-2xl shadow-xl border border-outline-variant p-8">
+            <TrialActiveStep
+              firstName={user?.firstName ?? ""}
+              daysLeft={trialDaysLeft}
+              onContinue={() => router.push("/inbox")}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleConfirm = async () => {
     if (!selectedPlanId || !selectedPlan) return;
     setError(null);
-
-    if (selectedPlan.trialDays > 0) {
-      subscribeTrial.mutate(selectedPlanId, {
-        onSuccess: () => router.push("/inbox"),
-        onError: (err: any) => {
-          setError(err?.response?.data?.message ?? "Failed to start trial. Please try again.");
-        },
-      });
-      return;
-    }
 
     const loaded = await loadRazorpayScript();
     if (!loaded) {
@@ -404,7 +469,7 @@ export default function OnboardingPage() {
             name: user ? `${user.firstName} ${user.lastName}` : "",
             email: user?.email ?? "",
           },
-          theme: { color: "#d97706" },
+          theme: { color: "#6366F1" },
           modal: {
             ondismiss: () => {
               setError("Payment was cancelled. Please try again.");
@@ -429,10 +494,10 @@ export default function OnboardingPage() {
           <span className="font-bold text-on-surface text-xl">CRM-<span className="text-primary">WA</span></span>
         </div>
 
-        <Steps current={step} />
+        <Steps current={step} labels={["Welcome", "Choose Plan", "Confirm"]} />
 
         <div className="bg-surface-container-low rounded-2xl shadow-xl border border-outline-variant p-8">
-          {plansLoading ? (
+          {(subLoading || plansLoading) ? (
             <div className="flex items-center justify-center h-40">
               <Spinner />
             </div>

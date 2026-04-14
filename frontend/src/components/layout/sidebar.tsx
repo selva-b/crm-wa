@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUIStore } from "@/stores/ui-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useLogout } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-billing";
 
 type Role = "ADMIN" | "MANAGER" | "EMPLOYEE";
 
@@ -46,6 +47,8 @@ interface NavItemDef {
   countKey?: "inbox";
   /** Roles that can see this item. Undefined = all roles. */
   roles?: Role[];
+  /** Plan feature flag required to see this item. */
+  feature?: "campaigns" | "automation";
 }
 
 const navItems: NavItemDef[] = [
@@ -53,10 +56,10 @@ const navItems: NavItemDef[] = [
   { href: "/inbox", icon: <MessageSquare className="h-5 w-5" />, label: "Inbox", countKey: "inbox" },
   { href: "/contacts", icon: <Users className="h-5 w-5" />, label: "Contacts" },
   { href: "/deals", icon: <Kanban className="h-5 w-5" />, label: "Deals", roles: ["ADMIN", "MANAGER"] },
-  { href: "/campaigns", icon: <Megaphone className="h-5 w-5" />, label: "Campaigns", roles: ["ADMIN", "MANAGER"] },
-  { href: "/sequences", icon: <Workflow className="h-5 w-5" />, label: "Sequences", roles: ["ADMIN", "MANAGER"] },
+  { href: "/campaigns", icon: <Megaphone className="h-5 w-5" />, label: "Campaigns", roles: ["ADMIN", "MANAGER"], feature: "campaigns" },
+  { href: "/sequences", icon: <Workflow className="h-5 w-5" />, label: "Sequences", roles: ["ADMIN", "MANAGER"], feature: "campaigns" },
   { href: "/scheduler", icon: <Clock className="h-5 w-5" />, label: "Scheduler", roles: ["ADMIN", "MANAGER"] },
-  { href: "/automation", icon: <Zap className="h-5 w-5" />, label: "Automation", roles: ["ADMIN", "MANAGER"] },
+  { href: "/automation", icon: <Zap className="h-5 w-5" />, label: "Automation", roles: ["ADMIN", "MANAGER"], feature: "automation" },
   { href: "/chatbot", icon: <Bot className="h-5 w-5" />, label: "Chatbot", roles: ["ADMIN", "MANAGER"] },
   { href: "/sla", icon: <ShieldCheck className="h-5 w-5" />, label: "SLA Tracking", roles: ["ADMIN", "MANAGER"] },
   { href: "/lead-ads", icon: <Target className="h-5 w-5" />, label: "Lead Ads", roles: ["ADMIN", "MANAGER"] },
@@ -91,10 +94,20 @@ export function Sidebar() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const user = useAuthStore((s) => s.user);
   const logout = useLogout();
+  const { data: subData } = useSubscription();
+  const plan = subData?.subscription?.plan;
 
   const userName = user
     ? `${user.firstName} ${user.lastName}`
     : "User";
+
+  function isFeatureAllowed(feature?: "campaigns" | "automation"): boolean {
+    if (!feature) return true;
+    if (!plan) return true; // don't hide while loading
+    if (feature === "campaigns") return plan.campaignsEnabled ?? false;
+    if (feature === "automation") return plan.automationEnabled ?? false;
+    return true;
+  }
 
   return (
     <aside
@@ -122,6 +135,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
         {navItems
           .filter((item) => !item.roles || item.roles.includes(user?.role as Role))
+          .filter((item) => isFeatureAllowed(item.feature))
           .map((item) => (
           <NavItem
             key={item.href}

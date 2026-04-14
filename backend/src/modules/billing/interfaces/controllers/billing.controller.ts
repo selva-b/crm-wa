@@ -37,6 +37,8 @@ import { RazorpayPaymentService } from '../../domain/services/razorpay-payment.s
 import { PlanRepository } from '../../infrastructure/repositories/plan.repository';
 import { SubscriptionRepository } from '../../infrastructure/repositories/subscription.repository';
 import { PaymentRepository } from '../../infrastructure/repositories/payment.repository';
+import { UsageRepository } from '../../infrastructure/repositories/usage.repository';
+import { UsageMetricType } from '@prisma/client';
 
 @Controller('billing')
 export class BillingController {
@@ -55,6 +57,7 @@ export class BillingController {
     private readonly planRepo: PlanRepository,
     private readonly subscriptionRepo: SubscriptionRepository,
     private readonly paymentRepo: PaymentRepository,
+    private readonly usageRepo: UsageRepository,
   ) {}
 
   // ── Plan Management (system/admin only) ──
@@ -227,6 +230,20 @@ export class BillingController {
         dueDate: now,
       });
       await this.paymentRepo.transitionInvoiceStatus(invoice.id, InvoiceStatus.DRAFT, InvoiceStatus.PAID);
+
+      // Reset usage counters to full plan limits (trial limits no longer apply)
+      await this.usageRepo.resetUsageForOrg(
+        user.orgId,
+        now,
+        periodEnd,
+        {
+          [UsageMetricType.MESSAGES_SENT]: plan.maxMessagesPerMonth,
+          [UsageMetricType.ACTIVE_USERS]: plan.maxUsers,
+          [UsageMetricType.WHATSAPP_SESSIONS]: plan.maxWhatsappSessions,
+          [UsageMetricType.CAMPAIGN_EXECUTIONS]: plan.maxCampaignsPerMonth,
+          [UsageMetricType.API_CALLS]: plan.maxMessagesPerMonth,
+        },
+      );
 
       return { subscription: activated, deduplicated: false };
     }

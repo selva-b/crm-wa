@@ -14,6 +14,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { CampaignsTable } from "@/components/campaigns/campaigns-table";
 import { CreateCampaignModal } from "@/components/campaigns/create-campaign-modal";
+import { useSubscription } from "@/hooks/use-billing";
 import type { CampaignStatus, ListCampaignsParams } from "@/lib/types/campaigns";
 
 const TAKE = 20;
@@ -31,6 +32,8 @@ const STATUS_TABS: { id: string; label: string }[] = [
 export default function CampaignsPage() {
   usePageTitle("Campaigns");
   useCampaignSocket();
+  const { data: subData } = useSubscription();
+  const campaignsEnabled = subData?.subscription?.plan?.campaignsEnabled ?? true;
 
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
@@ -92,6 +95,19 @@ export default function CampaignsPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-var(--header-height))]">
+      {/* Upgrade banner */}
+      {!campaignsEnabled && (
+        <div className="shrink-0 mx-6 mt-4 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+          <Megaphone className="h-4 w-4 shrink-0 text-amber-600" />
+          <span>
+            <strong>Campaigns</strong> are not included in your current plan.{" "}
+            <a href="/settings/billing" className="underline font-medium hover:text-amber-900">
+              Upgrade to Growth or higher
+            </a>{" "}
+            to unlock this feature.
+          </span>
+        </div>
+      )}
       {/* Header */}
       <div className="shrink-0 px-6 pt-5 pb-0 space-y-4">
         <div className="flex items-center justify-between">

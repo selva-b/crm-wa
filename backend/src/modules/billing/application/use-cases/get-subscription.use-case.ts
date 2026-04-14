@@ -76,6 +76,7 @@ export class GetSubscriptionUseCase {
           currency: plan.currency,
           campaignsEnabled: plan.campaignsEnabled,
           automationEnabled: plan.automationEnabled,
+          apiEnabled: plan.apiEnabled,
         },
         currentPeriodStart: subscription.currentPeriodStart,
         currentPeriodEnd: subscription.currentPeriodEnd,

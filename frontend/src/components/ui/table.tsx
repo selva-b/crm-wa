@@ -69,9 +69,14 @@ export function TableBody({ children, className }: TableProps) {
 }
 
 /* ─── Body Row ─── */
-export function TableRow({ children, className }: TableProps) {
+interface TableRowProps extends TableProps {
+  onClick?: () => void;
+}
+
+export function TableRow({ children, className, onClick }: TableRowProps) {
   return (
     <tr
+      onClick={onClick}
       className={cn(
         "border-b border-outline-variant/5 hover:bg-surface-container/20 transition-colors",
         className,
