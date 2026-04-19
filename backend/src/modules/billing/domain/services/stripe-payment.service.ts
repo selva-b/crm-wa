@@ -58,7 +58,7 @@ export class StripePaymentService {
           payment_method: paymentMethodId,
           off_session: true,
           confirm: true,
-          description: description || 'CRM-WA subscription payment',
+          description: description || 'Wazelo CRM subscription payment',
         },
         { idempotencyKey },
       );

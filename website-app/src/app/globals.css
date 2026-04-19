@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+/* ── Design Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --bg: #131313;
+  --surface: #1c1b1b;
+  --surface-high: #2a2a2a;
+  --surface-highest: #353534;
+  --surface-low: #0e0e0e;
+  --primary: #ffb77d;
+  --primary-container: #d97707;
+  --primary-glow: rgba(217, 119, 6, 0.2);
+  --text: #e5e2e1;
+  --text-muted: #dbc2b0;
+  --text-dim: #a38c7c;
+  --border: rgba(85, 67, 54, 0.25);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --success: #34d399;
+  --outline-variant: #554336;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: auto; /* Lenis handles smooth scrolling */
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(217, 119, 6, 0.3);
+  color: var(--text);
+}
+
+/* ── Typography ─────────────────────────────────────────────────────────────── */
+.font-headline {
+  font-family: "Epilogue", sans-serif;
+}
+.font-body {
+  font-family: "Manrope", sans-serif;
+}
+
+/* ── Marquee ─────────────────────────────────────────────────────────────────── */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+/* ── Fade Up ─────────────────────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fadeUp 0.9s ease forwards;
+}
+.animate-fade-up-delay-1 {
+  animation: fadeUp 0.9s 0.15s ease both;
+}
+.animate-fade-up-delay-2 {
+  animation: fadeUp 0.9s 0.3s ease both;
+}
+.animate-fade-up-delay-3 {
+  animation: fadeUp 0.9s 0.45s ease both;
+}
+
+/* ── Glow pulse ─────────────────────────────────────────────────────────────── */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+.animate-glow {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* ── Liquid Glass ─────────────────────────────────────────────────────────── */
+.liquid-glass {
+  background: rgba(0, 0, 0, 0.4);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 20%,
+    rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%,
+    rgba(255,255,255,0.1) 80%, rgba(255,255,255,0.3) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Dot blink ─────────────────────────────────────────────────────────────── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.animate-blink {
+  animation: blink 1.8s ease-in-out infinite;
+}
+
+/* ── Number Counter ─────────────────────────────────────────────────────────── */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-count {
+  animation: countUp 0.6s ease forwards;
+}
+
+/* ── Gradient text ─────────────────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #ffb77d 0%, #d97707 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Button primary gradient ───────────────────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, #ffb77d 0%, #d97707 100%);
+  color: #4d2600;
+  font-weight: 800;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-primary:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 30px rgba(255, 183, 125, 0.4);
+}
+
+/* ── Ghost button ──────────────────────────────────────────────────────────── */
+.btn-ghost {
+  border: 1px solid rgba(85, 67, 54, 0.3);
+  color: var(--text-muted);
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.btn-ghost:hover {
+  border-color: var(--primary);
+  color: var(--text);
+  background: rgba(255, 183, 125, 0.05);
+}
+
+/* ── Card hover ─────────────────────────────────────────────────────────────── */
+.feature-card {
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+.feature-card:hover {
+  border-color: rgba(255, 183, 125, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+.feature-card:hover .card-icon {
+  transform: scale(1.1);
+}
+.card-icon {
+  transition: transform 0.25s;
+}
+
+/* ── Amber glow strong ──────────────────────────────────────────────────────── */
+.amber-glow-strong {
+  box-shadow: 0 0 60px 10px rgba(217, 119, 6, 0.12);
+}

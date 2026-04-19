@@ -171,7 +171,7 @@ export class BillingCycleWorker {
       subscription.externalCustomerId || '',
       subscription.externalCustomerId || '', // Stripe uses default payment method from customer
       payment.idempotencyKey || payment.id,
-      `CRM-WA subscription renewal: ${plan?.name || subscription.id}`,
+      `Wazelo CRM subscription renewal: ${plan?.name || subscription.id}`,
     );
 
     if (result.success) {

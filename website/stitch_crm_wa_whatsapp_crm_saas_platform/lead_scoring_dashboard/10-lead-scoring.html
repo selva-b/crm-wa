@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CRM-WA | Lead Scoring</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#a7aaba",
+                    "on-primary-fixed-variant": "#572c00",
+                    "on-primary": "#643400",
+                    "surface-tint": "#ffb77d",
+                    "secondary-dim": "#b2b9ca",
+                    "surface-bright": "#282c38",
+                    "surface-container-low": "#10131b",
+                    "on-secondary-fixed": "#383f4e",
+                    "tertiary-container": "#a589f8",
+                    "surface-container": "#161923",
+                    "secondary-fixed": "#dce2f5",
+                    "outline": "#717584",
+                    "on-primary-container": "#230e00",
+                    "on-tertiary-container": "#230062",
+                    "tertiary": "#b299ff",
+                    "error": "#f97758",
+                    "primary-fixed": "#fe932c",
+                    "on-secondary-fixed-variant": "#545c6b",
+                    "on-tertiary-fixed": "#000000",
+                    "surface-container-highest": "#212532",
+                    "on-tertiary-fixed-variant": "#2e007c",
+                    "secondary": "#c0c6d8",
+                    "on-tertiary": "#31067e",
+                    "surface-dim": "#0c0e14",
+                    "primary-container": "#dd7a0c",
+                    "tertiary-fixed-dim": "#987cea",
+                    "outline-variant": "#434855",
+                    "on-error-container": "#ff9b82",
+                    "tertiary-fixed": "#a589f8",
+                    "primary-fixed-dim": "#ed871e",
+                    "on-background": "#e2e5f6",
+                    "primary-dim": "#fe932c",
+                    "inverse-on-surface": "#53555c",
+                    "surface-container-lowest": "#000000",
+                    "surface-variant": "#212532",
+                    "on-error": "#450900",
+                    "tertiary-dim": "#a88cfb",
+                    "surface-container-high": "#1c1f2a",
+                    "on-primary-fixed": "#240f00",
+                    "error-container": "#85230a",
+                    "background": "#0c0e14",
+                    "error-dim": "#c44f34",
+                    "inverse-surface": "#faf8ff",
+                    "secondary-fixed-dim": "#cdd4e6",
+                    "primary": "#ffb77d",
+                    "secondary-container": "#343c4a",
+                    "on-surface": "#e2e5f6",
+                    "on-secondary": "#39404f",
+                    "inverse-primary": "#914d00",
+                    "surface": "#0c0e14",
+                    "on-secondary-container": "#b8bfd1"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[240px] border-r border-[#2d3044] bg-[#0d0f1a] flex flex-col py-4 z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">rule</span>
+</div>
+<span class="text-amber-600 font-black text-xl tracking-tight">CRM-WA</span>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-[#9ca3b4] hover:text-amber-400 hover:bg-[#1a1d2e] transition-all duration-150 font-inter text-sm font-medium rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-amber-400">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#9ca3b4] hover:text-amber-400 hover:bg-[#1a1d2e] transition-all duration-150 font-inter text-sm font-medium rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-amber-400">group</span>
+                Leads
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-amber-500 bg-[#1a1d2e] border-r-4 border-amber-600 font-inter text-sm font-medium transition-all duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">rule</span>
+                Lead Scoring
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#9ca3b4] hover:text-amber-400 hover:bg-[#1a1d2e] transition-all duration-150 font-inter text-sm font-medium rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-amber-400">campaign</span>
+                Campaigns
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#9ca3b4] hover:text-amber-400 hover:bg-[#1a1d2e] transition-all duration-150 font-inter text-sm font-medium rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-amber-400">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="px-4 mt-auto">
+<div class="bg-[#1a1d2e] rounded-xl p-4 mb-4 border border-[#2d3044]">
+<p class="text-xs text-on-surface-variant mb-2">Enterprise Admin</p>
+<button class="w-full py-2 bg-amber-600 text-on-primary-container text-xs font-bold rounded hover:bg-amber-500 transition-colors">Upgrade Plan</button>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 text-[#9ca3b4] hover:text-amber-400 transition-all font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined">help</span>
+                Support
+            </a>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 left-[240px] right-0 h-16 bg-[#0f1117] border-b border-[#2d3044] flex justify-between items-center px-8 z-40">
+<h1 class="font-inter text-[20px] font-semibold text-on-surface">Lead Scoring</h1>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="absolute inset-y-0 left-3 flex items-center text-[#9ca3b4]">
+<span class="material-symbols-outlined text-sm">search</span>
+</span>
+<input class="bg-[#1a1d2e] border-[#2d3044] text-sm rounded-lg pl-10 pr-4 py-1.5 focus:ring-amber-600 focus:border-amber-600 w-64" placeholder="Search rules..." type="text"/>
+</div>
+<button class="flex items-center gap-2 px-4 py-2 bg-amber-600 text-black text-sm font-bold rounded hover:bg-amber-500 active:scale-95 duration-200 transition-all">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                Add Rule
+            </button>
+<div class="flex items-center gap-2 ml-4">
+<button class="p-2 text-[#9ca3b4] hover:bg-[#2d3044] transition-colors rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-[#9ca3b4] hover:bg-[#2d3044] transition-colors rounded-full">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-[240px] pt-16 min-h-screen">
+<div class="p-8 max-w-[1400px] mx-auto">
+<!-- Header Section -->
+<section class="mb-10">
+<div class="flex flex-col gap-1">
+<h2 class="text-2xl font-bold text-on-surface">Scoring Engine</h2>
+<p class="text-on-surface-variant max-w-2xl">Automatically score leads based on behavior and attributes to prioritize your sales outreach and improve conversion rates.</p>
+</div>
+</section>
+<!-- Scoring Rules Table -->
+<section class="mb-10">
+<div class="bg-surface-container border border-outline-variant rounded-xl overflow-hidden shadow-2xl">
+<div class="px-6 py-4 border-b border-outline-variant bg-surface-container-high flex justify-between items-center">
+<h3 class="font-semibold text-on-surface">Active Scoring Rules</h3>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-surface-container-highest border border-outline-variant rounded text-xs text-on-surface-variant">5 Total Rules</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-high/50 text-on-surface-variant text-xs uppercase tracking-wider">
+<tr>
+<th class="px-6 py-4 font-semibold">Rule Name</th>
+<th class="px-6 py-4 font-semibold">Criteria</th>
+<th class="px-6 py-4 font-semibold text-center">Score Value</th>
+<th class="px-6 py-4 font-semibold text-right">Active</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container-highest transition-colors group">
+<td class="px-6 py-4 text-sm font-medium text-on-surface">WhatsApp Source</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant font-mono text-xs">Source is WhatsApp</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center text-success font-bold">+10</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="inline-flex items-center">
+<div class="w-10 h-5 bg-amber-600/30 rounded-full relative cursor-pointer border border-amber-600/50">
+<div class="absolute right-1 top-1 w-3 h-3 bg-amber-500 rounded-full shadow-sm"></div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors group">
+<td class="px-6 py-4 text-sm font-medium text-on-surface">Replied to message</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant font-mono text-xs">Last activity is reply</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center text-success font-bold">+5</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="inline-flex items-center">
+<div class="w-10 h-5 bg-amber-600/30 rounded-full relative cursor-pointer border border-amber-600/50">
+<div class="absolute right-1 top-1 w-3 h-3 bg-amber-500 rounded-full shadow-sm"></div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors group">
+<td class="px-6 py-4 text-sm font-medium text-on-surface">INTERESTED status</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant font-mono text-xs">Status = INTERESTED</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center text-success font-bold">+20</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="inline-flex items-center">
+<div class="w-10 h-5 bg-amber-600/30 rounded-full relative cursor-pointer border border-amber-600/50">
+<div class="absolute right-1 top-1 w-3 h-3 bg-amber-500 rounded-full shadow-sm"></div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors group">
+<td class="px-6 py-4 text-sm font-medium text-on-surface">No reply 7 days</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant font-mono text-xs">Inactive for 7 days</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center text-error font-bold">-10</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="inline-flex items-center">
+<div class="w-10 h-5 bg-amber-600/30 rounded-full relative cursor-pointer border border-amber-600/50">
+<div class="absolute right-1 top-1 w-3 h-3 bg-amber-500 rounded-full shadow-sm"></div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors group">
+<td class="px-6 py-4 text-sm font-medium text-on-surface">Converted</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant font-mono text-xs">Status = CONVERTED</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center text-success font-bold">+50</span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="inline-flex items-center">
+<div class="w-10 h-5 bg-amber-600/30 rounded-full relative cursor-pointer border border-amber-600/50">
+<div class="absolute right-1 top-1 w-3 h-3 bg-amber-500 rounded-full shadow-sm"></div>
+</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Bottom Two Column Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Left Column: Score Distribution -->
+<section class="bg-surface-container border border-outline-variant rounded-xl p-6 shadow-xl flex flex-col">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-500">bar_chart</span>
+                            Score Distribution
+                        </h3>
+<span class="text-xs text-on-surface-variant">Last 30 Days</span>
+</div>
+<div class="flex-1 flex items-end gap-4 h-64 px-4 pb-4">
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-[#2d3044] rounded-t-lg relative group h-[20%] transition-all">
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 rounded-t-lg"></div>
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-on-surface-variant">42</div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-medium">0-25</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-amber-700/60 rounded-t-lg relative group h-[45%] transition-all">
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 rounded-t-lg"></div>
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-on-surface">112</div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-medium">25-50</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-amber-600 rounded-t-lg relative group h-[85%] transition-all">
+<div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 rounded-t-lg"></div>
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-on-surface">240</div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-medium font-bold text-amber-500">50-75</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-amber-500 rounded-t-lg relative group h-[30%] transition-all">
+<div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 rounded-t-lg"></div>
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-on-surface">68</div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-medium">75-100</span>
+</div>
+</div>
+</section>
+<!-- Right Column: Top Scored Contacts -->
+<section class="bg-surface-container border border-outline-variant rounded-xl p-6 shadow-xl">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-semibold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-success">stars</span>
+                            Top Scored Contacts
+                        </h3>
+<button class="text-xs text-amber-500 hover:underline">View All</button>
+</div>
+<div class="space-y-4">
+<!-- Contact 1 -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<img alt="Profile" class="w-10 h-10 rounded-full border border-outline-variant" data-alt="Close up portrait of a professional man in a dark blazer smiling confidently with soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAA5B0yoRY4AJ9XdCYFEDaOCEsTm0AK9tQG4MuCXWb-O9S-xAhvXcHP98cnhE1Mg8J-Iq5DSu6Gqxc88-yzwA1kriml7rsyB0WysqLLGxoynSfHnlyrHY_6rt0880_kOClnB-BGGRESaYFZdqOeyduVmejaD1-7a4gawGb8KmC-t81oombGc2fFjebsSJz3I0WGf_84RyMzaoERe5ObUQvrBCdip0d_BqoNvaTK3Y4zIyd9nsmrFnjriuOTVCLOlW_b1F7iYltoHw"/>
+<div>
+<p class="text-sm font-semibold text-on-surface">Alex Rivera</p>
+<p class="text-[10px] text-on-surface-variant">Last active: 14m ago</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="px-2 py-0.5 bg-[#34d399]/10 text-[#34d399] text-[10px] font-bold rounded border border-[#34d399]/20 uppercase">CONVERTED</span>
+<span class="text-2xl font-black text-success">88</span>
+</div>
+</div>
+<!-- Contact 2 -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<img alt="Profile" class="w-10 h-10 rounded-full border border-outline-variant" data-alt="Young professional woman with curly hair wearing glasses and a business casual mustard sweater, bright neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-jUp59eEEDcZztIS_i0mhhZ3aF3OJwSnDKX6Xo9G25bB4lyFVoxVEHJBVw9QEhaZvIBHWHL-GD6Ko-oA8OqbrkyKycRPyy_-PGyRbAaSWccHqPIo0O-sQVEwfInMshjkUAneIRjEl6b2FSChtuu-NuedZI_FabFrtSWiYIneOUBACjEVbusVuIsfalSWSAr34NKLdboGm6q-o3EZuSQ7U9FF5vMb_lsUMGBgGN2ZijEW5ynJDMURYVj8tUa7k7-brJIIyb6f9Gg"/>
+<div>
+<p class="text-sm font-semibold text-on-surface">Sarah Chen</p>
+<p class="text-[10px] text-on-surface-variant">Last active: 2h ago</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="px-2 py-0.5 bg-amber-600/10 text-amber-500 text-[10px] font-bold rounded border border-amber-600/20 uppercase">INTERESTED</span>
+<span class="text-2xl font-black text-amber-500">64</span>
+</div>
+</div>
+<!-- Contact 3 -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<img alt="Profile" class="w-10 h-10 rounded-full border border-outline-variant" data-alt="Middle aged man with beard and friendly expression in a workspace setting with warm atmospheric lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ1Sr72xG0ijyw4fQYsB6Wal2xAqU2vC0rI3j7IGA2p1I5C95W_tw9QqABbBAaSuoZVxS83Rn9lW4QEbZyEnJxqsBRjommASW0n0OjG3ZhXI6PMRqhRVIXkkZ7CGJcMqUQI2iD20inrPCfmExYT4S2qDGnQJ424b0K-cUduzMOgChELqzymB6lFpq9fHH-Wnr4aX9YTckpKFmmPchP41Wqw6rVD49l1XKG9b5BgziGoD51R868yO1rBEgq0O1hHOKHC2qyMy6V4A"/>
+<div>
+<p class="text-sm font-semibold text-on-surface">Marcus Thorne</p>
+<p class="text-[10px] text-on-surface-variant">Last active: 5h ago</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="px-2 py-0.5 bg-amber-600/10 text-amber-500 text-[10px] font-bold rounded border border-amber-600/20 uppercase">CONTACTED</span>
+<span class="text-2xl font-black text-amber-500">52</span>
+</div>
+</div>
+<!-- Contact 4 -->
+<div class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-3">
+<img alt="Profile" class="w-10 h-10 rounded-full border border-outline-variant" data-alt="Stylish woman in high fashion professional attire, urban backdrop with soft bokeh and natural daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAN6dCQfAqdivzPv7iF09-6NDf5dkHD6otyLkzJaVy_XaZC53AH4ySEIZOiPykZmswII6juKhdxoNazxx1-ApP6BIw-rUOZHJb5MqwzXLoqUaK6bMUAG4EXHBv8V4n7VwLTBPKUl9EkBu_blrKJ-UEo91byzZygMF4gXfb5tgY2VHuq5BNJbDvxNCyIIi5l_CX3v4h0erLs-sxIt5MpmLdTIhhBoHmdBr6aelGeIVKXR5Gi7xcai6nPbecEaZEDUP4HARti_2QZhg"/>
+<div>
+<p class="text-sm font-semibold text-on-surface">Elena Rodriguez</p>
+<p class="text-[10px] text-on-surface-variant">Last active: 1d ago</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="px-2 py-0.5 bg-error/10 text-error text-[10px] font-bold rounded border border-error/20 uppercase">NEW</span>
+<span class="text-2xl font-black text-error">38</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

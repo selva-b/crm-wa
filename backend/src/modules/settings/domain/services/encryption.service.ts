@@ -21,8 +21,8 @@ export class EncryptionService {
       );
     }
     // Derive a consistent 32-byte key using PBKDF2
-    const passphrase = rawKey || 'crm-wa-default-dev-key-not-for-production';
-    this.keyBuffer = crypto.pbkdf2Sync(passphrase, 'crm-wa-salt', 100_000, 32, 'sha256');
+    const passphrase = rawKey || 'wazelo-default-dev-key-not-for-production';
+    this.keyBuffer = crypto.pbkdf2Sync(passphrase, 'wazelo-salt', 100_000, 32, 'sha256');
   }
 
   /**

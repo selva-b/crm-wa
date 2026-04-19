@@ -141,7 +141,7 @@ function WelcomeStep({ orgName, onNext }: { orgName: string; onNext: () => void 
         <Sparkles className="w-8 h-8 text-primary" />
       </div>
       <h1 className="text-2xl font-bold text-on-surface mb-2">
-        Welcome to CRM-WA{orgName ? `, ${orgName}` : ""}!
+        Welcome to Wazelo CRM{orgName ? `, ${orgName}` : ""}!
       </h1>
       <p className="text-on-surface-variant mb-8 max-w-md mx-auto">
         Your free trial has expired. Choose a paid plan to continue using all features.
@@ -445,7 +445,7 @@ export default function OnboardingPage() {
           key: razorpayKeyId,
           amount: order.amount,
           currency: order.currency,
-          name: "CRM-WA",
+          name: "Wazelo CRM",
           description: `${order.planName} Plan Subscription`,
           order_id: order.orderId,
           handler: (response: any) => {

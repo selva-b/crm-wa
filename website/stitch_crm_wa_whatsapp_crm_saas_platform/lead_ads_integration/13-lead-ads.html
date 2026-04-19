@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CRM-WA | Lead Ads</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#ffb77d",
+                    "on-surface-variant": "#a7aaba",
+                    "on-tertiary-container": "#230062",
+                    "surface-bright": "#282c38",
+                    "primary-fixed": "#fe932c",
+                    "primary-fixed-dim": "#ed871e",
+                    "secondary-container": "#343c4a",
+                    "on-background": "#e2e5f6",
+                    "on-surface": "#e2e5f6",
+                    "error-dim": "#c44f34",
+                    "surface-dim": "#0c0e14",
+                    "secondary-fixed-dim": "#cdd4e6",
+                    "on-tertiary-fixed": "#000000",
+                    "inverse-on-surface": "#53555c",
+                    "secondary": "#c0c6d8",
+                    "on-primary-fixed": "#240f00",
+                    "tertiary": "#b299ff",
+                    "primary-dim": "#fe932c",
+                    "tertiary-dim": "#a88cfb",
+                    "primary-container": "#dd7a0c",
+                    "secondary-fixed": "#dce2f5",
+                    "on-primary": "#643400",
+                    "on-secondary": "#39404f",
+                    "tertiary-fixed": "#a589f8",
+                    "on-secondary-fixed-variant": "#545c6b",
+                    "background": "#0c0e14",
+                    "on-primary-container": "#230e00",
+                    "on-error-container": "#ff9b82",
+                    "inverse-surface": "#faf8ff",
+                    "on-error": "#450900",
+                    "tertiary-fixed-dim": "#987cea",
+                    "error-container": "#85230a",
+                    "error": "#f97758",
+                    "on-secondary-container": "#b8bfd1",
+                    "outline": "#717584",
+                    "surface-container-lowest": "#000000",
+                    "surface-container-high": "#1c1f2a",
+                    "secondary-dim": "#b2b9ca",
+                    "surface-container-low": "#10131b",
+                    "surface-container": "#161923",
+                    "outline-variant": "#434855",
+                    "on-tertiary-fixed-variant": "#2e007c",
+                    "on-primary-fixed-variant": "#572c00",
+                    "surface-container-highest": "#212532",
+                    "surface": "#0c0e14",
+                    "tertiary-container": "#a589f8",
+                    "surface-variant": "#212532",
+                    "surface-tint": "#ffb77d",
+                    "inverse-primary": "#914d00",
+                    "on-secondary-fixed": "#383f4e",
+                    "on-tertiary": "#31067e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-surface-dim text-on-surface selection:bg-primary/30 antialiased">
+<!-- TopNavBar -->
+<header class="bg-slate-950 text-slate-400 font-inter text-sm antialiased fixed top-0 w-full z-50 border-b border-slate-800">
+<div class="flex justify-between items-center h-16 px-6 w-full">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-amber-600">CRM-WA</span>
+<nav class="hidden md:flex gap-6">
+<a class="text-slate-400 hover:text-slate-200 duration-200 ease-in-out" href="#">Overview</a>
+<a class="text-amber-500 font-semibold border-b-2 border-amber-500 duration-200 ease-in-out" href="#">Integrations</a>
+<a class="text-slate-400 hover:text-slate-200 duration-200 ease-in-out" href="#">Marketplace</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+<input class="bg-slate-900 border-none rounded-lg pl-10 pr-4 py-1.5 text-xs focus:ring-1 focus:ring-amber-600 w-64" placeholder="Search accounts..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-slate-400 hover:bg-slate-900 p-2 rounded-lg transition-colors">notifications</button>
+<button class="material-symbols-outlined text-slate-400 hover:bg-slate-900 p-2 rounded-lg transition-colors">settings</button>
+<button class="bg-amber-600 text-slate-950 font-semibold px-4 py-1.5 rounded-lg text-xs hover:bg-amber-500 transition-colors">Configure</button>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="bg-slate-950 font-inter text-sm fixed left-0 top-0 h-full w-60 border-r border-slate-800 pt-16 z-40 hidden md:flex flex-col">
+<div class="flex flex-col p-4 gap-2 flex-grow overflow-y-auto">
+<a class="flex items-center gap-3 text-slate-400 px-3 py-2 hover:bg-slate-900 hover:text-slate-100 transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 bg-slate-900 text-amber-500 rounded-lg px-3 py-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="ads_click">ads_click</span>
+                Lead Ads
+            </a>
+<a class="flex items-center gap-3 text-slate-400 px-3 py-2 hover:bg-slate-900 hover:text-slate-100 transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+                Contacts
+            </a>
+<a class="flex items-center gap-3 text-slate-400 px-3 py-2 hover:bg-slate-900 hover:text-slate-100 transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+                Campaigns
+            </a>
+<a class="flex items-center gap-3 text-slate-400 px-3 py-2 hover:bg-slate-900 hover:text-slate-100 transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+                Automations
+            </a>
+<a class="flex items-center gap-3 text-slate-400 px-3 py-2 hover:bg-slate-900 hover:text-slate-100 transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+                Analytics
+            </a>
+<div class="mt-8 px-3">
+<button class="w-full flex items-center justify-center gap-2 bg-slate-900 border border-slate-800 text-amber-600 font-semibold py-2 rounded-lg hover:border-amber-600/50 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+                    New Integration
+                </button>
+</div>
+</div>
+<div class="p-4 border-t border-slate-800 flex flex-col gap-1">
+<a class="flex items-center gap-3 text-slate-400 px-3 py-2 hover:bg-slate-900 hover:text-slate-100 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">help</span>
+                Help
+            </a>
+<a class="flex items-center gap-3 text-slate-400 px-3 py-2 hover:bg-slate-900 hover:text-slate-100 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined text-lg">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-60 pt-20 px-6 pb-12 min-h-screen">
+<div class="max-w-7xl mx-auto space-y-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<nav class="flex text-xs text-on-surface-variant gap-2 mb-2">
+<span class="hover:text-primary cursor-pointer">Integrations</span>
+<span>/</span>
+<span class="text-primary font-medium">Lead Ads</span>
+</nav>
+<h1 class="text-3xl font-extrabold text-on-surface tracking-tight">Facebook Lead Ads</h1>
+<p class="text-on-surface-variant text-sm mt-1">Sync lead forms directly from your Meta ads campaigns to CRM-WA.</p>
+</div>
+<div class="flex gap-3">
+<button class="bg-surface-container-highest border border-outline-variant px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-surface-bright transition-all">
+<span class="material-symbols-outlined text-sm">sync</span>
+                        Force Sync
+                    </button>
+</div>
+</div>
+<!-- Bento Grid - Section 1 -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Facebook Connection Card -->
+<div class="lg:col-span-4 bg-surface-container rounded-xl border border-outline-variant p-6 flex flex-col justify-between overflow-hidden relative group">
+<div class="absolute -right-4 -top-4 text-primary/5 group-hover:text-primary/10 transition-colors">
+<span class="material-symbols-outlined !text-[120px]" data-icon="facebook" data-weight="fill" style="font-variation-settings: 'FILL' 1;">social_leaderboard</span>
+</div>
+<div class="relative z-10">
+<div class="flex items-center justify-between mb-6">
+<div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-2xl" data-icon="facebook" data-weight="fill" style="font-variation-settings: 'FILL' 1;">social_leaderboard</span>
+</div>
+<span class="bg-[#34d399]/20 text-[#34d399] px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">CONNECTED</span>
+</div>
+<h3 class="text-lg font-bold text-on-surface">Marketing Hub</h3>
+<p class="text-on-surface-variant text-xs mt-1">ID: fb_8829314421</p>
+</div>
+<div class="mt-8 relative z-10 flex gap-2">
+<button class="flex-1 bg-surface-container-highest hover:bg-error/10 hover:text-error border border-outline-variant py-2 rounded-lg text-xs font-bold transition-all">Disconnect</button>
+<button class="p-2 border border-outline-variant rounded-lg hover:bg-surface-bright"><span class="material-symbols-outlined text-sm">edit</span></button>
+</div>
+</div>
+<!-- Configuration Area -->
+<div class="lg:col-span-8 bg-surface-container rounded-xl border border-outline-variant p-6">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary">settings_suggest</span>
+<h2 class="text-base font-semibold">Campaign Configuration</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-6">
+<div>
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">Select Form ID</label>
+<div class="relative">
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-2.5 text-sm appearance-none focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+<option>Summer Launch 2024 - Contact Form</option>
+<option>Lead Gen - Real Estate Q3</option>
+<option>Waitlist - Early Access</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-lg p-4 space-y-4 border border-outline-variant/30">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-sm font-semibold">Auto-assign to agent</span>
+<span class="text-[10px] text-on-surface-variant">Round-robin leads to team</span>
+</div>
+<button class="w-10 h-5 bg-primary rounded-full relative shadow-inner">
+<div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-md"></div>
+</button>
+</div>
+<div class="h-px bg-outline-variant/20 w-full"></div>
+<div>
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">Auto-tag leads</label>
+<div class="flex gap-2">
+<input class="flex-1 bg-surface-container-highest border border-outline-variant rounded-lg px-3 py-1.5 text-sm focus:ring-1 focus:ring-primary outline-none placeholder:text-on-surface-variant/50" placeholder="e.g. facebook-ads, q4-promo" type="text"/>
+<button class="bg-primary-container/20 text-primary-container px-3 py-1.5 rounded-lg text-xs font-bold border border-primary-container/30">Add</button>
+</div>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Field Mapping</label>
+<div class="space-y-2 max-h-[180px] overflow-y-auto pr-2 custom-scroll">
+<div class="flex items-center justify-between bg-surface-container-low p-2 rounded-lg border border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">email</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant">arrow_forward</span>
+<span class="text-xs font-medium">email</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/50 cursor-pointer hover:text-error">cancel</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low p-2 rounded-lg border border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">full_name</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant">arrow_forward</span>
+<span class="text-xs font-medium">firstName</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/50 cursor-pointer hover:text-error">cancel</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low p-2 rounded-lg border border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">phone_number</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant">arrow_forward</span>
+<span class="text-xs font-medium">phone</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/50 cursor-pointer hover:text-error">cancel</span>
+</div>
+</div>
+<button class="w-full border-2 border-dashed border-outline-variant hover:border-primary/50 text-on-surface-variant hover:text-primary py-2 rounded-lg text-[10px] font-bold flex items-center justify-center gap-2 transition-all uppercase">
+<span class="material-symbols-outlined text-sm">add_circle</span>
+                                Add Mapping Rule
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Lead Ad Entries - Section 2 -->
+<div class="bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h2 class="text-lg font-bold text-on-surface">Recent Lead Ad Entries</h2>
+<p class="text-xs text-on-surface-variant">Latest 50 leads synchronized from active Meta forms.</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded-lg px-3 py-1.5 focus-within:ring-1 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-sm text-on-surface-variant mr-2">calendar_month</span>
+<input class="bg-transparent border-none p-0 text-xs w-44 outline-none focus:ring-0" type="text" value="Jun 1, 2024 - Jun 30, 2024"/>
+</div>
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded-lg px-3 py-1.5 focus-within:ring-1 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-sm text-on-surface-variant mr-2">filter_alt</span>
+<input class="bg-transparent border-none p-0 text-xs w-32 outline-none focus:ring-0" placeholder="Filter by Form" type="text"/>
+</div>
+<button class="p-1.5 bg-surface-container-highest border border-outline-variant rounded-lg hover:bg-surface-bright">
+<span class="material-symbols-outlined text-sm">download</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-sm text-left">
+<thead class="bg-surface-container-high/50 text-[10px] font-black uppercase tracking-widest text-on-surface-variant border-b border-outline-variant">
+<tr>
+<th class="px-6 py-4">Contact Name</th>
+<th class="px-6 py-4">Contact Info</th>
+<th class="px-6 py-4">Source Form</th>
+<th class="px-6 py-4">Status</th>
+<th class="px-6 py-4">Created</th>
+<th class="px-6 py-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Lead 1 -->
+<tr class="hover:bg-surface-bright/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">AS</div>
+<span class="font-semibold text-on-surface">Alex Stanford</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-xs">+1 (555) 234-8891</span>
+<span class="text-[10px] text-on-surface-variant">alex.s@gmail.com</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs bg-surface-container-highest px-2 py-1 rounded border border-outline-variant">Summer Launch 2024</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-[#34d399]/15 text-[#34d399] px-2 py-0.5 rounded-full text-[10px] font-bold">NEW</span>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">Today, 2:45 PM</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">visibility</span></button>
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">chat_bubble</span></button>
+</div>
+</td>
+</tr>
+<!-- Lead 2 -->
+<tr class="hover:bg-surface-bright/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold text-xs">MJ</div>
+<span class="font-semibold text-on-surface">Marcus Johnson</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-xs">+1 (555) 902-1142</span>
+<span class="text-[10px] text-on-surface-variant">marcus.j@outlook.com</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs bg-surface-container-highest px-2 py-1 rounded border border-outline-variant">Real Estate Q3</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-[#34d399]/15 text-[#34d399] px-2 py-0.5 rounded-full text-[10px] font-bold">NEW</span>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">Today, 11:20 AM</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">visibility</span></button>
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">chat_bubble</span></button>
+</div>
+</td>
+</tr>
+<!-- Lead 3 -->
+<tr class="hover:bg-surface-bright/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-500 font-bold text-xs">SC</div>
+<span class="font-semibold text-on-surface">Sarah Chen</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-xs">+44 20 7946 0958</span>
+<span class="text-[10px] text-on-surface-variant">schen.biz@gmail.com</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs bg-surface-container-highest px-2 py-1 rounded border border-outline-variant">Early Access Form</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-[#34d399]/15 text-[#34d399] px-2 py-0.5 rounded-full text-[10px] font-bold">NEW</span>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">Yesterday, 9:15 PM</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">visibility</span></button>
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">chat_bubble</span></button>
+</div>
+</td>
+</tr>
+<!-- Lead 4 -->
+<tr class="hover:bg-surface-bright/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 font-bold text-xs">BT</div>
+<span class="font-semibold text-on-surface">Brian Thompson</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-xs">+1 (555) 612-4431</span>
+<span class="text-[10px] text-on-surface-variant">bt@thompson.dev</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs bg-surface-container-highest px-2 py-1 rounded border border-outline-variant">Summer Launch 2024</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-[#34d399]/15 text-[#34d399] px-2 py-0.5 rounded-full text-[10px] font-bold">NEW</span>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">Yesterday, 4:30 PM</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">visibility</span></button>
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">chat_bubble</span></button>
+</div>
+</td>
+</tr>
+<!-- Lead 5 -->
+<tr class="hover:bg-surface-bright/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-pink-500/20 flex items-center justify-center text-pink-500 font-bold text-xs">LR</div>
+<span class="font-semibold text-on-surface">Lana Rodriguez</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-xs">+1 (555) 772-0199</span>
+<span class="text-[10px] text-on-surface-variant">lana.r@me.com</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs bg-surface-container-highest px-2 py-1 rounded border border-outline-variant">Real Estate Q3</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-[#34d399]/15 text-[#34d399] px-2 py-0.5 rounded-full text-[10px] font-bold">NEW</span>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">Yesterday, 10:10 AM</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">visibility</span></button>
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">chat_bubble</span></button>
+</div>
+</td>
+</tr>
+<!-- Lead 6 -->
+<tr class="hover:bg-surface-bright/50 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 font-bold text-xs">DW</div>
+<span class="font-semibold text-on-surface">Derek Wright</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-xs">+1 (555) 341-8822</span>
+<span class="text-[10px] text-on-surface-variant">d.wright@company.io</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="text-xs bg-surface-container-highest px-2 py-1 rounded border border-outline-variant">Summer Launch 2024</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-[#34d399]/15 text-[#34d399] px-2 py-0.5 rounded-full text-[10px] font-bold">NEW</span>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">Jun 24, 6:50 PM</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">visibility</span></button>
+<button class="p-1.5 hover:bg-primary/10 hover:text-primary rounded-lg transition-colors"><span class="material-symbols-outlined text-sm">chat_bubble</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-surface-container-high/30 border-t border-outline-variant flex items-center justify-between">
+<span class="text-xs text-on-surface-variant">Showing 1-6 of 2,408 leads</span>
+<div class="flex gap-1">
+<button class="p-1.5 rounded-md hover:bg-surface-container-highest border border-outline-variant text-on-surface-variant disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="px-3 py-1.5 rounded-md bg-primary/20 text-primary border border-primary/30 text-xs font-bold">1</button>
+<button class="px-3 py-1.5 rounded-md hover:bg-surface-container-highest border border-outline-variant text-xs font-bold">2</button>
+<button class="px-3 py-1.5 rounded-md hover:bg-surface-container-highest border border-outline-variant text-xs font-bold">3</button>
+<button class="p-1.5 rounded-md hover:bg-surface-container-highest border border-outline-variant text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-slate-800 flex justify-around items-center h-16 z-50 px-4">
+<a class="flex flex-col items-center justify-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined text-2xl">dashboard</span>
+<span class="text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 text-amber-500" href="#">
+<span class="material-symbols-outlined text-2xl">ads_click</span>
+<span class="text-[10px]">Ads</span>
+</a>
+<div class="relative -top-4">
+<button class="w-12 h-12 bg-amber-600 rounded-full flex items-center justify-center text-slate-950 shadow-lg shadow-amber-600/20">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center justify-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined text-2xl">person</span>
+<span class="text-[10px]">Leads</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined text-2xl">settings</span>
+<span class="text-[10px]">Setup</span>
+</a>
+</nav>
+</body></html>

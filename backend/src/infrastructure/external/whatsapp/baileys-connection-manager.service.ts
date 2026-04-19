@@ -94,7 +94,7 @@ export class BaileysConnectionManager implements OnModuleInit, OnModuleDestroy {
         },
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }) as any,
-        browser: ['CRM-WA', 'Chrome', '120.0.0'],
+        browser: ['Wazelo CRM', 'Chrome', '120.0.0'],
         syncFullHistory: false,
         connectTimeoutMs: 60_000,
         keepAliveIntervalMs: WHATSAPP_CONFIG.HEARTBEAT_INTERVAL_MS,

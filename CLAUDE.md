@@ -1,7 +1,7 @@
-# CRM-WA: WhatsApp CRM SaaS Platform
+# Wazelo CRM: WhatsApp CRM SaaS Platform
 
 ## Project Overview
-A multi-tenant WhatsApp CRM SaaS platform with real-time messaging, campaign management, automation, and billing.
+A multi-tenant WhatsApp CRM SaaS platform with real-time messaging, lead management, campaign management, automation, and billing.
 
 ---
 

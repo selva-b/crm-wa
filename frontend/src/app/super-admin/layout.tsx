@@ -60,7 +60,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
         <div className="flex items-center gap-2 px-4 h-14 border-b border-outline-variant">
           <Flame className="h-5 w-5 text-primary shrink-0" />
           <span className="font-bold text-sm text-on-surface">
-            CRM-WA <span className="text-primary">Admin</span>
+            Wazelo <span className="text-primary">Admin</span>
           </span>
         </div>
 

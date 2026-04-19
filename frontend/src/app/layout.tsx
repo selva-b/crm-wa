@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CRM-WA",
-  description: "WhatsApp CRM Platform",
+  title: "Wazelo CRM",
+  description: "WhatsApp CRM for Growing Teams — Leads, Inbox, Campaigns & Automation",
 };
 
 export default function RootLayout({

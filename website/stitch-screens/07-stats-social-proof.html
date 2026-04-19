@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wazelo CRM - Cinematic Stats &amp; Social Proof</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,100..900;1,100..900&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#004a75",
+                        "surface-container-high": "#2a2a2a",
+                        "primary": "#ffb77d",
+                        "on-surface-variant": "#dbc2b0",
+                        "surface-container-lowest": "#0e0e0e",
+                        "tertiary-fixed": "#cee5ff",
+                        "on-primary-fixed": "#2f1500",
+                        "error-container": "#93000a",
+                        "on-secondary-fixed": "#2f1500",
+                        "primary-fixed": "#ffdcc3",
+                        "on-surface": "#e5e2e1",
+                        "surface-dim": "#131313",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-container-highest": "#353534",
+                        "background": "#131313",
+                        "secondary-container": "#673d17",
+                        "on-background": "#e5e2e1",
+                        "on-tertiary-container": "#002c48",
+                        "on-secondary-container": "#e4a97a",
+                        "on-secondary": "#4c2703",
+                        "on-tertiary-fixed": "#001d32",
+                        "outline": "#a38c7c",
+                        "on-primary-container": "#432100",
+                        "outline-variant": "#554336",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "error": "#ffb4ab",
+                        "on-secondary-fixed-variant": "#673d17",
+                        "inverse-on-surface": "#313030",
+                        "on-error": "#690005",
+                        "tertiary-container": "#0297e8",
+                        "surface-bright": "#3a3939",
+                        "on-tertiary": "#003353",
+                        "on-error-container": "#ffdad6",
+                        "secondary": "#f7ba8a",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-tint": "#ffb77d",
+                        "tertiary-fixed-dim": "#96ccff",
+                        "secondary-fixed-dim": "#f7ba8a",
+                        "surface-container": "#201f1f",
+                        "tertiary": "#96ccff",
+                        "inverse-primary": "#904d00",
+                        "on-primary": "#4d2600",
+                        "primary-fixed-dim": "#ffb77d",
+                        "surface": "#131313",
+                        "primary-container": "#d97707",
+                        "secondary-fixed": "#ffdcc3",
+                        "surface-variant": "#353534"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Epilogue"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .amber-bloom {
+            box-shadow: 0 0 60px 4px rgba(255, 183, 125, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body antialiased min-h-screen selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation (Generated from JSON schema intent context) -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl transition via bg-[#1c1b1b]">
+<div class="flex justify-between items-center px-12 h-24 w-full max-w-[2560px] mx-auto">
+<div class="text-2xl font-black tracking-tighter text-amber-500 uppercase font-headline">MONOLITH CRM</div>
+<div class="flex gap-8 hidden md:flex items-center">
+<a class="text-amber-500 font-bold border-b-2 border-amber-500 pb-1 font-body text-sm uppercase tracking-wider" href="#">Features</a>
+<a class="text-[#e5e2e1]/60 font-medium hover:text-amber-400 transition-colors duration-300 font-body text-sm uppercase tracking-wider" href="#">Solutions</a>
+<a class="text-[#e5e2e1]/60 font-medium hover:text-amber-400 transition-colors duration-300 font-body text-sm uppercase tracking-wider" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-6">
+<button class="hover:text-amber-400 transition-colors duration-300 scale-95 duration-200 ease-in-out">
+<span class="material-symbols-outlined text-2xl text-[#e5e2e1]/60">search</span>
+</button>
+<button class="hover:text-amber-400 transition-colors duration-300 scale-95 duration-200 ease-in-out">
+<span class="material-symbols-outlined text-2xl text-[#e5e2e1]/60">notifications</span>
+</button>
+<button class="hover:text-amber-400 transition-colors duration-300 scale-95 duration-200 ease-in-out">
+<span class="material-symbols-outlined text-2xl text-[#e5e2e1]/60">settings</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant/30 ml-2">
+<img alt="Executive profile picture" class="w-full h-full object-cover" data-alt="professional headshot of an executive in a dark tailored suit with dramatic side lighting and a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBERLSsg_ToHNSCikaaCzU212hUDVnoQQVZ2Ly88L3tJ0gDrLLjAlSEaXWjZ-anUqeqBmCdhJGNMRfK3J4bDHljOF5pADpVvxLb2YCgqVfJqGslzNzoGiTzjcvHFfYW0yhpgGGA_547EFpJEOs_M48pimXmD04l2C6oFl7MZ0zpJOl77KwUScnTeSscqbO99mlxC16PsYh8rdJHfIiilN7pEyAWKO0ba5jTtKz6V8gs_L1FER37V1UnfGMIk_cksUwHQ-Q3Q8dSRrA"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Container -->
+<main class="w-full max-w-[2560px] mx-auto pt-32">
+<!-- PART 1: Impact Numbers -->
+<section class="bg-surface-container-lowest py-32 px-6 md:px-12 lg:px-24 relative overflow-hidden">
+<!-- Decorative Glow -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-64 bg-primary/5 blur-[120px] rounded-[100%] pointer-events-none"></div>
+<div class="max-w-7xl mx-auto text-center mb-24 relative z-10">
+<span class="font-body text-xs font-bold tracking-[0.2em] text-primary uppercase mb-6 inline-block border-b border-primary/30 pb-2">BY THE NUMBERS</span>
+<h2 class="font-headline font-black text-5xl md:text-7xl lg:text-[88px] leading-none text-on-surface uppercase tracking-tighter">
+                    NUMBERS THAT <span class="text-transparent bg-clip-text bg-gradient-to-br from-primary to-primary-container">SPEAK.</span>
+</h2>
+</div>
+<div class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 relative z-10">
+<!-- Metric 1 -->
+<div class="bg-surface-container-low rounded-xl p-10 border-t border-primary/20 relative overflow-hidden group amber-bloom transition-all duration-500 hover:-translate-y-2">
+<div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+<div class="flex flex-col h-full justify-between gap-8">
+<div>
+<div class="font-headline font-black text-6xl md:text-7xl lg:text-[96px] leading-none text-primary tracking-tighter mb-4">500+</div>
+<div class="font-body text-sm font-semibold tracking-widest text-on-surface-variant uppercase">Active Businesses</div>
+</div>
+<div class="h-16 w-full flex items-end">
+<!-- Abstract SVG Micro Graph -->
+<svg class="w-full h-full text-primary/40 stroke-current" preserveaspectratio="none" viewbox="0 0 100 40">
+<path d="M0,40 Q10,35 20,38 T40,25 T60,15 T80,20 T100,5" fill="none" stroke-linecap="round" stroke-width="2"></path>
+<path d="M0,40 Q10,35 20,38 T40,25 T60,15 T80,20 T100,5 L100,40 L0,40 Z" fill="url(#grad1)" opacity="0.1" stroke="none"></path>
+<defs>
+<lineargradient id="grad1" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="currentColor" stop-opacity="1"></stop>
+<stop offset="100%" stop-color="currentColor" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+</svg>
+</div>
+</div>
+</div>
+<!-- Separator Line (Hidden on mobile/tablet grid, visible in row) -->
+<div class="hidden xl:block absolute left-1/4 top-1/2 -translate-y-1/2 w-px h-2/3 bg-on-surface/5"></div>
+<!-- Metric 2 -->
+<div class="bg-surface-container-low rounded-xl p-10 border-t border-primary/20 relative overflow-hidden group amber-bloom transition-all duration-500 hover:-translate-y-2">
+<div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+<div class="flex flex-col h-full justify-between gap-8">
+<div>
+<div class="font-headline font-black text-6xl md:text-7xl lg:text-[96px] leading-none text-primary tracking-tighter mb-4">94<span class="text-5xl">%</span></div>
+<div class="font-body text-sm font-semibold tracking-widest text-on-surface-variant uppercase">Message Delivery Rate</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Mini Donut Chart -->
+<svg class="w-12 h-12 transform -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container-highest stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="4"></path>
+<path class="text-primary stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="94, 100" stroke-linecap="round" stroke-width="4"></path>
+</svg>
+<span class="font-body text-xs text-on-surface/50">Industry avg: 65%</span>
+</div>
+</div>
+</div>
+<!-- Separator Line -->
+<div class="hidden xl:block absolute left-2/4 top-1/2 -translate-y-1/2 w-px h-2/3 bg-on-surface/5"></div>
+<!-- Metric 3 -->
+<div class="bg-surface-container-low rounded-xl p-10 border-t border-primary/20 relative overflow-hidden group amber-bloom transition-all duration-500 hover:-translate-y-2">
+<div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+<div class="flex flex-col h-full justify-between gap-8">
+<div>
+<div class="font-headline font-black text-6xl md:text-7xl lg:text-[80px] leading-none text-primary tracking-tighter mb-4">2.3<span class="text-3xl ml-2 tracking-normal text-primary/80">min</span></div>
+<div class="font-body text-sm font-semibold tracking-widest text-on-surface-variant uppercase mt-6">Average Response Time</div>
+</div>
+<div class="flex items-center gap-3 text-[#a3defe] font-body text-sm font-bold">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">arrow_downward</span>
+<span>Down from 45 min</span>
+</div>
+</div>
+</div>
+<!-- Separator Line -->
+<div class="hidden xl:block absolute left-3/4 top-1/2 -translate-y-1/2 w-px h-2/3 bg-on-surface/5"></div>
+<!-- Metric 4 -->
+<div class="bg-surface-container-low rounded-xl p-10 border-t border-primary/20 relative overflow-hidden group amber-bloom transition-all duration-500 hover:-translate-y-2">
+<div class="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+<div class="flex flex-col h-full justify-between gap-8">
+<div>
+<div class="font-headline font-black text-6xl md:text-7xl lg:text-[96px] leading-none text-primary tracking-tighter mb-4">4.8<span class="text-6xl text-primary/60 align-top ml-1">★</span></div>
+<div class="font-body text-sm font-semibold tracking-widest text-on-surface-variant uppercase">Customer CSAT Score</div>
+</div>
+<div class="flex gap-1">
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-primary/40 text-2xl" style="font-variation-settings: 'FILL' 1;">star_half</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- PART 2: Social Proof / Case Study -->
+<section class="bg-surface-dim py-32 px-6 md:px-12 lg:px-24">
+<div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24 items-center">
+<!-- Left: Quote -->
+<div class="lg:col-span-7 flex relative">
+<div class="w-1 bg-gradient-to-b from-primary via-primary-container to-transparent mr-10 flex-shrink-0"></div>
+<div>
+<span class="material-symbols-outlined text-6xl text-primary/20 mb-6 block" style="font-variation-settings: 'FILL' 1;">format_quote</span>
+<blockquote class="font-headline italic font-light text-3xl md:text-4xl lg:text-[44px] leading-tight text-on-surface/90 mb-12 tracking-tight">
+                            "We went from missing 40% of leads to a 94% response rate in 3 weeks. Wazelo CRM is the only tool that actually works for WhatsApp sales."
+                        </blockquote>
+<div class="flex items-center gap-6">
+<div class="w-16 h-16 rounded-full overflow-hidden border-2 border-outline-variant">
+<img alt="Rajesh M." class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" data-alt="close up portrait of a confident south asian male professional in his 40s wearing a dark grey blazer against a deep charcoal background with studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBg0ZfiGMlhEz2medBfR42nDAaKJ3gkRhlJLfTsxMe92tCzfCMeMIGK9y8WTXMrg7AUk8qkELNzXCNlwaa7fIUU1WJrIo6RbQajvdPuHFxVU-C3TOPrLclheLEW43jTZObRWNHeaLb7EOuHq45vxnPeagrv4RetNQLotFZVpKQwYWqx3Pd_wba56xMdFLMRT6CHJuGwwjIiSyE8ErI_oZ8cjb8Dg85gglrvoMrJA8UF5vyjGpEwmw97aFoxqEZr6kD0E_2MUdnc0nQ"/>
+</div>
+<div>
+<div class="font-body text-xl font-bold text-on-surface mb-1">Rajesh M.</div>
+<div class="font-body text-sm font-medium tracking-wide text-primary uppercase">Head of Sales, Nexus Capital</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Case Study Card -->
+<div class="lg:col-span-5 relative">
+<!-- Ambient Shadow behind card -->
+<div class="absolute inset-0 bg-primary/10 blur-[100px] rounded-xl transform translate-y-10"></div>
+<div class="bg-surface-container-low border-t-2 border-primary rounded-xl p-10 relative z-10 shadow-2xl flex flex-col h-full justify-between">
+<div>
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest border border-outline-variant flex items-center justify-center">
+<div class="w-6 h-6 rounded-full bg-gradient-to-tr from-primary to-primary-container"></div>
+</div>
+<span class="font-headline font-bold text-xl tracking-tight text-on-surface">Nexus Capital</span>
+</div>
+<h3 class="font-headline font-black text-3xl md:text-4xl text-on-surface leading-tight tracking-tighter mb-12">
+                                3x lead conversion in 30 days
+                            </h3>
+<div class="space-y-6 mb-12 border-l border-outline-variant/30 pl-6">
+<div class="flex justify-between items-end">
+<span class="font-body text-sm font-medium text-on-surface-variant">Leads responded</span>
+<span class="font-headline font-bold text-xl text-primary flex items-center gap-1"><span class="material-symbols-outlined text-sm">arrow_upward</span> 340%</span>
+</div>
+<div class="flex justify-between items-end">
+<span class="font-body text-sm font-medium text-on-surface-variant">Response time</span>
+<span class="font-headline font-bold text-xl text-[#a3defe] flex items-center gap-1"><span class="material-symbols-outlined text-sm">arrow_downward</span> 87%</span>
+</div>
+<div class="flex justify-between items-end">
+<span class="font-body text-sm font-medium text-on-surface-variant">Revenue attributed</span>
+<span class="font-headline font-bold text-xl text-on-surface">₹24L</span>
+</div>
+</div>
+</div>
+<a class="inline-flex items-center gap-2 font-body font-bold text-sm tracking-widest text-primary uppercase hover:text-primary-container transition-colors group" href="#">
+                            Read case study 
+                            <span class="material-symbols-outlined text-lg transform group-hover:translate-x-1 transition-transform">arrow_right_alt</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

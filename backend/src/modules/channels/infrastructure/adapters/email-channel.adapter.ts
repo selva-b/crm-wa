@@ -46,7 +46,7 @@ export class EmailChannelAdapter implements ChannelAdapter {
       to: message.recipientIdentifier,
       subject:
         (message.channelPayload?.subject as string) || 'No Subject',
-      messageId: `<${message.idempotencyKey}@crm-wa>`,
+      messageId: `<${message.idempotencyKey}@wazelo>`,
     };
 
     if (message.type === MessageType.TEXT) {

@@ -202,7 +202,7 @@ export default function BillingPage() {
             key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
             amount: order.amount,
             currency: order.currency,
-            name: "CRM-WA",
+            name: "Wazelo CRM",
             description: subscription?.plan.id === plan.id
               ? `Activate ${order.planName} Plan`
               : `Subscribe to ${order.planName}`,
@@ -905,7 +905,7 @@ function PlanCard({
         {/* Action Button */}
         {isEnterprise && !isCurrent ? (
           <a
-            href="mailto:sales@crm-wa.com"
+            href="mailto:sales@wazelo.in"
             className="mt-4 w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-on-surface/20 px-3 py-2 text-[13px] font-medium text-on-surface hover:bg-surface-container transition-colors"
           >
             Contact Us

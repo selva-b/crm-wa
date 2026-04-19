@@ -229,7 +229,7 @@ export function InvoiceDetailModal({ invoice, user, onClose }: Props) {
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 18,
                   }}>💬</div>
-                  <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>CRM-WA</span>
+                  <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.5px" }}>Wazelo CRM</span>
                 </div>
                 {/* Invoice number */}
                 <div style={{ textAlign: "right" }}>
@@ -338,8 +338,8 @@ export function InvoiceDetailModal({ invoice, user, onClose }: Props) {
 
             {/* Footer */}
             <div style={{ padding: "16px 40px", background: "#f9fafb", borderTop: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p style={{ fontSize: 11, color: "#9ca3af" }}>Thank you for your business · CRM-WA Platform</p>
-              <p style={{ fontSize: 11, fontWeight: 600, color: "#4338ca" }}>support@crm-wa.com</p>
+              <p style={{ fontSize: 11, color: "#9ca3af" }}>Thank you for your business · Wazelo CRM Platform</p>
+              <p style={{ fontSize: 11, fontWeight: 600, color: "#4338ca" }}>support@wazelo.in</p>
             </div>
           </div>
         </div>

@@ -37,7 +37,7 @@ export default function SuperAdminLoginPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
             <Flame className="h-7 w-7 text-primary" />
-            <span className="text-on-surface font-bold text-xl">CRM-WA</span>
+            <span className="text-on-surface font-bold text-xl">Wazelo CRM</span>
           </div>
           <p className="text-on-surface-variant text-sm">Super Admin Portal</p>
         </div>
@@ -51,7 +51,7 @@ export default function SuperAdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full bg-surface-container border border-outline-variant text-on-surface rounded-lg px-3 py-2.5 text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="superadmin@crm-wa.com"
+              placeholder="superadmin@wazelo.in"
             />
           </div>
           <div>

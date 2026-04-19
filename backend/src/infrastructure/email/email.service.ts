@@ -79,18 +79,18 @@ export class EmailService {
         Confirm your email address
       </h1>
       <p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#374151;">
-        Hi <strong>${firstName}</strong>, welcome to CRM-WA! 🎉
+        Hi <strong>${firstName}</strong>, welcome to Wazelo CRM! 🎉
       </p>
       <p style="margin:0;font-size:15px;line-height:1.7;color:#374151;">
         You're one step away from your WhatsApp CRM. Click below to verify your email and activate your account.
       </p>
       ${buildButton('Verify Email Address', verificationUrl)}
-      ${buildNote("This link expires in <strong>24 hours</strong>. If you didn't create a CRM-WA account, you can safely ignore this email.")}
+      ${buildNote("This link expires in <strong>24 hours</strong>. If you didn't create a Wazelo CRM account, you can safely ignore this email.")}
     `;
     return {
-      subject: 'Verify your email — CRM-WA',
+      subject: 'Verify your email — Wazelo CRM',
       html: buildLayout({
-        preheader: `Hi ${firstName}, confirm your email to get started with CRM-WA.`,
+        preheader: `Hi ${firstName}, confirm your email to get started with Wazelo CRM.`,
         body,
         frontendUrl: this.frontendUrl,
       }),
@@ -111,15 +111,15 @@ export class EmailService {
         Hi <strong>${firstName}</strong>,
       </p>
       <p style="margin:0;font-size:15px;line-height:1.7;color:#374151;">
-        We received a request to reset the password for your CRM-WA account. Click below to choose a new password.
+        We received a request to reset the password for your Wazelo CRM account. Click below to choose a new password.
       </p>
       ${buildButton('Reset Password', resetUrl)}
       ${buildNote("This link expires in <strong>15 minutes</strong> for your security. If you didn't request a password reset, no action is needed — your account remains secure.")}
     `;
     return {
-      subject: 'Reset your password — CRM-WA',
+      subject: 'Reset your password — Wazelo CRM',
       html: buildLayout({
-        preheader: 'Reset your CRM-WA password. This link expires in 15 minutes.',
+        preheader: 'Reset your Wazelo CRM password. This link expires in 15 minutes.',
         body,
         frontendUrl: this.frontendUrl,
       }),
@@ -140,11 +140,11 @@ export class EmailService {
       MANAGER:  '✓ Team management &nbsp; ✓ Campaigns &nbsp; ✓ Reports &amp; analytics',
       EMPLOYEE: '✓ Shared inbox &nbsp; ✓ Contact management &nbsp; ✓ Conversations',
     };
-    const features = featuresByRole[role] ?? '✓ Access to CRM-WA workspace';
+    const features = featuresByRole[role] ?? '✓ Access to Wazelo CRM workspace';
 
     const body = `
       <h1 style="margin:0 0 12px;font-size:24px;font-weight:700;color:#111827;line-height:1.3;">
-        You've been invited to CRM-WA
+        You've been invited to Wazelo CRM
       </h1>
       <p style="margin:0 0 8px;font-size:15px;line-height:1.7;color:#374151;">
         You've been invited${orgText} as a ${buildRoleBadge(roleLabel)}.
@@ -162,9 +162,9 @@ export class EmailService {
       ${buildNote("This invitation expires in <strong>48 hours</strong>. If you didn't expect this, you can safely ignore this email.")}
     `;
     return {
-      subject: "You've been invited to join CRM-WA",
+      subject: "You've been invited to join Wazelo CRM",
       html: buildLayout({
-        preheader: `You've been invited to join CRM-WA as a ${roleLabel}.`,
+        preheader: `You've been invited to join Wazelo CRM as a ${roleLabel}.`,
         body,
         frontendUrl: this.frontendUrl,
       }),

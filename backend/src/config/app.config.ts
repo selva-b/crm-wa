@@ -19,7 +19,7 @@ export const emailConfig = registerAs('email', () => ({
   port: parseInt(process.env.SMTP_PORT || '1025', 10),
   user: process.env.SMTP_USER || '',
   pass: process.env.SMTP_PASS || '',
-  from: process.env.SMTP_FROM || 'noreply@crm-wa.com',
+  from: process.env.SMTP_FROM || 'noreply@wazelo.in',
 }));
 
 export const authConfig = registerAs('auth', () => ({

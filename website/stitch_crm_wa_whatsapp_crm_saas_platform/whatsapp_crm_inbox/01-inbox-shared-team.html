@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CRM-WA | Inbox</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#434855",
+                        "inverse-on-surface": "#53555c",
+                        "on-secondary-fixed": "#383f4e",
+                        "surface-tint": "#ffb77d",
+                        "on-primary-container": "#230e00",
+                        "background": "#0c0e14",
+                        "surface-container": "#161923",
+                        "surface-variant": "#212532",
+                        "on-surface-variant": "#a7aaba",
+                        "on-background": "#e2e5f6",
+                        "on-error": "#450900",
+                        "on-tertiary-fixed-variant": "#2e007c",
+                        "primary-dim": "#fe932c",
+                        "inverse-surface": "#faf8ff",
+                        "surface-container-lowest": "#000000",
+                        "secondary-fixed": "#dce2f5",
+                        "tertiary-fixed-dim": "#987cea",
+                        "on-tertiary": "#31067e",
+                        "on-primary-fixed-variant": "#572c00",
+                        "on-primary": "#643400",
+                        "surface": "#0c0e14",
+                        "primary-container": "#dd7a0c",
+                        "secondary-container": "#343c4a",
+                        "on-primary-fixed": "#240f00",
+                        "surface-dim": "#0c0e14",
+                        "tertiary-container": "#a589f8",
+                        "primary-fixed": "#fe932c",
+                        "primary": "#ffb77d",
+                        "on-tertiary-container": "#230062",
+                        "on-secondary-container": "#b8bfd1",
+                        "surface-container-low": "#10131b",
+                        "on-error-container": "#ff9b82",
+                        "error": "#f97758",
+                        "surface-bright": "#282c38",
+                        "tertiary-dim": "#a88cfb",
+                        "secondary-fixed-dim": "#cdd4e6",
+                        "on-surface": "#e2e5f6",
+                        "inverse-primary": "#914d00",
+                        "surface-container-high": "#1c1f2a",
+                        "on-secondary": "#39404f",
+                        "error-dim": "#c44f34",
+                        "tertiary": "#b299ff",
+                        "secondary-dim": "#b2b9ca",
+                        "tertiary-fixed": "#a589f8",
+                        "primary-fixed-dim": "#ed871e",
+                        "outline": "#717584",
+                        "error-container": "#85230a",
+                        "on-tertiary-fixed": "#000000",
+                        "on-secondary-fixed-variant": "#545c6b",
+                        "secondary": "#c0c6d8",
+                        "surface-container-highest": "#212532"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .chat-scrollbar::-webkit-scrollbar { width: 4px; }
+        .chat-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .chat-scrollbar::-webkit-scrollbar-thumb { background: #2d3044; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex h-screen overflow-hidden">
+<!-- SideNavBar (Left Panel) -->
+<aside class="flex flex-col h-full w-[240px] z-50 bg-[#0d0f1a] border-r border-[#2d3044] fixed left-0 top-0 h-full font-['Inter'] text-sm font-normal">
+<div class="p-6 flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+<div>
+<h1 class="text-xl font-semibold text-amber-600 leading-tight">CRM-WA</h1>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Midnight Ember</p>
+</div>
+</div>
+<nav class="flex-1 mt-4 px-2 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-amber-600">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 bg-[#1a1d2e] text-amber-600 border-r-2 border-amber-600 active:opacity-90 transition-opacity duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inbox</span>
+                Inbox
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-amber-600">group</span>
+                Contacts
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-amber-600">campaign</span>
+                Campaigns
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-amber-600">smart_toy</span>
+                Automation
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-amber-600">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="p-4">
+<button class="w-full bg-primary-container text-on-primary-container py-3 rounded-lg flex items-center justify-center gap-2 font-bold hover:brightness-110 transition-all shadow-lg shadow-primary-container/10">
+<span class="material-symbols-outlined">add</span>
+                New Broadcast
+            </button>
+</div>
+<div class="mt-auto border-t border-[#2d3044] p-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+                Help
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:text-error transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+                Sign Out
+            </a>
+</div>
+</aside>
+<!-- Main Workspace Container -->
+<main class="ml-[240px] flex flex-1 flex-col h-full bg-[#0f1117]">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-6 w-full h-16 z-40 border-b border-[#2d3044] bg-[#0f1117]">
+<div class="flex items-center gap-4 flex-1">
+<h2 class="font-semibold text-lg text-on-surface">Inbox</h2>
+<div class="relative w-full max-w-md ml-4">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full bg-surface-container border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant/50" placeholder="Search conversations..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-5 ml-4">
+<div class="flex items-center gap-4 text-[#9ca3b4]">
+<button class="material-symbols-outlined hover:text-amber-500 transition-colors scale-95 active:scale-100">notifications</button>
+<button class="material-symbols-outlined hover:text-amber-500 transition-colors scale-95 active:scale-100">history</button>
+<button class="material-symbols-outlined hover:text-amber-500 transition-colors scale-95 active:scale-100">tune</button>
+</div>
+<div class="h-8 w-[1px] bg-[#2d3044]"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-semibold text-on-surface">Support Agent</p>
+<p class="text-[10px] text-on-surface-variant">Online</p>
+</div>
+<img alt="Support Agent" class="w-9 h-9 rounded-full object-cover border border-[#2d3044]" data-alt="Professional customer support agent with a friendly expression in a modern office setting, soft professional lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAV0_3P--b2oghEVQY3YvXLGpqPj3jKBdAqywyHRpnUeR0nJhw5rXZwycGNWZSoMldDQvagASepEN9t3Xu_H3RWVmInnkGJpE4qzGLUJR2HSYhQbQdsIELDKSjpB2502hJWQ-eZcVBeDG5eAW8gLJssg9RlEKqWV-du9UdZwUuXEi9dtwad0TKcPu8IMkeB0Si-rQoxv9ISFp9BILkU6Hpy9k21mNHjcKlegi1S1pJ0iR14FRBevqKA6hR0vac0atK-N7It2jNHtw"/>
+</div>
+</div>
+</header>
+<!-- Inbox Content Area -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Middle Panel: Conversation List -->
+<section class="w-80 flex flex-col border-r border-[#2d3044] bg-[#0d0f1a]">
+<div class="p-4 border-b border-[#2d3044] flex gap-2">
+<span class="px-3 py-1 rounded-full bg-primary-container/10 text-primary-fixed-dim text-[10px] font-bold border border-primary-container/20">ALL</span>
+<span class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-[10px] font-bold">UNREAD</span>
+<span class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-[10px] font-bold">ASSIGNED</span>
+</div>
+<div class="flex-1 overflow-y-auto chat-scrollbar">
+<!-- Chat Item: Active -->
+<div class="p-4 bg-surface-container-highest/50 border-r-2 border-amber-600 flex items-start gap-3 cursor-pointer">
+<div class="relative flex-shrink-0">
+<img alt="Sarah Chen" class="w-11 h-11 rounded-full object-cover" data-alt="Portrait of a young smiling creative professional woman with soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6kc_lvHaHs_2luGCUz6tJ1jC_UwPnEv6UHe-1uCxFzjMpJW8eAgcT3Xh78Uei3GICo6cAEjmeof-3M10S2Ztishwj9SSbVWKxq-Sh_wJ1_OpPTKL70NJ8IVYYT0Fc6UPZGTOYazSwXfoVQ_k3PVTBXd4-hOvFnqFEwToLCgofBV7BtIlV1WntgcMcEs9mDQ5OvjLgCcgbLCtddAq7Nh8NrwBgad0TC24A2bD1NbrCF6Ep8rSampzV1u_S4ZhrA8JOp8f_wYWXhQ"/>
+<div class="absolute bottom-0 right-0 w-3 h-3 bg-[#34d399] border-2 border-[#0d0f1a] rounded-full"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-center mb-0.5">
+<h3 class="text-sm font-semibold text-on-surface truncate">Sarah Chen</h3>
+<span class="text-[10px] text-on-surface-variant">10:42 AM</span>
+</div>
+<p class="text-xs text-amber-500 font-medium truncate mb-1">How soon can we start?</p>
+<div class="flex justify-between items-center">
+<span class="px-1.5 py-0.5 rounded bg-tertiary-container/10 text-tertiary-fixed text-[9px] font-bold border border-tertiary-container/20 tracking-wider">INTERESTED</span>
+<span class="w-5 h-5 flex items-center justify-center bg-primary text-primary-container rounded-full text-[10px] font-bold">2</span>
+</div>
+</div>
+</div>
+<!-- Chat Item -->
+<div class="p-4 hover:bg-surface-container transition-colors flex items-start gap-3 cursor-pointer border-b border-[#2d3044]/30">
+<div class="relative flex-shrink-0">
+<img alt="Marcus Thompson" class="w-11 h-11 rounded-full object-cover" data-alt="Close up portrait of a male business executive with glasses and a friendly demeanor, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7e8mEp7MINHl3yiILT_JuDV1lxONQUv2s8dIyASAIfoOJXtOTvlCwoK4Pt4LAWKuFuDSSK3-21of0s-QbZnutk1lmOhMyyDlyiZsmZe7pjGQtswgfrsKMrcQvgaj-xxT4Z2YyKviuprsJ3hqteVRQFZKHq_qddYKlv8jL2UT6vOnprKFvQd7ROpoklP5Z8LWQdFe-A2FBpGMcnX9qvU3JqQ-va4Q-NeSF26YCDF3JNb5YODeFUU2wOi6cvN2m5nFRku6YyFX_2w"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-center mb-0.5">
+<h3 class="text-sm font-semibold text-on-surface truncate">Marcus Thompson</h3>
+<span class="text-[10px] text-on-surface-variant">9:15 AM</span>
+</div>
+<p class="text-xs text-on-surface-variant truncate mb-1">Thanks for the info!</p>
+<div class="flex justify-between items-center">
+<span class="px-1.5 py-0.5 rounded bg-secondary-container/30 text-on-secondary-container text-[9px] font-bold border border-secondary-container/50 tracking-wider uppercase">Contacted</span>
+</div>
+</div>
+</div>
+<!-- Chat Item -->
+<div class="p-4 hover:bg-surface-container transition-colors flex items-start gap-3 cursor-pointer border-b border-[#2d3044]/30">
+<div class="relative flex-shrink-0">
+<img alt="Elena Rodriguez" class="w-11 h-11 rounded-full object-cover" data-alt="Professional woman in business attire looking thoughtfully at the camera, clean corporate background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKppbG7O41jrMV2ueCOR7QfxYSTz0zTqIuarMc8r9DQqWAvTrEE8PirttpbL5qM5Cg5gdOtTxxY6tPlpnvlNUF-tIXZE0iDGAuH1fvf_SyHYdLzoCtexkdd4YjBtc5NaLt8FQZ4jcRLpUM9d7xYp94Yk9FGySNRBjFg3RKaBD5H71LTlTJQndhgJ1c9nI6a-k8Xnm8xNobJjMwrQm5K61dr-5mkQzo5BnkMGbv4NAmRVhen1pPtspoG1vI7brGshznNLdKGx3E5w"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-center mb-0.5">
+<h3 class="text-sm font-semibold text-on-surface truncate">Elena Rodriguez</h3>
+<span class="text-[10px] text-on-surface-variant">Yesterday</span>
+</div>
+<p class="text-xs text-on-surface-variant truncate mb-1">New inquiry regarding API integration</p>
+<div class="flex justify-between items-center">
+<span class="px-1.5 py-0.5 rounded bg-primary-container/10 text-primary text-[9px] font-bold border border-primary-container/20 tracking-wider uppercase">New</span>
+</div>
+</div>
+</div>
+<!-- Chat Item -->
+<div class="p-4 hover:bg-surface-container transition-colors flex items-start gap-3 cursor-pointer border-b border-[#2d3044]/30">
+<div class="relative flex-shrink-0">
+<img alt="David Park" class="w-11 h-11 rounded-full object-cover" data-alt="Modern stylish man with a warm smile, natural daylight lighting, urban blurred background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9pFlbDKM-TyRUTT_KnB1m7jPvzMYxw6_RtvomV1bOY64TQWqIw0DstEGJmECjDISmwYm3qzDelL-Q75Qc8aTa-BZdM6ezuiSj1ovH_N2EwkEoQd6NeWrCBVt0bvQnMi_RAZAXAr67CCeA9zGm8PeAEfTeVQ4bcfHsS5yX51HpEswOiqNftusdQi2D7yezkbKg8T9rK8TqIBoshT6Ta595qw2FLc9Qcgalq7vzTNeXxzCFWBW-DswfoisXDQEut2AsxkNsE2abbA"/>
+<div class="absolute bottom-0 right-0 w-3 h-3 bg-[#34d399] border-2 border-[#0d0f1a] rounded-full"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-center mb-0.5">
+<h3 class="text-sm font-semibold text-on-surface truncate">David Park</h3>
+<span class="text-[10px] text-on-surface-variant">Yesterday</span>
+</div>
+<p class="text-xs text-on-surface-variant truncate mb-1">Just sent the payment link.</p>
+<div class="flex justify-between items-center">
+<span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-[#34d399] text-[9px] font-bold border border-emerald-500/20 tracking-wider uppercase">Converted</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Panel: Chat Window -->
+<section class="flex-1 flex flex-col bg-[#0f1117] relative">
+<!-- Chat Header -->
+<div class="h-16 border-b border-[#2d3044] bg-[#0f1117]/80 backdrop-blur-md px-6 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<img alt="Sarah Chen" class="w-9 h-9 rounded-full object-cover" data-alt="Portrait of a young smiling creative professional woman with soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlUhfV8Whhig5uYVbEJF_ifsUPlhzKv6fA0kgs_5FouEgCSs3Ne77KEKeYB0eSrz08MdznyWh4HY1pPTB_cZb9qH64i7WMb3Cws4nxkkfdimHfB1rrbcmEDEampDBhh2_mhus9Sz6qJvN3-Y6fAaecdawUa8X2VgGLIJPDOuFLBb54KpZTtkknAoMIjo1FHRRvkvFfiAblkMtG0t955WOhE2nr0veGTHKAVs_zxneMfB56FOjiMzZbbvv1C45_Qh0yN9DailWmRw"/>
+<div>
+<h2 class="text-sm font-bold text-on-surface">Sarah Chen</h2>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-[#34d399]"></span>
+<span class="text-[10px] text-on-surface-variant uppercase font-semibold">Interested • Sarah@creative.co</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 text-[11px] font-bold text-on-surface-variant border border-[#2d3044] rounded-lg hover:bg-surface-elevated transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">person_add</span>
+                            Assign Agent
+                        </button>
+<button class="px-3 py-1.5 text-[11px] font-bold text-on-surface-variant border border-[#2d3044] rounded-lg hover:bg-surface-elevated transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                            Close Ticket
+                        </button>
+<button class="p-1.5 text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Message Area -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6 chat-scrollbar bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+<div class="flex justify-center">
+<span class="px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-[10px] font-medium border border-[#2d3044]">TODAY</span>
+</div>
+<!-- Customer Message -->
+<div class="flex items-end gap-3 max-w-[80%]">
+<img alt="Sarah" class="w-7 h-7 rounded-full object-cover mb-1" data-alt="Portrait of a young smiling creative professional woman" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtv67Tf8ZYxGRnnik4Wc6DWitBWZB5daHI5YS_A_F-pLfJx-icjEUlr2hAVUwGj46o3FaJOrldOO-jQtiINJpLzZwCH7WcWI5dlCnvGLb2-e7UWBcjBoJS8zHuM4objKVVFT4ukwCrZQCouMrk56raQFt-zRjvpVXEyHefTYDUqC06TybSQ1k5zhcjGipwSJj9nY-zsMjDKV0JP-NVNoKTy_tu41QW288u1O4NQREmHEZsIH02lcbUNzzTSTK7Vale9znoaM6scw"/>
+<div class="flex flex-col gap-1">
+<div class="bg-[#1a1d2e] p-4 rounded-2xl rounded-bl-none border border-[#2d3044] text-sm text-on-surface shadow-sm">
+                                Hello! I saw your recent WhatsApp campaign regarding the enterprise automation tools. Could you share more details about the pricing tiers?
+                            </div>
+<span class="text-[10px] text-on-surface-variant ml-1">10:30 AM</span>
+</div>
+</div>
+<!-- Agent Message -->
+<div class="flex flex-col items-end gap-1 ml-auto max-w-[80%]">
+<div class="bg-primary-container p-4 rounded-2xl rounded-br-none text-sm text-on-primary-container shadow-lg shadow-primary-container/20 font-medium">
+                            Hi Sarah! Great to hear from you. We have three main tiers: Startup, Scale, and Enterprise. I've attached our latest feature comparison PDF for you to look over.
+                        </div>
+<div class="flex items-center gap-1.5 mt-1 mr-1">
+<span class="text-[10px] text-on-surface-variant">10:35 AM</span>
+<span class="material-symbols-outlined text-[14px] text-amber-500" style="font-variation-settings: 'FILL' 1;">done_all</span>
+</div>
+</div>
+<!-- Agent File Message -->
+<div class="flex flex-col items-end gap-1 ml-auto max-w-[80%]">
+<div class="bg-surface-container border border-primary/30 p-3 rounded-2xl rounded-br-none flex items-center gap-4 cursor-pointer hover:bg-surface-variant transition-colors group">
+<div class="w-10 h-10 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div class="pr-4">
+<p class="text-sm font-semibold text-on-surface">Pricing_Tiers_2024.pdf</p>
+<p class="text-[10px] text-on-surface-variant">2.4 MB • PDF Document</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">download</span>
+</div>
+<div class="flex items-center gap-1.5 mt-1 mr-1">
+<span class="text-[10px] text-on-surface-variant">10:36 AM</span>
+<span class="material-symbols-outlined text-[14px] text-amber-500" style="font-variation-settings: 'FILL' 1;">done_all</span>
+</div>
+</div>
+<!-- Customer Message -->
+<div class="flex items-end gap-3 max-w-[80%]">
+<img alt="Sarah" class="w-7 h-7 rounded-full object-cover mb-1" data-alt="Portrait of a young smiling creative professional woman" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPYqiR__YrOnBbdl4NizXXRNk9yPduywJBJRI846Ex-JyLkBbAflzCLD0SOtGQseVUA64pYnnWTFbaSBJ2oL9jWV7YRTrx0JpHywQm-oybZUe01fmaVWD0j9PRegQ2Ju69HmCJsrNehpqZ9ceI1ZLucy3tbcCjMD8YabXuqUTZ0yPerb5ZOhm-WeDu5wLrf3amjETh6NLeSQcyQuOiLtdqhhBda6-3MMalQffTuiR9clOPcI8uiPVeV16LObixjt2Pow_jFETEqg"/>
+<div class="flex flex-col gap-1">
+<div class="bg-[#1a1d2e] p-4 rounded-2xl rounded-bl-none border border-[#2d3044] text-sm text-on-surface shadow-sm">
+                                This looks perfect. The "Scale" tier seems to fit our current needs. How soon can we start the onboarding process?
+                            </div>
+<span class="text-[10px] text-on-surface-variant ml-1">10:42 AM</span>
+</div>
+</div>
+</div>
+<!-- Chat Footer: Input Area -->
+<div class="p-6 bg-[#0f1117] border-t border-[#2d3044]">
+<div class="flex items-center gap-3 mb-3">
+<button class="px-3 py-1.5 rounded bg-surface-container-high border border-[#2d3044] text-[11px] font-bold text-on-surface-variant hover:text-primary-dim transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">flash_on</span> Quick Reply
+                        </button>
+<button class="px-3 py-1.5 rounded bg-surface-container-high border border-[#2d3044] text-[11px] font-bold text-on-surface-variant hover:text-primary-dim transition-colors flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm">event</span> Schedule
+                        </button>
+</div>
+<div class="relative bg-surface-container rounded-xl border border-[#2d3044] focus-within:border-primary-dim transition-all">
+<div class="flex items-center px-4 py-3 gap-3">
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined">mood</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<textarea class="flex-1 bg-transparent border-none focus:ring-0 text-sm text-on-surface resize-none py-1 h-8 max-h-32 chat-scrollbar placeholder:text-on-surface-variant/40" placeholder="Type a message..."></textarea>
+<button class="w-10 h-10 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary-container/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Contextual FAB - Only for specific task context -->
+<!-- Suppressed for Inbox view as per instructions to prioritize content canvas -->
+</body></html>

@@ -1,7 +1,7 @@
 {
-  "name": "crm-wa-backend",
+  "name": "wazelo-backend",
   "version": "0.1.0",
-  "description": "CRM-WA WhatsApp CRM SaaS Platform — Backend",
+  "description": "Wazelo CRM — WhatsApp CRM SaaS Platform Backend",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

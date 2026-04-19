@@ -2226,7 +2226,7 @@ function DeveloperApiSection() {
   -d '{
     "to": "+919876543210",
     "type": "text",
-    "body": "Hello from CRM-WA API!"
+    "body": "Hello from Wazelo CRM API!"
   }'`}
                 </pre>
 
@@ -2240,7 +2240,7 @@ const res = await axios.post(
   {
     to: "+919876543210",
     type: "text",
-    body: "Hello from CRM-WA API!",
+    body: "Hello from Wazelo CRM API!",
   },
   {
     headers: { "X-API-Key": "YOUR_API_KEY" },
@@ -2261,7 +2261,7 @@ res = requests.post(
     json={
         "to": "+919876543210",
         "type": "text",
-        "body": "Hello from CRM-WA API!",
+        "body": "Hello from Wazelo CRM API!",
     },
     headers={"X-API-Key": "YOUR_API_KEY"},
 )

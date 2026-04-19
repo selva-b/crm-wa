@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wazelo CRM - Features</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;700;900&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#131313",
+                        "primary-fixed": "#ffdcc3",
+                        "on-surface": "#e5e2e1",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "primary-container": "#d97707",
+                        "surface-variant": "#353534",
+                        "background": "#131313",
+                        "on-secondary-container": "#e4a97a",
+                        "outline-variant": "#554336",
+                        "on-tertiary": "#003353",
+                        "on-secondary": "#4c2703",
+                        "on-secondary-fixed": "#2f1500",
+                        "on-primary-fixed": "#2f1500",
+                        "inverse-surface": "#e5e2e1",
+                        "inverse-on-surface": "#313030",
+                        "secondary-fixed-dim": "#f7ba8a",
+                        "on-tertiary-container": "#002c48",
+                        "tertiary-fixed": "#cee5ff",
+                        "tertiary": "#96ccff",
+                        "on-error": "#690005",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#3a3939",
+                        "primary-fixed-dim": "#ffb77d",
+                        "outline": "#a38c7c",
+                        "surface-container-highest": "#353534",
+                        "surface-container": "#201f1f",
+                        "inverse-primary": "#904d00",
+                        "secondary-fixed": "#ffdcc3",
+                        "surface-tint": "#ffb77d",
+                        "surface-container-lowest": "#0e0e0e",
+                        "secondary": "#f7ba8a",
+                        "on-tertiary-fixed-variant": "#004a75",
+                        "tertiary-fixed-dim": "#96ccff",
+                        "tertiary-container": "#0297e8",
+                        "on-surface-variant": "#dbc2b0",
+                        "surface-container-high": "#2a2a2a",
+                        "on-primary": "#4d2600",
+                        "on-background": "#e5e2e1",
+                        "error-container": "#93000a",
+                        "on-tertiary-fixed": "#001d32",
+                        "primary": "#ffb77d",
+                        "on-secondary-fixed-variant": "#673d17",
+                        "surface-dim": "#131313",
+                        "secondary-container": "#673d17",
+                        "on-primary-container": "#432100",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-low": "#1c1b1b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Epilogue", "sans-serif"],
+                        "body": ["Manrope", "sans-serif"],
+                        "label": ["Manrope", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-[#131313]/80 backdrop-blur-2xl fixed top-0 w-full z-50 border-b border-amber-900/10 shadow-[0_20px_50px_rgba(217,119,6,0.05)]">
+<div class="flex justify-between items-center h-20 px-12 max-w-[1920px] mx-auto">
+<a class="text-2xl font-black tracking-tighter text-stone-200 font-headline uppercase" href="#">Wazelo CRM</a>
+<div class="hidden md:flex items-center space-x-8">
+<a class="text-stone-400 font-medium hover:text-stone-200 transition-colors uppercase tracking-tighter font-headline text-sm" href="#">Platform</a>
+<a class="text-amber-500 border-b-2 border-amber-500 pb-1 uppercase tracking-tighter font-headline text-sm font-black flex-col" href="#">Features</a>
+<a class="text-stone-400 font-medium hover:text-stone-200 transition-colors uppercase tracking-tighter font-headline text-sm" href="#">Intelligence</a>
+<a class="text-stone-400 font-medium hover:text-stone-200 transition-colors uppercase tracking-tighter font-headline text-sm" href="#">Pricing</a>
+</div>
+<div class="flex items-center space-x-4">
+<button class="hidden md:block text-amber-600 font-headline font-black uppercase tracking-tighter text-sm hover:text-amber-400 transition-colors">Login</button>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-black uppercase tracking-tighter text-sm px-6 py-2.5 rounded-md hover:opacity-90 transition-opacity">Request Access</button>
+</div>
+</div>
+</nav>
+<!-- Marquee -->
+<div class="mt-20 w-full bg-surface-container-lowest overflow-hidden py-3 border-y border-outline-variant/10">
+<div class="whitespace-nowrap flex animate-[marquee_20s_linear_infinite]">
+<span class="text-primary-container font-headline text-[11px] uppercase tracking-[0.3em] px-4 font-bold">SHARED INBOX · CAMPAIGNS · AUTOMATION · ANALYTICS · CONTACTS CRM · CHATBOT BUILDER · API ACCESS · SEQUENCES ·</span>
+<span class="text-primary-container font-headline text-[11px] uppercase tracking-[0.3em] px-4 font-bold">SHARED INBOX · CAMPAIGNS · AUTOMATION · ANALYTICS · CONTACTS CRM · CHATBOT BUILDER · API ACCESS · SEQUENCES ·</span>
+<span class="text-primary-container font-headline text-[11px] uppercase tracking-[0.3em] px-4 font-bold">SHARED INBOX · CAMPAIGNS · AUTOMATION · ANALYTICS · CONTACTS CRM · CHATBOT BUILDER · API ACCESS · SEQUENCES ·</span>
+<span class="text-primary-container font-headline text-[11px] uppercase tracking-[0.3em] px-4 font-bold">SHARED INBOX · CAMPAIGNS · AUTOMATION · ANALYTICS · CONTACTS CRM · CHATBOT BUILDER · API ACCESS · SEQUENCES ·</span>
+</div>
+</div>
+<!-- Main Content Area -->
+<main class="flex-grow bg-surface py-24 px-6 md:px-12 lg:px-24">
+<div class="max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="mb-24 max-w-4xl">
+<span class="text-primary font-headline text-sm font-bold uppercase tracking-[0.2em] mb-4 block">EVERYTHING YOU NEED</span>
+<h1 class="font-headline font-black text-on-surface leading-[0.9] tracking-tighter text-[clamp(48px,6vw,88px)] uppercase mb-8">
+                    ONE PLATFORM.<br/>
+                    EVERY WHATSAPP<br/>
+                    USE CASE.
+                </h1>
+<p class="font-body text-on-surface-variant text-xl md:text-2xl font-light max-w-2xl leading-relaxed">
+                    From solo sales reps to enterprise teams — Wazelo CRM scales with your business.
+                </p>
+</div>
+<!-- Feature Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-32">
+<!-- Card 1 -->
+<div class="bg-surface-container-high rounded-xl p-8 border border-white/5 hover:border-primary/20 transition-colors group">
+<div class="w-14 h-14 bg-surface-container-lowest rounded-full flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">forum</span>
+</div>
+<h3 class="font-headline text-2xl font-bold text-on-surface mb-3 tracking-tight">Shared Inbox</h3>
+<p class="font-body text-on-surface-variant text-base leading-relaxed">Your whole team in one WhatsApp inbox. Assign, reply, and resolve.</p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-high rounded-xl p-8 border border-white/5 hover:border-primary/20 transition-colors group">
+<div class="w-14 h-14 bg-surface-container-lowest rounded-full flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">campaign</span>
+</div>
+<h3 class="font-headline text-2xl font-bold text-on-surface mb-3 tracking-tight">Bulk Campaigns</h3>
+<p class="font-body text-on-surface-variant text-base leading-relaxed">Broadcast to thousands. Track delivery in real-time.</p>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-high rounded-xl p-8 border border-white/5 hover:border-primary/20 transition-colors group">
+<div class="w-14 h-14 bg-surface-container-lowest rounded-full flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">bolt</span>
+</div>
+<h3 class="font-headline text-2xl font-bold text-on-surface mb-3 tracking-tight">Automation</h3>
+<p class="font-body text-on-surface-variant text-base leading-relaxed">Auto-replies and workflow rules. Work while you sleep.</p>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-high rounded-xl p-8 border border-white/5 hover:border-primary/20 transition-colors group">
+<div class="w-14 h-14 bg-surface-container-lowest rounded-full flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">bar_chart</span>
+</div>
+<h3 class="font-headline text-2xl font-bold text-on-surface mb-3 tracking-tight">Analytics</h3>
+<p class="font-body text-on-surface-variant text-base leading-relaxed">Delivery rates, CSAT scores, team performance.</p>
+</div>
+<!-- Card 5 -->
+<div class="bg-surface-container-high rounded-xl p-8 border border-white/5 hover:border-primary/20 transition-colors group">
+<div class="w-14 h-14 bg-surface-container-lowest rounded-full flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">group</span>
+</div>
+<h3 class="font-headline text-2xl font-bold text-on-surface mb-3 tracking-tight">Contacts CRM</h3>
+<p class="font-body text-on-surface-variant text-base leading-relaxed">Tag, segment, and manage all your leads.</p>
+</div>
+<!-- Card 6 -->
+<div class="bg-surface-container-high rounded-xl p-8 border border-white/5 hover:border-primary/20 transition-colors group">
+<div class="w-14 h-14 bg-surface-container-lowest rounded-full flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">smart_toy</span>
+</div>
+<h3 class="font-headline text-2xl font-bold text-on-surface mb-3 tracking-tight">Chatbot Builder</h3>
+<p class="font-body text-on-surface-variant text-base leading-relaxed">Build no-code WhatsApp chatbots in minutes.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Stats Bar -->
+<div class="w-full bg-surface-container-low border-t border-outline-variant/10">
+<div class="max-w-7xl mx-auto py-16 px-6 md:px-12 lg:px-24">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-8">
+<!-- Stat 1 -->
+<div class="flex flex-col border-l-2 border-white/5 pl-6">
+<span class="font-headline text-4xl md:text-5xl font-black text-primary tracking-tighter mb-2">500+</span>
+<span class="font-body text-sm text-on-surface uppercase tracking-widest font-semibold">Businesses</span>
+</div>
+<!-- Stat 2 -->
+<div class="flex flex-col border-l-2 border-white/5 pl-6">
+<span class="font-headline text-4xl md:text-5xl font-black text-primary tracking-tighter mb-2">94%</span>
+<span class="font-body text-sm text-on-surface uppercase tracking-widest font-semibold">Delivery Rate</span>
+</div>
+<!-- Stat 3 -->
+<div class="flex flex-col border-l-2 border-white/5 pl-6">
+<span class="font-headline text-4xl md:text-5xl font-black text-primary tracking-tighter mb-2">2.3 min</span>
+<span class="font-body text-sm text-on-surface uppercase tracking-widest font-semibold">Avg Response</span>
+</div>
+<!-- Stat 4 -->
+<div class="flex flex-col border-l-2 border-white/5 pl-6">
+<span class="font-headline text-4xl md:text-5xl font-black text-primary tracking-tighter mb-2">4.8★</span>
+<span class="font-body text-sm text-on-surface uppercase tracking-widest font-semibold">CSAT Score</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="bg-[#0e0e0e] w-full py-16 border-t border-stone-900 tonal transition from surface_dim to surface_container_lowest">
+<div class="flex flex-col items-center gap-8 max-w-7xl mx-auto px-8">
+<div class="flex flex-wrap justify-center gap-8 font-['Manrope'] text-xs uppercase tracking-[0.2em]">
+<a class="text-stone-600 hover:text-amber-400 transition-colors opacity-80 hover:opacity-100" href="#">Privacy Protocol</a>
+<a class="text-stone-600 hover:text-amber-400 transition-colors opacity-80 hover:opacity-100" href="#">Terms of Service</a>
+<a class="text-stone-600 hover:text-amber-400 transition-colors opacity-80 hover:opacity-100" href="#">Security</a>
+<a class="text-stone-600 hover:text-amber-400 transition-colors opacity-80 hover:opacity-100" href="#">Status</a>
+</div>
+<p class="text-stone-600 font-['Manrope'] text-xs uppercase tracking-[0.2em] text-center">
+                © 2024 Wazelo CRM. Engineered for the 1%.
+            </p>
+</div>
+</footer>
+<style>
+        @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+    </style>
+</body></html>

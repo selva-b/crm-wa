@@ -88,7 +88,7 @@ export class PaymentRetryWorker {
       subscription?.externalCustomerId || '',
       subscription?.externalCustomerId || '', // Stripe uses default payment method from customer
       `retry-${payment.id}-${payment.retryCount + 1}`,
-      `CRM-WA payment retry #${payment.retryCount + 1}`,
+      `Wazelo CRM payment retry #${payment.retryCount + 1}`,
     );
 
     if (result.success) {

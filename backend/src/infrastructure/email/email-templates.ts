@@ -58,7 +58,7 @@ export function buildLayout(opts: {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>CRM-WA</title>
+  <title>Wazelo CRM</title>
 </head>
 <body style="margin:0;padding:0;background-color:${brand.bg};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
 
@@ -101,7 +101,7 @@ export function buildLayout(opts: {
                 <a href="${frontendUrl}" style="color:${brand.textMuted};text-decoration:none;font-weight:500;">Go to Dashboard</a>
               </p>` : ''}
               <p style="margin:0;font-size:11px;color:${brand.textFaint};">
-                &copy; ${new Date().getFullYear()} CRM-WA. All rights reserved.
+                &copy; ${new Date().getFullYear()} Wazelo CRM. All rights reserved.
               </p>
             </td>
           </tr>
