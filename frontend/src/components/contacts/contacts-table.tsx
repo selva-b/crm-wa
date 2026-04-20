@@ -118,6 +118,7 @@ export function ContactsTable({
             <TableHead>Products</TableHead>
             <TableHead>Source</TableHead>
             <TableHead>Created</TableHead>
+            <TableHead align="right"></TableHead>
           </TableHeaderRow>
         </TableHeader>
         <TableBody>

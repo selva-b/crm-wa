@@ -122,9 +122,8 @@ export interface AlertListResponse {
 }
 
 export interface QueryAlertsParams {
-  take?: number;
-  skip?: number;
-  metric?: string;
+  limit?: number;
+  offset?: number;
 }
 
 // ─── Errors ───
@@ -139,8 +138,5 @@ export interface ErrorGroup {
 }
 
 export interface QueryErrorsParams {
-  take?: number;
-  skip?: number;
-  from?: string;
-  to?: string;
+  windowMinutes?: number;
 }

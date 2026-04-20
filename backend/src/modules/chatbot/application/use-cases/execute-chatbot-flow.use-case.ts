@@ -5,6 +5,8 @@ import { QueueService } from '@/infrastructure/queue/queue.service';
 import { ChatbotRepository } from '../../infrastructure/repositories/chatbot.repository';
 import { KbRepository } from '@/modules/knowledge-base/infrastructure/repositories/kb.repository';
 import { DocumentProcessorService } from '@/modules/knowledge-base/domain/services/document-processor.service';
+import { EncryptionService } from '@/common/services';
+import { MessageEncryptionService } from '@/modules/messages/domain/services/message-encryption.service';
 import { QUEUE_NAMES } from '@/common/constants';
 import { MessageDirection, MessageStatus, MessageType, ChatbotSessionStatus } from '@prisma/client';
 
@@ -26,6 +28,7 @@ export class ExecuteChatbotFlowUseCase {
     private readonly docProcessor: DocumentProcessorService,
     private readonly aiProvider: AiProviderService,
     private readonly queueService: QueueService,
+    private readonly enc: MessageEncryptionService,
   ) {}
 
   /**
@@ -426,7 +429,10 @@ IMPORTANT RULES:
     // Update conversation
     await this.prisma.conversation.updateMany({
       where: { id: conversationId, orgId },
-      data: { lastMessageAt: new Date(), lastMessageBody: text.slice(0, 500) },
+      data: {
+        lastMessageAt: new Date(),
+        lastMessageBody: this.enc.encryptIfPresent(text.slice(0, 500)),
+      },
     });
   }
 }

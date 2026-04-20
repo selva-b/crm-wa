@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateCampaign, usePreviewAudience } from "@/hooks/use-campaigns";
+import { useProducts } from "@/hooks/use-products";
 import {
   createCampaignSchema,
   type CreateCampaignFormData,
@@ -27,9 +28,9 @@ export function CreateCampaignModal({
 }: CreateCampaignModalProps) {
   const createCampaign = useCreateCampaign();
   const previewAudience = usePreviewAudience();
-  const [scheduleMode, setScheduleMode] = useState<"immediate" | "scheduled">(
-    "immediate",
-  );
+  const { data: products } = useProducts();
+  const [scheduleMode, setScheduleMode] = useState<"immediate" | "scheduled">("immediate");
+  const [productId, setProductId] = useState("");
 
   const {
     register,
@@ -69,12 +70,14 @@ export function CreateCampaignModal({
       mediaUrl: data.mediaUrl || undefined,
       mediaMimeType: data.mediaMimeType || undefined,
       scheduledAt: isScheduled ? data.scheduledAt : undefined,
+      productId: productId || undefined,
     };
 
     createCampaign.mutate(payload, {
       onSuccess: () => {
         reset();
         setScheduleMode("immediate");
+        setProductId("");
         onClose();
       },
     });
@@ -355,7 +358,28 @@ export function CreateCampaignModal({
             </div>
           </section>
 
-          {/* Section 5: Scheduling */}
+          {/* Section 5: Product (optional) */}
+          <section className="space-y-3">
+            <p className="text-[11px] font-medium text-on-surface-variant uppercase tracking-wide">
+              Product <span className="normal-case font-normal">(optional)</span>
+            </p>
+            <div>
+              <Label htmlFor="productId">Link to Product</Label>
+              <select
+                id="productId"
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
+                className="w-full rounded-xl bg-surface-container-low px-4 py-3 text-[15px] text-on-surface outline-none focus:bg-surface-container focus:ring-2 focus:ring-primary/40"
+              >
+                <option value="">No product</option>
+                {(products ?? []).map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          </section>
+
+          {/* Section 6: Scheduling */}
           <section className="space-y-3">
             <p className="text-[11px] font-medium text-on-surface-variant uppercase tracking-wide">
               Scheduling

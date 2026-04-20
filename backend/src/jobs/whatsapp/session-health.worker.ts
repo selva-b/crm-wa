@@ -83,8 +83,8 @@ export class SessionHealthWorker implements OnModuleInit {
     attempt: number,
   ): Promise<void> {
     if (!this.sessionService.canRetryReconnect(attempt - 1)) {
-      // Max retries exhausted → disconnect
-      await this.sessionRepo.disconnectSession(session.id);
+      // Max retries exhausted — preserve creds so user can reconnect without re-scanning QR
+      await this.sessionRepo.markAsDisconnected(session.id);
 
       await this.auditService.log({
         orgId: session.orgId,
@@ -140,8 +140,8 @@ export class SessionHealthWorker implements OnModuleInit {
         attempt: attempt + 1,
       });
     } else {
-      // Final failure
-      await this.sessionRepo.disconnectSession(session.id);
+      // Final failure — preserve creds so user can reconnect without re-scanning QR
+      await this.sessionRepo.markAsDisconnected(session.id);
       this.eventEmitter.emit(EVENT_NAMES.WHATSAPP_SESSION_DISCONNECTED, {
         sessionId: session.id,
         orgId: session.orgId,
@@ -177,7 +177,8 @@ export class SessionHealthWorker implements OnModuleInit {
         },
       );
     } else {
-      await this.sessionRepo.disconnectSession(session.id);
+      // No retries left — preserve creds so user can reconnect without re-scanning QR
+      await this.sessionRepo.markAsDisconnected(session.id);
 
       this.eventEmitter.emit(EVENT_NAMES.WHATSAPP_SESSION_DISCONNECTED, {
         sessionId: session.id,

@@ -138,7 +138,7 @@ export class ObservabilityController {
   @Roles('ADMIN')
   @Permissions(PERMISSIONS.AUDIT_READ)
   async getAlertHistory(@Query() query: QueryAlertsDto) {
-    return this.alertService.getRecentAlerts(query.limit);
+    return this.alertService.getRecentAlerts(query.limit, query.offset);
   }
 
   // ─── Errors ──────────────────────────────────────────

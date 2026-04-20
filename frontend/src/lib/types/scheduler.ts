@@ -54,6 +54,7 @@ export interface CreateScheduledMessageRequest {
   scheduledAt: string;
   timezone?: string;
   metadata?: Record<string, unknown>;
+  productId?: string;
 }
 
 export interface UpdateScheduledMessageRequest {

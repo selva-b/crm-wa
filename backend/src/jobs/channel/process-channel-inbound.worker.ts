@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import { InboundMessagePayload } from '@/modules/channels/domain/interfaces/channel-adapter.interface';
 import { ChannelService } from '@/modules/channels/domain/services/channel.service';
+import { MessageEncryptionService } from '@/modules/messages/domain/services/message-encryption.service';
 import {
   QUEUE_NAMES,
   EVENT_NAMES,
@@ -33,6 +34,7 @@ export class ProcessChannelInboundWorker implements OnModuleInit {
     private readonly queueService: QueueService,
     private readonly channelService: ChannelService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly enc: MessageEncryptionService,
   ) {}
 
   async onModuleInit() {
@@ -79,9 +81,9 @@ export class ProcessChannelInboundWorker implements OnModuleInit {
         where: { id: conversation.id },
         data: {
           lastMessageAt: payload.timestamp,
-          lastMessageBody:
-            payload.body?.substring(0, 500) ||
-            `[${payload.type}]`,
+          lastMessageBody: this.enc.encryptIfPresent(
+            payload.body?.substring(0, 500) || `[${payload.type}]`,
+          ),
           unreadCount: { increment: 1 },
           status: 'OPEN', // Re-open if closed
           updatedAt: new Date(),
@@ -97,9 +99,9 @@ export class ProcessChannelInboundWorker implements OnModuleInit {
           contactPhone: payload.senderIdentifier,
           status: 'OPEN',
           lastMessageAt: payload.timestamp,
-          lastMessageBody:
-            payload.body?.substring(0, 500) ||
-            `[${payload.type}]`,
+          lastMessageBody: this.enc.encryptIfPresent(
+            payload.body?.substring(0, 500) || `[${payload.type}]`,
+          ),
           unreadCount: 1,
         },
       });

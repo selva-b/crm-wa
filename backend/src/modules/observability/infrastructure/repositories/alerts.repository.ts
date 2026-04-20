@@ -75,12 +75,17 @@ export class AlertsRepository {
     });
   }
 
-  async getRecentAlerts(limit: number = 50) {
-    return this.prisma.alertEvent.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      include: { alertRule: { select: { name: true, metric: true } } },
-    });
+  async getRecentAlerts(limit: number = 50, offset: number = 0) {
+    const [data, total] = await Promise.all([
+      this.prisma.alertEvent.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+        include: { alertRule: { select: { name: true, metric: true } } },
+      }),
+      this.prisma.alertEvent.count(),
+    ]);
+    return { data, total };
   }
 
   async getAllRules() {

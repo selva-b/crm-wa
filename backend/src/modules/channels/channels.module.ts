@@ -15,6 +15,8 @@ import { ChannelAdapterRegistry } from './domain/services/channel-adapter-regist
 import { ChannelService } from './domain/services/channel.service';
 import { ChannelWebhookService } from './domain/services/channel-webhook.service';
 import { EncryptionService } from './domain/services/channel-encryption.service';
+import { EncryptionService as CommonEncryptionService } from '@/common/services';
+import { MessageEncryptionService } from '@/modules/messages/domain/services/message-encryption.service';
 
 // Application — Use Cases
 import { SendChannelMessageUseCase } from './application/use-cases/send-channel-message.use-case';
@@ -48,6 +50,8 @@ import { ChannelOrgGuard } from './interfaces/guards/channel-org.guard';
     ChannelService,
     ChannelWebhookService,
     EncryptionService,
+    CommonEncryptionService,
+    MessageEncryptionService,
 
     // Use Cases
     SendChannelMessageUseCase,

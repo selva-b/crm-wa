@@ -68,6 +68,7 @@ export class CreateScheduledMessageUseCase {
       timezone: dto.timezone || 'UTC',
       createdById: userId,
       metadata: dto.metadata as any,
+      productId: dto.productId,
     });
 
     // 5. Emit event

@@ -124,9 +124,69 @@ export class DevSendMessageDto {
   idempotencyKey?: string;
 
   @IsOptional()
+  @IsUUID()
+  userId?: string;
+
+  @IsOptional()
   @ValidateNested()
   @Type(() => DevInteractivePayload)
   interactive?: DevInteractivePayload;
+}
+
+// ── Send Bulk Message DTO ──
+
+export class DevSendBulkMessageDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @IsString({ each: true })
+  to: string[];
+
+  @IsEnum(['text', 'image', 'video', 'document', 'audio'])
+  type: string = 'text';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4096)
+  body?: string;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  @MaxLength(2048)
+  mediaUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  caption?: string;
+
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
+}
+
+// ── Create Template DTO ──
+
+export class DevCreateTemplateDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(4096)
+  body: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  language?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  category?: string;
 }
 
 // ── Send Template Message DTO ──
@@ -180,47 +240,21 @@ export class DevCreateContactDto {
   metadata?: Record<string, unknown>;
 }
 
-// ── Register Webhook DTO ──
+// ── Update Contact DTO ──
 
-export class DevRegisterWebhookDto {
-  @IsUrl({ require_tld: false })
-  @MaxLength(2048)
-  url: string;
+export class DevUpdateContactDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  name?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
-  description?: string;
+  @MaxLength(320)
+  email?: string;
 
   @IsOptional()
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(10)
-  @IsString({ each: true })
-  events?: string[];
-
-  @IsOptional()
-  headers?: Record<string, string>;
-}
-
-export class DevUpdateWebhookDto {
-  @IsOptional()
-  @IsUrl({ require_tld: false })
-  @MaxLength(2048)
-  url?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  description?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  events?: string[];
-
-  @IsOptional()
-  enabled?: boolean;
+  metadata?: Record<string, unknown>;
 }
 
 // ── List Messages Query DTO ──

@@ -32,6 +32,7 @@ import {
   ListSessionsUseCase,
   GetSessionUseCase,
   RefreshQrUseCase,
+  ReconnectSessionUseCase,
 } from '../../application/use-cases';
 
 // Messaging endpoints moved to MessagesController (POST /messaging/messages) — EPIC 5
@@ -44,6 +45,7 @@ export class WhatsAppSessionController {
     private readonly listSessionsUseCase: ListSessionsUseCase,
     private readonly getSessionUseCase: GetSessionUseCase,
     private readonly refreshQrUseCase: RefreshQrUseCase,
+    private readonly reconnectSessionUseCase: ReconnectSessionUseCase,
   ) {}
 
   // ───── Session Management ─────
@@ -63,6 +65,25 @@ export class WhatsAppSessionController {
       user.orgId,
       user.sub,
       dto,
+      this.getIp(req),
+      this.getUa(req),
+    );
+  }
+
+  @Post('sessions/:sessionId/reconnect')
+  @Permissions(PERMISSIONS.WHATSAPP_SESSION_OWN)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @HttpCode(HttpStatus.OK)
+  async reconnectSession(
+    @CurrentUser() user: JwtPayload,
+    @Param('sessionId', ParseUUIDPipe) sessionId: string,
+    @Req() req: Request,
+  ) {
+    return this.reconnectSessionUseCase.execute(
+      user.orgId,
+      user.sub,
+      user.role,
+      sessionId,
       this.getIp(req),
       this.getUa(req),
     );

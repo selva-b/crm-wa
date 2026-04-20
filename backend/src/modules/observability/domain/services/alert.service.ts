@@ -153,8 +153,8 @@ export class AlertService {
     return this.alertsRepository.getAllRules();
   }
 
-  async getRecentAlerts(limit: number = 50) {
-    return this.alertsRepository.getRecentAlerts(limit);
+  async getRecentAlerts(limit: number = 50, offset: number = 0) {
+    return this.alertsRepository.getRecentAlerts(limit, offset);
   }
 
   async createAlertRule(input: {

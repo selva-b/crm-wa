@@ -1,10 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { ConversationStatus, Prisma } from '@prisma/client';
+import { MessageEncryptionService } from '../../domain/services/message-encryption.service';
 
 @Injectable()
 export class ConversationRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly enc: MessageEncryptionService,
+  ) {}
+
+  private decryptConversation<T extends { lastMessageBody?: string | null }>(conv: T): T {
+    return {
+      ...conv,
+      lastMessageBody: this.enc.decryptIfEncrypted(conv.lastMessageBody),
+    };
+  }
 
   /**
    * Find or create a conversation for a given org + session + contactPhone.
@@ -17,7 +28,7 @@ export class ConversationRepository {
     contactPhone: string;
     contactId?: string;
   }) {
-    return this.prisma.conversation.upsert({
+    const conv = await this.prisma.conversation.upsert({
       where: {
         unique_conversation_per_contact_session: {
           orgId: input.orgId,
@@ -34,22 +45,26 @@ export class ConversationRepository {
       },
       update: {}, // No-op on conflict — just return existing
     });
+    return this.decryptConversation(conv);
   }
 
   async findById(id: string) {
-    return this.prisma.conversation.findFirst({
+    const conv = await this.prisma.conversation.findFirst({
       where: { id, deletedAt: null },
     });
+    return conv ? this.decryptConversation(conv) : null;
   }
 
   async findByIdAndOrg(id: string, orgId: string) {
-    return this.prisma.conversation.findFirst({
+    const conv = await this.prisma.conversation.findFirst({
       where: { id, orgId, deletedAt: null },
     });
+    return conv ? this.decryptConversation(conv) : null;
   }
 
   /**
    * Update conversation's last message metadata.
+   * Truncates the plaintext to 500 chars BEFORE encrypting, then stores ciphertext.
    * Called after each message (inbound or outbound) is processed.
    */
   async updateLastMessage(
@@ -57,11 +72,12 @@ export class ConversationRepository {
     body: string | null,
     isInbound: boolean,
   ) {
+    const truncated = body ? body.substring(0, 500) : null;
     return this.prisma.conversation.update({
       where: { id },
       data: {
         lastMessageAt: new Date(),
-        lastMessageBody: body ? body.substring(0, 500) : null,
+        lastMessageBody: this.enc.encryptIfPresent(truncated),
         ...(isInbound && { unreadCount: { increment: 1 } }),
       },
     });
@@ -134,14 +150,14 @@ export class ConversationRepository {
       this.prisma.conversation.count({ where }),
     ]);
 
-    return { data, total, page: options.page, limit: options.limit };
+    return { data: data.map((c) => this.decryptConversation(c)), total, page: options.page, limit: options.limit };
   }
 
   /**
    * Find conversation by org + session + contact phone.
    */
   async findByContact(orgId: string, sessionId: string, contactPhone: string) {
-    return this.prisma.conversation.findUnique({
+    const conv = await this.prisma.conversation.findUnique({
       where: {
         unique_conversation_per_contact_session: {
           orgId,
@@ -150,5 +166,6 @@ export class ConversationRepository {
         },
       },
     });
+    return conv ? this.decryptConversation(conv) : null;
   }
 }

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DeveloperApiRepository } from '../../infrastructure/repositories/developer-api.repository';
 import { QueueService } from '@/infrastructure/queue/queue.service';
@@ -10,11 +6,11 @@ import { UsageTrackingService } from '@/modules/billing/domain/services/usage-tr
 import { QUEUE_NAMES, EVENT_NAMES } from '@/common/constants';
 import { MessageDirection, MessageStatus, MessageType, UsageMetricType } from '@prisma/client';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
-import { DevSendMessageDto } from '../dto';
+import { DevSendTemplateDto } from '../dto';
 
 @Injectable()
-export class DevSendMessageUseCase {
-  private readonly logger = new Logger(DevSendMessageUseCase.name);
+export class DevSendTemplateMessageUseCase {
+  private readonly logger = new Logger(DevSendTemplateMessageUseCase.name);
 
   constructor(
     private readonly repo: DeveloperApiRepository,
@@ -24,16 +20,14 @@ export class DevSendMessageUseCase {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async execute(orgId: string, dto: DevSendMessageDto) {
+  async execute(orgId: string, dto: DevSendTemplateDto) {
     // 1. Idempotency check
     if (dto.idempotencyKey) {
       const existing = await this.prisma.message.findFirst({
         where: { idempotencyKey: dto.idempotencyKey, orgId },
         select: { id: true, status: true, createdAt: true },
       });
-      if (existing) {
-        return { message: existing, deduplicated: true };
-      }
+      if (existing) return { message: existing, deduplicated: true };
     }
 
     // 2. Check usage limits
@@ -42,33 +36,36 @@ export class DevSendMessageUseCase {
       throw new BadRequestException({
         error: 'USAGE_LIMIT_EXCEEDED',
         message: 'Message limit reached for your current plan. Please upgrade.',
-        details: {
-          used: usageCheck.currentValue,
-          limit: usageCheck.limitValue,
-        },
+        details: { used: usageCheck.currentValue, limit: usageCheck.limitValue },
       });
     }
 
-    // 3. Find a connected WhatsApp session for this org
-    const session = dto.userId
-      ? await this.repo.getSessionByUserAndOrg(orgId, dto.userId)
-      : await this.repo.getFirstConnectedSession(orgId);
-    if (!session) {
-      throw new BadRequestException(
-        dto.userId
-          ? 'No connected WhatsApp session for the specified user.'
-          : 'No connected WhatsApp session. Please connect WhatsApp first.',
-      );
+    // 3. Find template in DB and render body
+    const template = await this.prisma.messageTemplate.findFirst({
+      where: { orgId, name: dto.templateName, status: 'APPROVED', deletedAt: null },
+    });
+    if (!template) {
+      throw new BadRequestException(`Template '${dto.templateName}' not found or not approved.`);
     }
 
-    // 4. Auto-create or find contact
-    const contactResult = await this.repo.createContact({
-      orgId,
-      name: dto.to,
-      phoneNumber: dto.to,
+    const bodyComponent = (template.components as any[]).find((c) => c.type === 'BODY');
+    const rawBody: string = bodyComponent?.text ?? dto.templateName;
+
+    // Replace {{variableName}} placeholders with provided values
+    const renderedBody = rawBody.replace(/\{\{(\w+)\}\}/g, (_: string, key: string) => {
+      return dto.variables?.[key] ?? `{{${key}}}`;
     });
 
-    // 5. Find or create conversation
+    // 4. Find session
+    const session = await this.repo.getFirstConnectedSession(orgId);
+    if (!session) {
+      throw new BadRequestException('No connected WhatsApp session. Please connect WhatsApp first.');
+    }
+
+    // 5. Auto-create or find contact
+    const contactResult = await this.repo.createContact({ orgId, name: dto.to, phoneNumber: dto.to });
+
+    // 6. Find or create conversation
     let conversation = await this.prisma.conversation.findFirst({
       where: { orgId, contactId: contactResult.contact.id, deletedAt: null },
       orderBy: { updatedAt: 'desc' },
@@ -87,63 +84,53 @@ export class DevSendMessageUseCase {
       });
     }
 
-    // 6. Create message record
-    const messageType = dto.type.toUpperCase() as MessageType;
+    // 7. Create message record with rendered body
     const message = await this.prisma.message.create({
       data: {
         orgId,
         conversationId: conversation.id,
         sessionId: session.id,
         direction: MessageDirection.OUTBOUND,
-        type: messageType,
-        body: dto.body,
-        mediaUrl: dto.mediaUrl,
+        type: MessageType.TEXT,
+        body: renderedBody,
         contactPhone: dto.to,
         status: MessageStatus.QUEUED,
         idempotencyKey: dto.idempotencyKey,
-        metadata: dto.interactive ? { interactive: dto.interactive as any } : undefined,
+        metadata: { templateName: dto.templateName, variables: dto.variables ?? {} } as any,
       },
     });
 
-    // 7. Create message event
     await this.prisma.messageEvent.create({
-      data: {
-        messageId: message.id,
-        orgId,
-        status: MessageStatus.QUEUED,
-      },
+      data: { messageId: message.id, orgId, status: MessageStatus.QUEUED },
     });
 
-    // 8. Queue the message for sending
+    // 8. Queue as plain TEXT — Baileys handles it normally
     await this.queueService.publish(QUEUE_NAMES.SEND_WHATSAPP_MESSAGE, {
       messageId: message.id,
       sessionId: session.id,
       orgId,
       contactPhone: dto.to,
-      type: messageType,
-      body: dto.body,
-      mediaUrl: dto.mediaUrl,
-      interactive: dto.interactive,
+      type: MessageType.TEXT,
+      body: renderedBody,
     });
 
-    // 9. Increment usage
     await this.usageTracking.incrementUsage(orgId, UsageMetricType.MESSAGES_SENT);
 
-    // 10. Emit event
     this.eventEmitter.emit(EVENT_NAMES.MESSAGE_QUEUED, {
       messageId: message.id,
       orgId,
       contactPhone: dto.to,
-      source: 'developer-api',
+      source: 'developer-api-template',
     });
 
-    this.logger.log(`Developer API: Message ${message.id} queued for ${dto.to} in org ${orgId}`);
+    this.logger.log(`Developer API: Template '${dto.templateName}' rendered and queued for ${dto.to} in org ${orgId}`);
 
     return {
       message: {
         id: message.id,
         to: dto.to,
-        type: dto.type,
+        templateName: dto.templateName,
+        renderedBody,
         status: 'QUEUED',
         createdAt: message.createdAt,
       },

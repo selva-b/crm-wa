@@ -20,6 +20,7 @@ export interface CreateScheduledMessageInput {
   createdById: string;
   idempotencyKey?: string;
   metadata?: Prisma.InputJsonValue;
+  productId?: string;
 }
 
 export interface ListScheduledMessagesOptions {
@@ -48,6 +49,7 @@ export class SchedulerRepository {
         createdById: input.createdById,
         idempotencyKey: input.idempotencyKey,
         metadata: input.metadata || Prisma.DbNull,
+        productId: input.productId ?? null,
       },
     });
   }

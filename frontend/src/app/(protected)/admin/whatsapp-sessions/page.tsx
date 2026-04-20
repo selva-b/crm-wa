@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Wifi, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wifi, Search, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { useAdminSessions, useAdminForceDisconnect } from "@/hooks/use-whatsapp";
+import { useAdminSessions, useAdminForceDisconnect, useAdminForceReconnect } from "@/hooks/use-whatsapp";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,10 +29,21 @@ export default function AdminWhatsAppSessionsPage() {
   });
 
   const forceDisconnect = useAdminForceDisconnect();
+  const forceReconnect = useAdminForceReconnect();
 
   const sessions = data?.sessions ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / limit);
+
+  // Sessions are ordered by createdAt DESC — first occurrence per userId = most recent
+  const latestSessionIdPerUser = new Set(
+    sessions
+      .reduce<string[]>((acc, s) => {
+        if (!acc.includes(s.userId)) acc.push(s.userId);
+        return acc;
+      }, [])
+      .map((userId) => sessions.find((s) => s.userId === userId)!.id)
+  );
 
   // Client-side user name search (backend doesn't support it in this endpoint)
   const filtered = userSearch
@@ -170,25 +181,50 @@ export default function AdminWhatsAppSessionsPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      {s.status === "CONNECTED" || s.status === "RECONNECTING" ? (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() =>
-                            forceDisconnect.mutate({
-                              userId: s.userId,
-                              reason: "Admin force disconnect",
-                            })
-                          }
-                          loading={forceDisconnect.isPending}
-                        >
-                          Force Disconnect
-                        </Button>
-                      ) : (
-                        <span className="text-[12px] text-on-surface-variant/50">
-                          —
-                        </span>
-                      )}
+                      <div className="flex items-center justify-end gap-2">
+                        {s.status === "DISCONNECTED" && latestSessionIdPerUser.has(s.id) && s.hasCreds && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => forceReconnect.mutate(s.id)}
+                            loading={forceReconnect.isPending}
+                            title="Reconnect without re-scanning QR"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Reconnect
+                          </Button>
+                        )}
+                        {s.status === "DISCONNECTED" && latestSessionIdPerUser.has(s.id) && !s.hasCreds && (
+                          <span className="text-[11px] text-on-surface-variant/50 italic">
+                            Needs QR re-scan
+                          </span>
+                        )}
+                        {s.status === "DISCONNECTED" && !latestSessionIdPerUser.has(s.id) && (
+                          <span className="text-[11px] text-on-surface-variant/30 italic">
+                            Old session
+                          </span>
+                        )}
+                        {(s.status === "CONNECTED" || s.status === "RECONNECTING") && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() =>
+                              forceDisconnect.mutate({
+                                userId: s.userId,
+                                reason: "Admin force disconnect",
+                              })
+                            }
+                            loading={forceDisconnect.isPending}
+                          >
+                            Disconnect
+                          </Button>
+                        )}
+                        {s.status === "CONNECTING" && (
+                          <span className="text-[12px] text-on-surface-variant/50">
+                            Waiting for QR...
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

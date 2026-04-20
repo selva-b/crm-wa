@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateAutomationRule } from "@/hooks/use-automation";
+import { useProducts } from "@/hooks/use-products";
 import {
   createAutomationRuleSchema,
   type CreateAutomationRuleFormData,
@@ -41,6 +43,8 @@ export function CreateAutomationRuleModal({
   onClose,
 }: CreateAutomationRuleModalProps) {
   const createRule = useCreateAutomationRule();
+  const { data: products } = useProducts();
+  const [productId, setProductId] = useState("");
 
   const {
     register,
@@ -69,9 +73,10 @@ export function CreateAutomationRuleModal({
   const triggerType = watch("triggerType") as AutomationTriggerType;
 
   function onSubmit(data: CreateAutomationRuleFormData) {
-    createRule.mutate(data, {
+    createRule.mutate({ ...data, productId: productId || undefined }, {
       onSuccess: () => {
         reset();
+        setProductId("");
         onClose();
       },
     });
@@ -79,6 +84,7 @@ export function CreateAutomationRuleModal({
 
   function handleClose() {
     reset();
+    setProductId("");
     onClose();
   }
 
@@ -329,6 +335,22 @@ export function CreateAutomationRuleModal({
                 />
               </div>
             </div>
+          </div>
+
+          {/* Product */}
+          <div>
+            <Label htmlFor="productId">Product <span className="text-on-surface-variant/50 font-normal">(optional)</span></Label>
+            <select
+              id="productId"
+              value={productId}
+              onChange={(e) => setProductId(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-outline-variant/20 bg-surface-container-low px-3 py-2.5 text-[14px] text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">No product</option>
+              {(products ?? []).map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Submit */}

@@ -74,6 +74,7 @@ export class CreateCampaignUseCase {
       timezone: dto.timezone,
       createdById: userId,
       idempotencyKey: dto.idempotencyKey,
+      productId: dto.productId,
     });
 
     // 5. Record campaign event

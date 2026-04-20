@@ -146,6 +146,7 @@ export interface CreateAutomationRuleRequest {
   priority?: number;
   maxExecutionsPerContact?: number;
   cooldownSeconds?: number;
+  productId?: string;
 }
 
 export interface UpdateAutomationRuleRequest {

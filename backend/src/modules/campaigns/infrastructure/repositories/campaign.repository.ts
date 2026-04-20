@@ -22,6 +22,7 @@ export interface CreateCampaignInput {
   createdById: string;
   idempotencyKey?: string;
   metadata?: Record<string, unknown>;
+  productId?: string;
 }
 
 export interface UpdateCampaignInput {
@@ -68,6 +69,7 @@ export class CampaignRepository {
         createdById: input.createdById,
         idempotencyKey: input.idempotencyKey || null,
         metadata: (input.metadata as Prisma.InputJsonValue) ?? Prisma.JsonNull,
+        productId: input.productId ?? null,
       },
     });
   }

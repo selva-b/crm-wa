@@ -73,8 +73,11 @@ export class WhatsAppSessionRepository {
           { status: WhatsAppSessionStatus.CONNECTED },
           { status: WhatsAppSessionStatus.RECONNECTING, phoneNumber: { not: null } },
           { status: WhatsAppSessionStatus.CONNECTING, createdAt: { gt: fiveMinutesAgo } },
+          // DISCONNECTED with creds intact — user should reconnect, not create a new session
+          { status: WhatsAppSessionStatus.DISCONNECTED, encryptedCreds: { not: null } },
         ],
       },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -142,6 +145,30 @@ export class WhatsAppSessionRepository {
     });
   }
 
+  // Soft disconnect — preserves encryptedCreds so reconnect works without a new QR scan.
+  // Use this for natural disconnects (network loss, phone offline, health worker exhaustion).
+  // Only use disconnectSession() for explicit mobile logout (creds must be wiped).
+  async markAsDisconnected(id: string) {
+    return this.prisma.whatsAppSession.update({
+      where: { id },
+      data: {
+        status: WhatsAppSessionStatus.DISCONNECTED,
+        disconnectedAt: new Date(),
+      },
+    });
+  }
+
+  async resetReconnectCount(id: string) {
+    return this.prisma.whatsAppSession.update({
+      where: { id },
+      data: {
+        reconnectCount: 0,
+        status: WhatsAppSessionStatus.RECONNECTING,
+        disconnectedAt: null,
+      },
+    });
+  }
+
   async findByOrgIdPaginated(
     orgId: string,
     options: {
@@ -178,7 +205,12 @@ export class WhatsAppSessionRepository {
       this.prisma.whatsAppSession.count({ where }),
     ]);
 
-    return { data, total, page: options.page, limit: options.limit };
+    const mapped = data.map(({ encryptedCreds, ...rest }) => ({
+      ...rest,
+      hasCreds: encryptedCreds !== null,
+    }));
+
+    return { data: mapped, total, page: options.page, limit: options.limit };
   }
 
   async findStaleConnectedSessions(heartbeatThreshold: Date) {

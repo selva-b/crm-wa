@@ -96,7 +96,7 @@ export class BaileysConnectionManager implements OnModuleInit, OnModuleDestroy {
         logger: pino({ level: 'silent' }) as any,
         browser: ['Wazelo CRM', 'Chrome', '120.0.0'],
         syncFullHistory: false,
-        connectTimeoutMs: 60_000,
+        connectTimeoutMs: WHATSAPP_CONFIG.DISCONNECT_DETECTION_TIMEOUT_MS,
         keepAliveIntervalMs: WHATSAPP_CONFIG.HEARTBEAT_INTERVAL_MS,
       });
 
@@ -196,6 +196,7 @@ export class BaileysConnectionManager implements OnModuleInit, OnModuleDestroy {
         const loggedOut = statusCode === DisconnectReason.loggedOut;
 
         if (loggedOut) {
+          // Explicit logout from WhatsApp mobile — clear creds, no reconnect
           await this.authStateService.clearAuthState(sessionId);
           this.eventEmitter.emit(EVENT_NAMES.BAILEYS_CONNECTION_UPDATE, {
             sessionId,
@@ -204,22 +205,16 @@ export class BaileysConnectionManager implements OnModuleInit, OnModuleDestroy {
             event: 'logout',
             reason: 'Logged out from WhatsApp mobile app',
           });
-        } else if (
-          statusCode === DisconnectReason.restartRequired ||
-          statusCode === DisconnectReason.connectionReplaced ||
-          statusCode === DisconnectReason.timedOut ||
-          statusCode === DisconnectReason.connectionClosed
-        ) {
-          // Non-fatal disconnect — reconnect immediately
-          // Status 515 (restartRequired) is normal after QR scan pairing
+        } else {
+          // ALL other codes: network loss, phone offline, restartRequired, timedOut, etc.
+          // Always attempt reconnect — health worker will handle exhaustion
           this.logger.log(
-            `Auto-reconnecting session ${sessionId} (status: ${statusCode})`,
+            `Auto-reconnecting session ${sessionId} (statusCode: ${statusCode ?? 'unknown'})`,
           );
           setTimeout(() => {
             this.createConnection(sessionId, userId, orgId).catch((err) => {
               this.logger.error(
-                `Auto-reconnect failed for session ${sessionId}`,
-                err,
+                `Auto-reconnect failed for session ${sessionId}: ${err.message}`,
               );
               this.eventEmitter.emit(EVENT_NAMES.BAILEYS_CONNECTION_UPDATE, {
                 sessionId,
@@ -230,14 +225,6 @@ export class BaileysConnectionManager implements OnModuleInit, OnModuleDestroy {
               });
             });
           }, 1500);
-        } else {
-          this.eventEmitter.emit(EVENT_NAMES.BAILEYS_CONNECTION_UPDATE, {
-            sessionId,
-            orgId,
-            userId,
-            event: 'disconnected',
-            reason: `Connection closed: status ${statusCode}`,
-          });
         }
       }
     });

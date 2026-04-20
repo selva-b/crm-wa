@@ -44,6 +44,7 @@ import { useProducts, useContactProducts, useAssignProduct, useUnassignProduct }
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFieldValues, setFieldValues, listFieldDefinitions, type CustomFieldValue } from "@/lib/api/custom-fields";
 import { exportContactData, eraseContactData } from "@/lib/api/gdpr";
+import { SendMessageModal } from "./send-message-modal";
 
 interface ContactDetailDrawerProps {
   contactId: string | null;
@@ -77,6 +78,7 @@ export function ContactDetailDrawer({
   const [showActions, setShowActions] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSendMessage, setShowSendMessage] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "" });
 
@@ -384,16 +386,23 @@ export function ContactDetailDrawer({
                 </div>
               )}
 
-              {/* Open Conversation */}
-              <div className="px-5 pb-4">
+              {/* Message actions */}
+              <div className="px-5 pb-4 flex gap-2">
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setShowSendMessage(true)}
+                >
+                  <MessageSquare className="h-4 w-4 mr-1.5" />
+                  Send Message
+                </Button>
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="w-full"
+                  className="flex-1"
                   onClick={openConversation}
                 >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  View Conversation
+                  Open Chat
                 </Button>
               </div>
 
@@ -473,6 +482,16 @@ export function ContactDetailDrawer({
           )}
         </div>
       </div>
+
+      {/* Send message modal */}
+      {contact && (
+        <SendMessageModal
+          open={showSendMessage}
+          onClose={() => setShowSendMessage(false)}
+          contactName={contact.name || contact.phoneNumber}
+          phoneNumber={contact.phoneNumber}
+        />
+      )}
 
       {/* Assign owner modal */}
       {contact && (

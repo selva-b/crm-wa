@@ -1,10 +1,14 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
+import { MessageEncryptionService } from '@/modules/messages/domain/services/message-encryption.service';
 
 @Controller('search')
 export class SearchController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly enc: MessageEncryptionService,
+  ) {}
 
   @Get()
   async search(
@@ -42,15 +46,12 @@ export class SearchController {
         orderBy: { updatedAt: 'desc' },
       }),
 
-      // Search conversations by contact phone or last message body
+      // Search conversations by contact phone (lastMessageBody is encrypted — cannot search by content)
       this.prisma.conversation.findMany({
         where: {
           orgId,
           deletedAt: null,
-          OR: [
-            { contactPhone: { contains: q } },
-            { lastMessageBody: { contains: q, mode: 'insensitive' } },
-          ],
+          contactPhone: { contains: q },
         },
         select: {
           id: true,
@@ -82,6 +83,12 @@ export class SearchController {
       }),
     ]);
 
-    return { contacts, conversations, campaigns };
+    // Decrypt lastMessageBody in conversation results
+    const decryptedConversations = conversations.map((c) => ({
+      ...c,
+      lastMessageBody: this.enc.decryptIfEncrypted(c.lastMessageBody),
+    }));
+
+    return { contacts, conversations: decryptedConversations, campaigns };
   }
 }

@@ -5,6 +5,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MessageDirection, MessageStatus } from '@prisma/client';
 import { TemplateRepository } from '../../infrastructure/repositories/template.repository';
 import { ChannelService } from '@/modules/channels/domain/services/channel.service';
+import { MessageEncryptionService } from '../../domain/services/message-encryption.service';
 import { QUEUE_NAMES, EVENT_NAMES } from '@/common/constants';
 
 export interface SendTemplateParams {
@@ -28,6 +29,7 @@ export class SendTemplateMessageUseCase {
     private readonly templateRepo: TemplateRepository,
     private readonly channelService: ChannelService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly enc: MessageEncryptionService,
   ) {}
 
   async execute(params: SendTemplateParams) {
@@ -121,7 +123,12 @@ export class SendTemplateMessageUseCase {
     // 9. Update conversation
     await this.prisma.conversation.update({
       where: { id: conversation.id },
-      data: { lastMessageAt: new Date(), lastMessageBody: displayBody?.substring(0, 500) || `[Template: ${template.name}]` },
+      data: {
+        lastMessageAt: new Date(),
+        lastMessageBody: this.enc.encryptIfPresent(
+          displayBody?.substring(0, 500) || `[Template: ${template.name}]`,
+        ),
+      },
     });
 
     // 10. Emit

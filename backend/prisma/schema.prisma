@@ -773,7 +773,7 @@ model Message {
   contactPhone      String           @map("contact_phone") @db.VarChar(20)
   contactName       String?          @map("contact_name") @db.VarChar(255)
   body              String?          @db.Text
-  mediaUrl          String?          @map("media_url") @db.VarChar(2048)
+  mediaUrl          String?          @map("media_url") @db.Text
   mediaMimeType     String?          @map("media_mime_type") @db.VarChar(100)
   mediaSize         Int?             @map("media_size")
   metadata          Json?            @db.JsonB
@@ -1106,7 +1106,7 @@ model Conversation {
   contactPhone      String             @map("contact_phone") @db.VarChar(20)
   status            ConversationStatus @default(OPEN)
   lastMessageAt     DateTime?          @map("last_message_at")
-  lastMessageBody   String?            @map("last_message_body") @db.VarChar(500)
+  lastMessageBody   String?            @map("last_message_body") @db.Text
   unreadCount       Int                @default(0) @map("unread_count")
   assignedToId      String?            @map("assigned_to_id") @db.Uuid
   createdAt         DateTime           @default(now()) @map("created_at")
@@ -1239,9 +1239,12 @@ model Campaign {
   updatedAt       DateTime             @updatedAt @map("updated_at")
   deletedAt       DateTime?            @map("deleted_at")
 
+  productId   String?   @map("product_id") @db.Uuid
+
   organization Organization        @relation(fields: [orgId], references: [id])
   session      WhatsAppSession     @relation(fields: [sessionId], references: [id])
   createdBy    User                @relation("CampaignCreator", fields: [createdById], references: [id])
+  product      Product?            @relation("CampaignProduct", fields: [productId], references: [id])
   recipients   CampaignRecipient[]
   events       CampaignEvent[]
 
@@ -1251,6 +1254,7 @@ model Campaign {
   @@index([scheduledAt])
   @@index([orgId, createdAt])
   @@index([createdById])
+  @@index([productId])
   @@index([deletedAt])
   @@map("campaigns")
 }
@@ -1461,7 +1465,10 @@ model ScheduledMessage {
   updatedAt      DateTime               @updatedAt @map("updated_at")
   deletedAt      DateTime?              @map("deleted_at")
 
+  productId   String?   @map("product_id") @db.Uuid
+
   organization Organization @relation(fields: [orgId], references: [id])
+  product      Product?     @relation("ScheduledMessageProduct", fields: [productId], references: [id])
 
   @@index([orgId])
   @@index([orgId, status])
@@ -1469,6 +1476,7 @@ model ScheduledMessage {
   @@index([sessionId])
   @@index([createdById])
   @@index([scheduledAt])
+  @@index([productId])
   @@index([deletedAt])
   @@map("scheduled_messages")
 }
@@ -1498,7 +1506,10 @@ model AutomationRule {
   updatedAt               DateTime              @updatedAt @map("updated_at")
   deletedAt               DateTime?             @map("deleted_at")
 
+  productId   String?   @map("product_id") @db.Uuid
+
   organization Organization             @relation(fields: [orgId], references: [id])
+  product      Product?                 @relation("AutomationRuleProduct", fields: [productId], references: [id])
   actions      AutomationAction[]
   executions   AutomationExecutionLog[]
 
@@ -1508,6 +1519,7 @@ model AutomationRule {
   @@index([status])
   @@index([triggerType])
   @@index([createdById])
+  @@index([productId])
   @@index([deletedAt])
   @@map("automation_rules")
 }
@@ -2781,11 +2793,14 @@ model Product {
   updatedAt   DateTime      @updatedAt @map("updated_at")
   deletedAt   DateTime?     @map("deleted_at")
 
-  organization    Organization     @relation(fields: [orgId], references: [id])
-  contactProducts ContactProduct[]
-  deals           Deal[]
-  csatSurveys     CsatSurvey[]
-  articleProducts ArticleProduct[]
+  organization      Organization       @relation(fields: [orgId], references: [id])
+  contactProducts   ContactProduct[]
+  deals             Deal[]
+  csatSurveys       CsatSurvey[]
+  articleProducts   ArticleProduct[]
+  campaigns         Campaign[]         @relation("CampaignProduct")
+  scheduledMessages ScheduledMessage[] @relation("ScheduledMessageProduct")
+  automationRules   AutomationRule[]   @relation("AutomationRuleProduct")
 
   @@unique([orgId, name, deletedAt])
   @@index([orgId])

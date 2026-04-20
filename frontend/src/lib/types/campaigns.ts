@@ -156,6 +156,7 @@ export interface CreateCampaignRequest {
   scheduledAt?: string;
   timezone?: string;
   idempotencyKey?: string;
+  productId?: string;
 }
 
 export interface UpdateCampaignRequest {

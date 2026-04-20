@@ -16,6 +16,8 @@ import {
 } from '@prisma/client';
 import { ChannelService } from '../../domain/services/channel.service';
 import { ChannelAdapterRegistry } from '../../domain/services/channel-adapter-registry';
+import { EncryptionService } from '@/common/services';
+import { MessageEncryptionService } from '@/modules/messages/domain/services/message-encryption.service';
 import { QUEUE_NAMES, EVENT_NAMES } from '@/common/constants';
 
 export interface SendChannelMessageParams {
@@ -45,6 +47,7 @@ export class SendChannelMessageUseCase {
     private readonly channelService: ChannelService,
     private readonly adapterRegistry: ChannelAdapterRegistry,
     private readonly eventEmitter: EventEmitter2,
+    private readonly enc: MessageEncryptionService,
   ) {}
 
   async execute(params: SendChannelMessageParams) {
@@ -175,8 +178,9 @@ export class SendChannelMessageUseCase {
       where: { id: conversation.id },
       data: {
         lastMessageAt: new Date(),
-        lastMessageBody:
+        lastMessageBody: this.enc.encryptIfPresent(
           body?.substring(0, 500) || `[${messageType}]`,
+        ),
         updatedAt: new Date(),
       },
     });

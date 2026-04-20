@@ -33,6 +33,7 @@ export class GetSessionUseCase {
       lastHeartbeatAt: session.lastHeartbeatAt,
       reconnectCount: session.reconnectCount,
       createdAt: session.createdAt,
+      hasCreds: session.encryptedCreds !== null && session.encryptedCreds !== undefined,
     };
   }
 }

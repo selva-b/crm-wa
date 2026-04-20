@@ -155,6 +155,44 @@ export class DeveloperApiRepository {
   }
 
   /**
+   * Get a single contact by ID and org.
+   */
+  async getContactById(id: string, orgId: string) {
+    return this.prisma.contact.findFirst({
+      where: { id, orgId, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        phoneNumber: true,
+        email: true,
+        leadStatus: true,
+        source: true,
+        metadata: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  /**
+   * Update a contact by ID and org.
+   */
+  async updateContact(
+    id: string,
+    orgId: string,
+    data: { name?: string; email?: string; metadata?: Record<string, unknown> },
+  ) {
+    return this.prisma.contact.updateMany({
+      where: { id, orgId, deletedAt: null },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.email !== undefined && { email: data.email }),
+        ...(data.metadata && { metadata: data.metadata as any }),
+      },
+    });
+  }
+
+  /**
    * Get active WhatsApp sessions for an org.
    */
   async getActiveSessions(orgId: string) {
@@ -182,73 +220,100 @@ export class DeveloperApiRepository {
   }
 
   /**
-   * Get developer dashboard stats.
+   * Create or update a custom text template for an org.
+   */
+  async createTemplate(data: {
+    orgId: string;
+    name: string;
+    body: string;
+    language?: string;
+    category?: string;
+  }) {
+    return this.prisma.messageTemplate.upsert({
+      where: {
+        unique_template_per_org: {
+          orgId: data.orgId,
+          name: data.name,
+          language: data.language ?? 'en',
+          deletedAt: null as any,
+        },
+      },
+      create: {
+        orgId: data.orgId,
+        name: data.name,
+        language: data.language ?? 'en',
+        category: data.category ?? 'CUSTOM',
+        status: 'APPROVED',
+        components: [{ type: 'BODY', text: data.body }],
+      },
+      update: {
+        components: [{ type: 'BODY', text: data.body }],
+        category: data.category ?? 'CUSTOM',
+        status: 'APPROVED',
+      },
+      select: { id: true, name: true, language: true, category: true, status: true, components: true, createdAt: true },
+    });
+  }
+
+  /**
+   * List approved message templates for an org.
+   */
+  async listTemplates(orgId: string) {
+    return this.prisma.messageTemplate.findMany({
+      where: { orgId, deletedAt: null, status: 'APPROVED' },
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        language: true,
+        category: true,
+        status: true,
+        components: true,
+      },
+    });
+  }
+
+  /**
+   * Get connected session for a specific user in an org.
+   */
+  async getSessionByUserAndOrg(orgId: string, userId: string) {
+    return this.prisma.whatsAppSession.findFirst({
+      where: { orgId, userId, status: 'CONNECTED', deletedAt: null },
+      select: { id: true, phoneNumber: true, userId: true },
+    });
+  }
+
+  /**
+   * Get dashboard stats for the developer portal.
    */
   async getDashboardStats(orgId: string) {
-    const [
-      totalMessages,
-      messagesSentThisMonth,
-      totalContacts,
-      activeWebhooks,
-      activeSessions,
-      apiKeys,
-    ] = await Promise.all([
+    const [totalMessages, totalContacts, activeSessions, activeApiKeys] = await Promise.all([
       this.prisma.message.count({ where: { orgId, deletedAt: null } }),
-      this.prisma.message.count({
-        where: {
-          orgId,
-          direction: 'OUTBOUND',
-          createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
-          deletedAt: null,
-        },
-      }),
       this.prisma.contact.count({ where: { orgId, deletedAt: null } }),
-      this.prisma.webhook.count({ where: { orgId, enabled: true, deletedAt: null } }),
       this.prisma.whatsAppSession.count({ where: { orgId, status: 'CONNECTED', deletedAt: null } }),
       this.prisma.apiKey.count({ where: { orgId, isActive: true } }),
     ]);
 
-    // Get usage record for current period
-    const usageRecord = await this.prisma.usageRecord.findFirst({
-      where: {
-        orgId,
-        metricType: 'MESSAGES_SENT',
-        periodEnd: { gte: new Date() },
-      },
-      orderBy: { periodStart: 'desc' },
-    });
-
-    return {
-      totalMessages,
-      messagesSentThisMonth,
-      messagesLimit: usageRecord?.limitValue ?? 0,
-      messagesUsed: usageRecord?.currentValue ?? messagesSentThisMonth,
-      totalContacts,
-      activeWebhooks,
-      activeSessions,
-      activeApiKeys: apiKeys,
-    };
+    return { totalMessages, totalContacts, activeSessions, activeApiKeys };
   }
 
   /**
-   * Get API call logs (recent messages sent via API).
+   * Get API access logs for the developer portal with cursor-based pagination.
+   * Uses AuditLog filtered by source='api'.
    */
   async getApiLogs(orgId: string, limit: number, cursor?: string) {
-    const logs = await this.prisma.message.findMany({
-      where: {
-        orgId,
-        direction: 'OUTBOUND',
-        deletedAt: null,
-      },
+    const logs = await this.prisma.auditLog.findMany({
+      where: { orgId, source: 'api' },
       take: limit + 1,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        contactPhone: true,
-        type: true,
-        status: true,
-        body: true,
+        action: true,
+        targetType: true,
+        targetId: true,
+        ipAddress: true,
+        duration: true,
         createdAt: true,
       },
     });
@@ -259,4 +324,5 @@ export class DeveloperApiRepository {
 
     return { data, nextCursor, hasMore };
   }
+
 }

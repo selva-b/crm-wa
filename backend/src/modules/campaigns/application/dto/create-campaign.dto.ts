@@ -97,4 +97,8 @@ export class CreateCampaignDto {
   @IsString()
   @MaxLength(255)
   idempotencyKey?: string;
+
+  @IsOptional()
+  @IsUUID('4')
+  productId?: string;
 }

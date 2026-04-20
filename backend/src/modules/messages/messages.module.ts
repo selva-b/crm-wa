@@ -3,6 +3,7 @@ import { AuditModule } from '@/modules/audit/audit.module';
 import { WhatsAppModule } from '@/modules/whatsapp/whatsapp.module';
 import { TeamsModule } from '@/modules/teams/teams.module';
 import { ChannelsModule } from '@/modules/channels/channels.module';
+import { EncryptionService } from '@/common/services';
 
 // Repositories
 import { MessageRepository } from './infrastructure/repositories/message.repository';
@@ -14,6 +15,7 @@ import { TemplateRepository } from './infrastructure/repositories/template.repos
 
 // Domain services
 import { RateLimiterService } from './domain/services/rate-limiter.service';
+import { MessageEncryptionService } from './domain/services/message-encryption.service';
 
 // Use cases
 import {
@@ -46,6 +48,8 @@ import { TemplatesController } from './interfaces/controllers/templates.controll
     DeadLetterRepository,
 
     // Domain services
+    EncryptionService,
+    MessageEncryptionService,
     RateLimiterService,
 
     // Use cases
@@ -69,6 +73,7 @@ import { TemplatesController } from './interfaces/controllers/templates.controll
     MessageEventRepository,
     DeadLetterRepository,
     RateLimiterService,
+    MessageEncryptionService,
   ],
 })
 export class MessagesModule {}

@@ -54,6 +54,7 @@ import {
   listFieldDefinitions,
 } from "@/lib/api/custom-fields";
 import { exportContactData, eraseContactData } from "@/lib/api/gdpr";
+import { SendMessageModal } from "@/components/contacts/send-message-modal";
 import type { LeadStatus } from "@/lib/types/contacts";
 
 const LEAD_STATUSES: { value: LeadStatus; label: string }[] = [
@@ -94,6 +95,7 @@ export default function ContactDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showAssign, setShowAssign] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSendMessage, setShowSendMessage] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "" });
 
@@ -263,8 +265,11 @@ export default function ContactDetailPage() {
             >
               <UserPlus className="h-4 w-4" />
             </button>
+            <Button size="sm" onClick={() => setShowSendMessage(true)}>
+              <MessageSquare className="h-4 w-4 mr-1" /> Send Message
+            </Button>
             <Button size="sm" variant="secondary" onClick={openConversation}>
-              <MessageSquare className="h-4 w-4 mr-1" /> Open Chat
+              Open Chat
             </Button>
             <button
               onClick={handleExport}
@@ -329,6 +334,13 @@ export default function ContactDetailPage() {
         currentOwnerId={contact.ownerId}
         open={showAssign}
         onClose={() => setShowAssign(false)}
+      />
+
+      <SendMessageModal
+        open={showSendMessage}
+        onClose={() => setShowSendMessage(false)}
+        contactName={contact.name || contact.phoneNumber}
+        phoneNumber={contact.phoneNumber}
       />
 
       <ConfirmDialog

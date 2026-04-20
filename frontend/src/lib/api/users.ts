@@ -16,6 +16,8 @@ export interface OrgUser {
 export interface UsersListResponse {
   users: OrgUser[];
   total: number;
+  take: number;
+  skip: number;
 }
 
 export interface Invitation {

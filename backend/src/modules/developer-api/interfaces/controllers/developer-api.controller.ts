@@ -14,7 +14,6 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
-  Logger,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Public } from '@/common/decorators/public.decorator';
@@ -24,15 +23,18 @@ import { FeatureFlagGuard, FEATURE_FLAG_KEY } from '@/modules/billing/interfaces
 import { UsageMetricType } from '@prisma/client';
 import { DeveloperApiRepository } from '../../infrastructure/repositories/developer-api.repository';
 import { DevSendMessageUseCase } from '../../application/use-cases/send-message.use-case';
+import { DevSendBulkMessageUseCase } from '../../application/use-cases/send-bulk-message.use-case';
+import { DevSendTemplateMessageUseCase } from '../../application/use-cases/send-template-message.use-case';
+import { ApiKeysRepository } from '@/modules/api-keys/infrastructure/repositories/api-keys.repository';
 import {
   DevSendMessageDto,
+  DevSendBulkMessageDto,
+  DevSendTemplateDto,
   DevCreateContactDto,
-  DevRegisterWebhookDto,
-  DevUpdateWebhookDto,
+  DevUpdateContactDto,
+  DevCreateTemplateDto,
   DevListMessagesQueryDto,
 } from '../../application/dto';
-import { PrismaService } from '@/infrastructure/database/prisma.service';
-import { randomBytes } from 'crypto';
 
 /**
  * Public Developer API — authenticated via X-API-Key header.
@@ -43,12 +45,12 @@ import { randomBytes } from 'crypto';
 @UseGuards(ApiKeyGuard, FeatureFlagGuard) // API key auth + feature flag check
 @SetMetadata(FEATURE_FLAG_KEY, 'api')
 export class DeveloperApiController {
-  private readonly logger = new Logger(DeveloperApiController.name);
-
   constructor(
     private readonly repo: DeveloperApiRepository,
     private readonly sendMessageUseCase: DevSendMessageUseCase,
-    private readonly prisma: PrismaService,
+    private readonly sendBulkMessageUseCase: DevSendBulkMessageUseCase,
+    private readonly sendTemplateMessageUseCase: DevSendTemplateMessageUseCase,
+    private readonly apiKeysRepo: ApiKeysRepository,
   ) {}
 
   // ── Messages ──
@@ -60,6 +62,24 @@ export class DeveloperApiController {
   async sendMessage(@Req() req: Request, @Body() dto: DevSendMessageDto) {
     const orgId = (req as any).apiKeyAuth.orgId;
     return this.sendMessageUseCase.execute(orgId, dto);
+  }
+
+  @Post('messages/send-bulk')
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.MESSAGES_SENT)
+  @UseGuards(UsageLimitGuard)
+  @HttpCode(HttpStatus.OK)
+  async sendBulkMessage(@Req() req: Request, @Body() dto: DevSendBulkMessageDto) {
+    const orgId = (req as any).apiKeyAuth.orgId;
+    return this.sendBulkMessageUseCase.execute(orgId, dto);
+  }
+
+  @Post('messages/send-template')
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.MESSAGES_SENT)
+  @UseGuards(UsageLimitGuard)
+  @HttpCode(HttpStatus.OK)
+  async sendTemplateMessage(@Req() req: Request, @Body() dto: DevSendTemplateDto) {
+    const orgId = (req as any).apiKeyAuth.orgId;
+    return this.sendTemplateMessageUseCase.execute(orgId, dto);
   }
 
   @Get('messages')
@@ -115,6 +135,55 @@ export class DeveloperApiController {
     });
   }
 
+  @Get('contacts/:id')
+  async getContact(
+    @Req() req: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const orgId = (req as any).apiKeyAuth.orgId;
+    const contact = await this.repo.getContactById(id, orgId);
+    if (!contact) throw new NotFoundException('Contact not found');
+    return contact;
+  }
+
+  @Put('contacts/:id')
+  async updateContact(
+    @Req() req: Request,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DevUpdateContactDto,
+  ) {
+    const orgId = (req as any).apiKeyAuth.orgId;
+    const contact = await this.repo.getContactById(id, orgId);
+    if (!contact) throw new NotFoundException('Contact not found');
+    await this.repo.updateContact(id, orgId, {
+      name: dto.name,
+      email: dto.email,
+      metadata: dto.metadata,
+    });
+    return this.repo.getContactById(id, orgId);
+  }
+
+  // ── Templates ──
+
+  @Post('templates')
+  @HttpCode(HttpStatus.CREATED)
+  async createTemplate(@Req() req: Request, @Body() dto: DevCreateTemplateDto) {
+    const orgId = (req as any).apiKeyAuth.orgId;
+    return this.repo.createTemplate({
+      orgId,
+      name: dto.name,
+      body: dto.body,
+      language: dto.language,
+      category: dto.category,
+    });
+  }
+
+  @Get('templates')
+  async listTemplates(@Req() req: Request) {
+    const orgId = (req as any).apiKeyAuth.orgId;
+    return this.repo.listTemplates(orgId);
+  }
+
   // ── Session Status ──
 
   @Get('session/status')
@@ -132,88 +201,40 @@ export class DeveloperApiController {
     };
   }
 
-  // ── Webhooks ──
+  // ── API Keys ──
 
-  @Post('webhooks')
+  @Post('keys')
   @HttpCode(HttpStatus.CREATED)
-  async registerWebhook(
+  async createApiKey(
     @Req() req: Request,
-    @Body() dto: DevRegisterWebhookDto,
+    @Body() dto: { name: string; scopes?: string[]; expiresInDays?: number },
   ) {
-    const orgId = (req as any).apiKeyAuth.orgId;
-    const secret = randomBytes(32).toString('hex');
-    const events = dto.events ?? ['message.received', 'message.status'];
-
-    const webhook = await this.prisma.webhook.create({
-      data: {
-        orgId,
-        url: dto.url,
-        secret,
-        description: dto.description ?? 'Developer API webhook',
-        events,
-        headers: dto.headers ?? undefined,
-        enabled: true,
-        maxRetries: 5,
-        timeoutMs: 10000,
-      },
-      select: {
-        id: true,
-        url: true,
-        events: true,
-        enabled: true,
-        createdAt: true,
-      },
-    });
-
-    return { ...webhook, secret }; // Show secret once
-  }
-
-  @Get('webhooks')
-  async listWebhooks(@Req() req: Request) {
-    const orgId = (req as any).apiKeyAuth.orgId;
-    return this.prisma.webhook.findMany({
-      where: { orgId, deletedAt: null },
-      select: {
-        id: true,
-        url: true,
-        events: true,
-        enabled: true,
-        failureCount: true,
-        lastDeliveryAt: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
+    const { orgId, keyId } = (req as any).apiKeyAuth;
+    return this.apiKeysRepo.createKey({
+      orgId,
+      name: dto.name,
+      scopes: dto.scopes ?? ['read', 'write'],
+      expiresAt: dto.expiresInDays
+        ? new Date(Date.now() + dto.expiresInDays * 86_400_000)
+        : undefined,
+      createdById: keyId,
     });
   }
 
-  @Put('webhooks/:id')
-  async updateWebhook(
-    @Req() req: Request,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: DevUpdateWebhookDto,
-  ) {
+  @Get('keys')
+  async listApiKeys(@Req() req: Request) {
     const orgId = (req as any).apiKeyAuth.orgId;
-    return this.prisma.webhook.updateMany({
-      where: { id, orgId, deletedAt: null },
-      data: {
-        ...(dto.url && { url: dto.url }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.events && { events: dto.events }),
-        ...(dto.enabled !== undefined && { enabled: dto.enabled }),
-      },
-    });
+    return this.apiKeysRepo.findByOrg(orgId);
   }
 
-  @Delete('webhooks/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteWebhook(
+  @Delete('keys/:id')
+  @HttpCode(HttpStatus.OK)
+  async revokeApiKey(
     @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     const orgId = (req as any).apiKeyAuth.orgId;
-    await this.prisma.webhook.updateMany({
-      where: { id, orgId },
-      data: { deletedAt: new Date() },
-    });
+    await this.apiKeysRepo.revokeKey(id, orgId);
+    return { revoked: true };
   }
 }
