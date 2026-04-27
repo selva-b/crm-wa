@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, FileText, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileText, X, CheckCircle2, AlertCircle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { useImportContacts } from "@/hooks/use-contacts";
@@ -15,14 +15,28 @@ export function ImportContactsModal({ open, onClose }: ImportContactsModalProps)
   const [csvContent, setCsvContent] = useState("");
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState<string[][]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const importMutation = useImportContacts();
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const downloadSample = () => {
+    const csv = [
+      "Phone,Name,Email,Status,Source",
+      "+919876543210,Ravi Kumar,ravi@example.com,NEW,WHATSAPP",
+      "+919123456789,Priya Sharma,priya@example.com,INTERESTED,INSTAGRAM",
+      "+917654321098,Arjun Patel,,CONTACTED,MANUAL",
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "contacts-sample.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
+  const processFile = (file: File) => {
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -46,6 +60,28 @@ export function ImportContactsModal({ open, onClose }: ImportContactsModalProps)
       setPreview(rows);
     };
     reader.readAsText(file);
+  };
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
   };
 
   const handleImport = () => {
@@ -127,7 +163,10 @@ export function ImportContactsModal({ open, onClose }: ImportContactsModalProps)
             <>
               <div
                 onClick={() => fileRef.current?.click()}
-                className="border-2 border-dashed border-outline-variant/30 rounded-xl p-8 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${isDragging ? "border-primary/60 bg-primary/10" : "border-outline-variant/30 hover:border-primary/40 hover:bg-primary/5"}`}
               >
                 <input
                   ref={fileRef}
@@ -152,6 +191,14 @@ export function ImportContactsModal({ open, onClose }: ImportContactsModalProps)
                     <p className="text-[11px] text-on-surface-variant/50 mt-1">
                       Required column: Phone. Optional: Name, Email, Status, Source
                     </p>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); downloadSample(); }}
+                      className="mt-2 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download sample file
+                    </button>
                   </>
                 )}
               </div>

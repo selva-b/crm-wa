@@ -1,14 +1,20 @@
 import {
-  IsString, IsNotEmpty, IsEnum, IsOptional, IsInt, Min, MaxLength,
+  IsString, IsNotEmpty, IsEnum, IsOptional, IsInt, Min, MaxLength, IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TicketCategory, TicketPriority, TicketStatus } from '@prisma/client';
 
 export class CreateTicketDto {
+  @IsOptional() @IsUUID()
+  orgId?: string;
+
+  @IsOptional() @IsUUID()
+  userId?: string;
+
   @IsString() @IsNotEmpty() @MaxLength(255)
   title: string;
 
-  @IsString() @IsNotEmpty()
+  @IsString() @IsNotEmpty() @MaxLength(5000)
   description: string;
 
   @IsEnum(TicketCategory)
@@ -19,7 +25,7 @@ export class CreateTicketDto {
 }
 
 export class ReplyToTicketDto {
-  @IsString() @IsNotEmpty()
+  @IsString() @IsNotEmpty() @MaxLength(10000)
   body: string;
 }
 
@@ -44,6 +50,6 @@ export class ListTicketsQueryDto {
   @IsOptional() @IsEnum(TicketPriority)
   priority?: TicketPriority;
 
-  @IsOptional() @IsString()
+  @IsOptional() @IsUUID()
   orgId?: string;
 }

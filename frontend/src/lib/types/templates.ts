@@ -32,6 +32,22 @@ export interface SendTemplateRequest {
   idempotencyKey?: string;
 }
 
+export interface CreateTemplateRequest {
+  name: string;
+  body: string;
+  category?: string;
+  language?: string;
+  productId?: string;
+}
+
+export interface UpdateTemplateRequest {
+  name?: string;
+  body?: string;
+  category?: string;
+  language?: string;
+  productId?: string | null;
+}
+
 export const TEMPLATE_STATUS_LABELS: Record<TemplateStatus, string> = {
   PENDING: "Pending",
   APPROVED: "Approved",

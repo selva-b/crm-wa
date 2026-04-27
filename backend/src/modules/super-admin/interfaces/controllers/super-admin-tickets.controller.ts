@@ -1,10 +1,12 @@
 import {
   Controller, Get, Post, Patch, Body, Param, Query,
-  UseGuards, Req, ParseUUIDPipe, HttpCode, HttpStatus,
+  UseGuards, Req, ParseUUIDPipe, HttpCode, HttpStatus, BadRequestException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { SuperAdminGuard } from '../guards/super-admin.guard';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
+import { Permissions } from '@/common/decorators/permissions.decorator';
+import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
 import {
   CreateTicketUseCase,
   GetTicketUseCase,
@@ -29,20 +31,29 @@ export class SuperAdminTicketsController {
     private readonly updateTicketStatusUseCase: UpdateTicketStatusUseCase,
   ) {}
 
-  /** Any authenticated user (org user or super admin) can create a ticket */
+  /** Any authenticated org user or super admin can create a ticket */
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Permissions(PERMISSIONS.SETTINGS_READ)
   async createTicket(@Body() dto: CreateTicketDto, @CurrentUser() user: JwtPayload) {
+    if (user.isSuperAdmin) {
+      if (!dto.orgId || !dto.userId) {
+        throw new BadRequestException('orgId and userId are required for super admin ticket creation');
+      }
+      return this.createTicketUseCase.execute(dto.orgId, dto.userId, dto);
+    }
     return this.createTicketUseCase.execute(user.orgId, user.sub, dto);
   }
 
   /** List — super admin sees all; org users see their org's tickets */
   @Get()
+  @Permissions(PERMISSIONS.SETTINGS_READ)
   async listTickets(@Query() query: ListTicketsQueryDto, @CurrentUser() user: JwtPayload) {
     return this.listTicketsUseCase.execute(query, user.orgId, user.isSuperAdmin);
   }
 
   @Get(':id')
+  @Permissions(PERMISSIONS.SETTINGS_READ)
   async getTicket(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtPayload) {
     return this.getTicketUseCase.execute(id, user.orgId, user.isSuperAdmin);
   }
@@ -50,6 +61,7 @@ export class SuperAdminTicketsController {
   /** Both org users and super admin can reply */
   @Post(':id/replies')
   @HttpCode(HttpStatus.CREATED)
+  @Permissions(PERMISSIONS.SETTINGS_READ)
   async replyToTicket(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ReplyToTicketDto,
@@ -66,7 +78,8 @@ export class SuperAdminTicketsController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTicketStatusDto,
+    @CurrentUser() user: JwtPayload,
   ) {
-    return this.updateTicketStatusUseCase.execute(id, dto);
+    return this.updateTicketStatusUseCase.execute(id, dto, user.orgId, user.isSuperAdmin);
   }
 }

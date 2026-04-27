@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { templatesApi } from "@/lib/api/templates";
-import type { SendTemplateRequest } from "@/lib/types/templates";
+import type { SendTemplateRequest, CreateTemplateRequest, UpdateTemplateRequest } from "@/lib/types/templates";
 
 export const templateKeys = {
   all: ["templates"] as const,
@@ -45,5 +45,37 @@ export function useSendTemplate() {
       qc.invalidateQueries({ queryKey: ["messages"] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
     },
+  });
+}
+
+export function useCreateTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateTemplateRequest) => templatesApi.create(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: templateKeys.all }),
+  });
+}
+
+export function useUpdateTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string } & UpdateTemplateRequest) =>
+      templatesApi.update(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: templateKeys.all }),
+  });
+}
+
+export function useDeleteTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => templatesApi.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: templateKeys.all }),
+  });
+}
+
+export function useGenerateTemplate() {
+  return useMutation({
+    mutationFn: (data: { prompt: string; category?: string; language?: string }) =>
+      templatesApi.generate(data),
   });
 }

@@ -126,12 +126,10 @@ export function ContactsTable({
             <TableRow
               key={contact.id}
               className="cursor-pointer"
+              onClick={() => onRowClick(contact.id)}
             >
               <TableCell>
-                <button
-                  onClick={() => onRowClick(contact.id)}
-                  className="flex items-center gap-3 min-w-0 text-left"
-                >
+                <div className="flex items-center gap-3 min-w-0">
                   <Avatar
                     name={contact.name || contact.phoneNumber}
                     src={contact.avatarUrl}
@@ -145,7 +143,7 @@ export function ContactsTable({
                       {contact.phoneNumber}
                     </p>
                   </div>
-                </button>
+                </div>
               </TableCell>
 
               <TableCell className="text-[12px] text-on-surface-variant truncate max-w-[180px]">

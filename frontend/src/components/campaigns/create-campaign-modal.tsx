@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, FileText } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,12 @@ import {
   type CreateCampaignFormData,
 } from "@/lib/validations/campaigns";
 import type { MessageType, CampaignAudienceType } from "@/lib/types/campaigns";
+import { useTemplates } from "@/hooks/use-templates";
+import type { MessageTemplate } from "@/lib/types/templates";
+
+function extractTemplateBody(template: MessageTemplate): string {
+  return template.components.find((c) => c.type === "BODY")?.text ?? "";
+}
 
 interface CreateCampaignModalProps {
   open: boolean;
@@ -31,6 +37,8 @@ export function CreateCampaignModal({
   const { data: products } = useProducts();
   const [scheduleMode, setScheduleMode] = useState<"immediate" | "scheduled">("immediate");
   const [productId, setProductId] = useState("");
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const { data: templates, isLoading: templatesLoading } = useTemplates("APPROVED");
 
   const {
     register,
@@ -172,7 +180,50 @@ export function CreateCampaignModal({
             </div>
 
             <div>
-              <Label htmlFor="messageBody">Message Body</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="messageBody">Message Body</Label>
+                <button
+                  type="button"
+                  onClick={() => setShowTemplatePicker((v) => !v)}
+                  className="flex items-center gap-1 text-[12px] text-primary hover:text-primary/80 transition-colors"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  {showTemplatePicker ? "Close templates" : "Use template"}
+                </button>
+              </div>
+              {showTemplatePicker && (
+                <div className="rounded-xl border border-outline-variant/15 bg-surface-container-low p-3 space-y-1.5 max-h-[220px] overflow-y-auto mb-2">
+                  {templatesLoading ? (
+                    <p className="text-xs text-on-surface-variant text-center py-3">Loading templates...</p>
+                  ) : !templates || templates.length === 0 ? (
+                    <p className="text-xs text-on-surface-variant text-center py-3">No approved templates found.</p>
+                  ) : (
+                    templates.map((tpl) => {
+                      const body = extractTemplateBody(tpl);
+                      return (
+                        <button
+                          key={tpl.id}
+                          type="button"
+                          onClick={() => {
+                            setValue("messageBody", body, { shouldValidate: true });
+                            setShowTemplatePicker(false);
+                          }}
+                          className="w-full text-left rounded-lg px-3 py-2 hover:bg-surface-container transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[13px] font-medium text-on-surface">{tpl.name}</span>
+                            <span className="text-[11px] text-on-surface-variant/60 bg-surface-container px-1.5 py-0.5 rounded-md">{tpl.language}</span>
+                            {tpl.category && (
+                              <span className="text-[11px] text-on-surface-variant/60 bg-surface-container px-1.5 py-0.5 rounded-md">{tpl.category}</span>
+                            )}
+                          </div>
+                          <p className="text-[12px] text-on-surface-variant/70 truncate">{body}</p>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
               <textarea
                 id="messageBody"
                 placeholder="Type your message here... Use {{name}} for personalization"

@@ -3,6 +3,7 @@ import { AuditModule } from '@/modules/audit/audit.module';
 import { WhatsAppModule } from '@/modules/whatsapp/whatsapp.module';
 import { TeamsModule } from '@/modules/teams/teams.module';
 import { ChannelsModule } from '@/modules/channels/channels.module';
+import { AiModule } from '@/modules/ai/ai.module';
 import { EncryptionService } from '@/common/services';
 
 // Repositories
@@ -31,6 +32,7 @@ import { DeleteConversationUseCase } from './application/use-cases/delete-conver
 import { CloseConversationUseCase } from './application/use-cases/close-conversation.use-case';
 import { SyncTemplatesUseCase } from './application/use-cases/sync-templates.use-case';
 import { SendTemplateMessageUseCase } from './application/use-cases/send-template-message.use-case';
+import { GenerateTemplateUseCase } from './application/use-cases/generate-template.use-case';
 
 // Controllers
 import { MessagesController } from './interfaces/controllers/messages.controller';
@@ -38,7 +40,7 @@ import { CannedResponsesController } from './interfaces/controllers/canned-respo
 import { TemplatesController } from './interfaces/controllers/templates.controller';
 
 @Module({
-  imports: [AuditModule, forwardRef(() => WhatsAppModule), forwardRef(() => TeamsModule), ChannelsModule],
+  imports: [AuditModule, forwardRef(() => WhatsAppModule), forwardRef(() => TeamsModule), ChannelsModule, AiModule],
   controllers: [MessagesController, CannedResponsesController, TemplatesController],
   providers: [
     // Repositories
@@ -66,6 +68,7 @@ import { TemplatesController } from './interfaces/controllers/templates.controll
     TemplateRepository,
     SyncTemplatesUseCase,
     SendTemplateMessageUseCase,
+    GenerateTemplateUseCase,
   ],
   exports: [
     MessageRepository,

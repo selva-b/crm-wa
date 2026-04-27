@@ -110,6 +110,9 @@ export class WidgetPublicController {
  * 2. Shows an inline chat bubble with welcome message
  */
 function generateWidgetScript(orgSlug: string): string {
+  // Sanitize slug to only allow safe characters before embedding in JS string
+  const safeSlug = orgSlug.replace(/[^a-z0-9-]/g, '');
+  orgSlug = safeSlug;
   return `
 (function() {
   if (window.__crmwa_widget_loaded) return;
@@ -129,7 +132,7 @@ function generateWidgetScript(orgSlug: string): string {
   function render(cfg) {
     var pos = cfg.position || 'bottom-right';
     var isRight = pos.indexOf('right') >= 0;
-    var color = cfg.primaryColor || '#6366f1';
+    var color = /^#[0-9A-Fa-f]{3,6}$/.test(cfg.primaryColor) ? cfg.primaryColor : '#6366f1';
 
     // Container
     var container = document.createElement('div');

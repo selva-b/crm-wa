@@ -69,6 +69,7 @@ const navItems: NavItemDef[] = [
   { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
   { href: "/settings/channels", icon: <Radio className="h-5 w-5" />, label: "Channels", roles: ["ADMIN", "MANAGER"] },
   { href: "/settings/products", icon: <Package className="h-5 w-5" />, label: "Products", roles: ["ADMIN"] },
+  { href: "/settings/templates", icon: <FileText className="h-5 w-5" />, label: "Templates", roles: ["ADMIN", "MANAGER"] },
   { href: "/settings/sla", icon: <Shield className="h-5 w-5" />, label: "SLA Policies", roles: ["ADMIN"] },
   { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN", "MANAGER"] },
   { href: "/support", icon: <LifeBuoy className="h-5 w-5" />, label: "Support" },

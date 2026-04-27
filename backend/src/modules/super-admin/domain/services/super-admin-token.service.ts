@@ -13,7 +13,7 @@ export class SuperAdminTokenService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {
-    this.accessSecret = this.configService.getOrThrow<string>('jwt.accessSecret');
+    this.accessSecret = this.configService.getOrThrow<string>('jwt.superAdminSecret');
     this.accessExpiry = this.configService.get<StringValue>('jwt.accessExpiry', '15m');
   }
 

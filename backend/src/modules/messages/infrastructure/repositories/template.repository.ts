@@ -67,4 +67,50 @@ export class TemplateRepository {
       where: { orgId, name, language, deletedAt: null },
     });
   }
+
+  async create(data: {
+    orgId: string;
+    name: string;
+    body: string;
+    language?: string;
+    category?: string;
+    productId?: string;
+  }) {
+    return this.prisma.messageTemplate.create({
+      data: {
+        orgId: data.orgId,
+        name: data.name,
+        language: data.language ?? 'en',
+        category: data.category ?? null,
+        status: 'PENDING',
+        components: [{ type: 'BODY', text: data.body }] as any,
+        exampleValues: data.productId ? { productId: data.productId } : undefined,
+      },
+    });
+  }
+
+  async update(
+    id: string,
+    orgId: string,
+    data: { name?: string; body?: string; category?: string; language?: string; productId?: string | null },
+  ) {
+    const patch: Record<string, unknown> = {};
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.category !== undefined) patch.category = data.category;
+    if (data.language !== undefined) patch.language = data.language;
+    if (data.body !== undefined) patch.components = [{ type: 'BODY', text: data.body }];
+    if (data.productId !== undefined) patch.exampleValues = data.productId ? { productId: data.productId } : null;
+
+    return this.prisma.messageTemplate.updateMany({
+      where: { id, orgId, deletedAt: null },
+      data: patch,
+    });
+  }
+
+  async softDelete(id: string, orgId: string) {
+    return this.prisma.messageTemplate.updateMany({
+      where: { id, orgId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+  }
 }

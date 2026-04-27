@@ -62,9 +62,13 @@ export class PermissionsGuard implements CanActivate {
       throw new ForbiddenException('Access denied');
     }
 
-    // Super admin bypass — cross-org platform access
+    // Super admin bypass — only allowed on super-admin routes
     if (user.isSuperAdmin) {
-      return true;
+      const path: string = request.path || '';
+      if (path.startsWith('/api/v1/super-admin/') || path === '/api/v1/super-admin') {
+        return true;
+      }
+      throw new ForbiddenException('Super admin token cannot be used on org endpoints');
     }
 
     // ADMIN bypass — full access within their org

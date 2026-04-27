@@ -11,7 +11,8 @@ export class CreateTicketUseCase {
   constructor(private readonly ticketRepo: HelpTicketRepository) {}
 
   async execute(orgId: string, userId: string, dto: CreateTicketDto) {
-    return this.ticketRepo.create({ orgId, userId, ...dto });
+    const { orgId: _o, userId: _u, ...rest } = dto;
+    return this.ticketRepo.create({ orgId, userId, ...rest });
   }
 }
 
@@ -105,9 +106,12 @@ export class ReplyToTicketUseCase {
 export class UpdateTicketStatusUseCase {
   constructor(private readonly ticketRepo: HelpTicketRepository) {}
 
-  async execute(id: string, dto: UpdateTicketStatusDto) {
+  async execute(id: string, dto: UpdateTicketStatusDto, orgId?: string, isSuperAdmin?: boolean) {
     const ticket = await this.ticketRepo.findById(id);
     if (!ticket) throw new NotFoundException('Ticket not found');
+    if (!isSuperAdmin && ticket.orgId !== orgId) {
+      throw new ForbiddenException('Access denied');
+    }
     return this.ticketRepo.updateStatus(id, dto.status);
   }
 }
