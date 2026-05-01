@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { templatesApi } from "@/lib/api/templates";
 import type { SendTemplateRequest, CreateTemplateRequest, UpdateTemplateRequest } from "@/lib/types/templates";
 
@@ -31,9 +32,11 @@ export function useSyncTemplates() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (channelId: string) => templatesApi.sync(channelId),
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: templateKeys.all });
+      toast.success(`Templates synced${data?.synced != null ? ` (${data.synced} updated)` : ""}`);
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to sync templates"),
   });
 }
 
@@ -52,7 +55,8 @@ export function useCreateTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateTemplateRequest) => templatesApi.create(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: templateKeys.all }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: templateKeys.all }); toast.success("Template created"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to create template"),
   });
 }
 
@@ -61,7 +65,8 @@ export function useUpdateTemplate() {
   return useMutation({
     mutationFn: ({ id, ...data }: { id: string } & UpdateTemplateRequest) =>
       templatesApi.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: templateKeys.all }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: templateKeys.all }); toast.success("Template updated"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to update template"),
   });
 }
 
@@ -69,7 +74,8 @@ export function useDeleteTemplate() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => templatesApi.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: templateKeys.all }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: templateKeys.all }); toast.success("Template deleted"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to delete template"),
   });
 }
 

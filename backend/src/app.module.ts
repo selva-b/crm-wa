@@ -59,6 +59,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { ChatbotModule } from './modules/chatbot/chatbot.module';
 import { DeveloperApiModule } from './modules/developer-api/developer-api.module';
 import { SuperAdminModule } from './modules/super-admin/super-admin.module';
+import { ShopifyModule } from './modules/shopify/shopify.module';
 
 // Guards & Interceptors
 import { JwtAuthGuard } from './modules/auth/interfaces/guards/jwt-auth.guard';
@@ -144,6 +145,7 @@ import { EventsModule } from './events/events.module';
     ChatbotModule,
     DeveloperApiModule,
     SuperAdminModule,
+    ShopifyModule,
 
     // Background workers
     JobsModule,

@@ -40,8 +40,11 @@ export function SendMessageModal({
 
   if (!open) return null;
 
+  const MAX_LENGTH = 4096;
+
   function handleSend() {
     if (!message.trim() || sendMessage.isPending) return;
+    if (message.length > MAX_LENGTH) return;
     sendMessage.mutate();
   }
 
@@ -91,9 +94,15 @@ export function SendMessageModal({
             autoFocus
             className="w-full rounded-xl bg-surface-container-low px-3 py-2.5 text-[13px] text-on-surface placeholder:text-on-surface-variant/40 outline-none focus:ring-1 focus:ring-primary/40 border border-outline-variant/15 resize-none"
           />
-          <p className="mt-1 text-[11px] text-on-surface-variant/40">
-            Ctrl+Enter to send
-          </p>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-[11px] text-on-surface-variant/40">Ctrl+Enter to send</p>
+            <p className={`text-[11px] tabular-nums ${message.length > MAX_LENGTH ? "text-error" : "text-on-surface-variant/40"}`}>
+              {message.length} / {MAX_LENGTH.toLocaleString()}
+            </p>
+          </div>
+          {message.length > MAX_LENGTH && (
+            <p className="text-[11px] text-error mt-1">Message is too long.</p>
+          )}
         </div>
 
         {/* Error */}
@@ -111,7 +120,7 @@ export function SendMessageModal({
           <Button
             size="sm"
             onClick={handleSend}
-            disabled={!message.trim()}
+            disabled={!message.trim() || message.length > MAX_LENGTH}
             loading={sendMessage.isPending}
           >
             <Send className="h-3.5 w-3.5 mr-1.5" />

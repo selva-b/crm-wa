@@ -303,4 +303,14 @@ export class AutomationRepository {
       orderBy: { completedAt: 'desc' },
     });
   }
+
+  async findExecutionTriggerPayload(
+    executionId: string,
+  ): Promise<Record<string, unknown> | null> {
+    const log = await this.prisma.automationExecutionLog.findUnique({
+      where: { id: executionId },
+      select: { triggerPayload: true },
+    });
+    return (log?.triggerPayload as Record<string, unknown> | null) ?? null;
+  }
 }

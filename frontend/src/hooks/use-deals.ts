@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { dealsApi } from "@/lib/api/deals";
 import type { CreatePipelineRequest, CreateDealRequest, UpdateDealRequest, MoveDealRequest } from "@/lib/types/deals";
 
@@ -40,7 +41,8 @@ export function useCreatePipeline() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreatePipelineRequest) => dealsApi.createPipeline(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: dealKeys.all }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: dealKeys.all }); toast.success("Pipeline created"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to create pipeline"),
   });
 }
 
@@ -49,7 +51,8 @@ export function useCreateDeal() {
   return useMutation({
     mutationFn: (data: CreateDealRequest) =>
       dealsApi.createDeal(data.pipelineId, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: dealKeys.all }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: dealKeys.all }); toast.success("Deal created"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to create deal"),
   });
 }
 
@@ -58,7 +61,8 @@ export function useUpdateDeal() {
   return useMutation({
     mutationFn: ({ pipelineId, dealId, ...data }: UpdateDealRequest & { pipelineId: string; dealId: string }) =>
       dealsApi.updateDeal(pipelineId, dealId, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: dealKeys.all }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: dealKeys.all }); toast.success("Deal updated"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to update deal"),
   });
 }
 
@@ -68,6 +72,7 @@ export function useMoveDeal() {
     mutationFn: ({ pipelineId, dealId, ...data }: MoveDealRequest & { pipelineId: string; dealId: string }) =>
       dealsApi.moveDeal(pipelineId, dealId, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: dealKeys.all }),
+    onError: (err: Error) => toast.error(err.message || "Failed to move deal"),
   });
 }
 
@@ -84,6 +89,7 @@ export function useDeleteDeal() {
   return useMutation({
     mutationFn: ({ pipelineId, dealId }: { pipelineId: string; dealId: string }) =>
       dealsApi.deleteDeal(pipelineId, dealId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: dealKeys.all }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: dealKeys.all }); toast.success("Deal deleted"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to delete deal"),
   });
 }

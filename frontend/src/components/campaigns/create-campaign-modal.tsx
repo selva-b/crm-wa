@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { X, FileText } from "lucide-react";
+import { useState, useMemo } from "react";
+import { X, FileText, Search, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateCampaign, usePreviewAudience } from "@/hooks/use-campaigns";
-import { useProducts } from "@/hooks/use-products";
+import { ProductSelectField } from "@/components/ui/product-select-field";
 import {
   createCampaignSchema,
   type CreateCampaignFormData,
@@ -32,13 +33,15 @@ export function CreateCampaignModal({
   onClose,
   sessions,
 }: CreateCampaignModalProps) {
+  const router = useRouter();
   const createCampaign = useCreateCampaign();
   const previewAudience = usePreviewAudience();
-  const { data: products } = useProducts();
   const [scheduleMode, setScheduleMode] = useState<"immediate" | "scheduled">("immediate");
   const [productId, setProductId] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplate | null>(null);
+  const [templateSearch, setTemplateSearch] = useState("");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
-  const { data: templates, isLoading: templatesLoading } = useTemplates("APPROVED");
+  const { data: templates, isLoading: templatesLoading } = useTemplates();
 
   const {
     register,
@@ -60,6 +63,18 @@ export function CreateCampaignModal({
   const audienceType = watch("audienceType") as CampaignAudienceType;
   const messageBody = watch("messageBody") || "";
   const audienceFilters = watch("audienceFilters");
+
+  const filteredTemplates = useMemo(() => {
+    if (!templates) return [];
+    if (!templateSearch.trim()) return templates;
+    const q = templateSearch.toLowerCase();
+    return templates.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.category?.toLowerCase().includes(q) ||
+        t.language.toLowerCase().includes(q),
+    );
+  }, [templates, templateSearch]);
 
   function toggleFilter(key: "leadStatuses" | "sources", value: string) {
     const current = audienceFilters?.[key] ?? [];
@@ -86,6 +101,9 @@ export function CreateCampaignModal({
         reset();
         setScheduleMode("immediate");
         setProductId("");
+        setSelectedTemplate(null);
+        setTemplateSearch("");
+        setShowTemplatePicker(false);
         onClose();
       },
     });
@@ -155,6 +173,8 @@ export function CreateCampaignModal({
             <p className="text-[11px] font-medium text-on-surface-variant uppercase tracking-wide">
               Message Content
             </p>
+
+            {/* Message Type */}
             <div>
               <Label>Message Type</Label>
               <div className="flex gap-1.5">
@@ -179,51 +199,136 @@ export function CreateCampaignModal({
               </div>
             </div>
 
+            {/* WhatsApp Template picker */}
             <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="messageBody">Message Body</Label>
+              <Label>
+                WhatsApp Template{" "}
+                <span className="font-normal text-on-surface-variant/50">(optional)</span>
+              </Label>
+
+              {selectedTemplate ? (
+                /* Selected chip */
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 mt-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="h-4 w-4 text-primary shrink-0" />
+                    <span className="text-[13px] font-medium text-on-surface truncate">
+                      {selectedTemplate.name}
+                    </span>
+                    <span className="text-[11px] bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant shrink-0">
+                      {selectedTemplate.language}
+                    </span>
+                    {selectedTemplate.category && (
+                      <span className="text-[11px] bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant shrink-0">
+                        {selectedTemplate.category}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTemplate(null)}
+                    className="p-1 rounded text-on-surface-variant hover:text-error transition-colors shrink-0"
+                    title="Clear template"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                /* Select button */
                 <button
                   type="button"
                   onClick={() => setShowTemplatePicker((v) => !v)}
-                  className="flex items-center gap-1 text-[12px] text-primary hover:text-primary/80 transition-colors"
+                  className="mt-1 w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border border-outline-variant/15 bg-surface-container-low text-[13px] text-on-surface-variant/60 hover:bg-surface-container transition-colors text-left"
                 >
-                  <FileText className="h-3.5 w-3.5" />
-                  {showTemplatePicker ? "Close templates" : "Use template"}
+                  <FileText className="h-4 w-4 shrink-0" />
+                  Select a template…
                 </button>
-              </div>
-              {showTemplatePicker && (
-                <div className="rounded-xl border border-outline-variant/15 bg-surface-container-low p-3 space-y-1.5 max-h-[220px] overflow-y-auto mb-2">
-                  {templatesLoading ? (
-                    <p className="text-xs text-on-surface-variant text-center py-3">Loading templates...</p>
-                  ) : !templates || templates.length === 0 ? (
-                    <p className="text-xs text-on-surface-variant text-center py-3">No approved templates found.</p>
-                  ) : (
-                    templates.map((tpl) => {
-                      const body = extractTemplateBody(tpl);
-                      return (
-                        <button
-                          key={tpl.id}
-                          type="button"
-                          onClick={() => {
-                            setValue("messageBody", body, { shouldValidate: true });
-                            setShowTemplatePicker(false);
-                          }}
-                          className="w-full text-left rounded-lg px-3 py-2 hover:bg-surface-container transition-colors"
-                        >
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[13px] font-medium text-on-surface">{tpl.name}</span>
-                            <span className="text-[11px] text-on-surface-variant/60 bg-surface-container px-1.5 py-0.5 rounded-md">{tpl.language}</span>
-                            {tpl.category && (
-                              <span className="text-[11px] text-on-surface-variant/60 bg-surface-container px-1.5 py-0.5 rounded-md">{tpl.category}</span>
-                            )}
-                          </div>
-                          <p className="text-[12px] text-on-surface-variant/70 truncate">{body}</p>
-                        </button>
-                      );
-                    })
+              )}
+
+              {/* Dropdown list */}
+              {showTemplatePicker && !selectedTemplate && (
+                <div className="mt-1 rounded-xl border border-outline-variant/15 bg-surface-container-lowest shadow-lg overflow-hidden">
+                  {/* Search */}
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-outline-variant/10">
+                    <Search className="h-3.5 w-3.5 text-on-surface-variant/40 shrink-0" />
+                    <input
+                      autoFocus
+                      value={templateSearch}
+                      onChange={(e) => setTemplateSearch(e.target.value)}
+                      placeholder="Search templates…"
+                      className="flex-1 bg-transparent text-[13px] text-on-surface outline-none placeholder:text-on-surface-variant/40"
+                    />
+                  </div>
+                  {/* List — shows first 3, search to see more */}
+                  <div className="max-h-[220px] overflow-y-auto">
+                    {templatesLoading ? (
+                      <p className="text-xs text-center text-on-surface-variant py-4">
+                        Loading…
+                      </p>
+                    ) : filteredTemplates.length === 0 ? (
+                      <div className="flex flex-col items-center gap-2 py-5 px-4 text-center">
+                        <FileText className="h-6 w-6 text-on-surface-variant/30" />
+                        <p className="text-[13px] text-on-surface-variant">
+                          {templateSearch.trim() ? "No templates match your search" : "No templates yet"}
+                        </p>
+                        {!templateSearch.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => { onClose(); router.push("/settings/templates"); }}
+                            className="flex items-center gap-1.5 text-[12px] text-primary hover:underline"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Create a template
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      (templateSearch.trim() ? filteredTemplates : filteredTemplates.slice(0, 3)).map((tpl) => {
+                        const body = extractTemplateBody(tpl);
+                        return (
+                          <button
+                            key={tpl.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedTemplate(tpl);
+                              setValue("messageBody", body, { shouldValidate: true });
+                              setShowTemplatePicker(false);
+                              setTemplateSearch("");
+                            }}
+                            className="w-full text-left px-3 py-2.5 hover:bg-surface-container transition-colors border-b border-outline-variant/5 last:border-0"
+                          >
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-[13px] font-medium text-on-surface">
+                                {tpl.name}
+                              </span>
+                              <span className="text-[11px] bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant">
+                                {tpl.language}
+                              </span>
+                              {tpl.category && (
+                                <span className="text-[11px] bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant">
+                                  {tpl.category}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[12px] text-on-surface-variant/60 truncate">
+                              {body || "—"}
+                            </p>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                  {!templateSearch.trim() && filteredTemplates.length > 3 && (
+                    <p className="px-3 py-2 text-[11px] text-on-surface-variant/50 border-t border-outline-variant/10 text-center">
+                      {filteredTemplates.length - 3} more — search to filter
+                    </p>
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Message Body */}
+            <div>
+              <Label htmlFor="messageBody">Message Body</Label>
               <textarea
                 id="messageBody"
                 placeholder="Type your message here... Use {{name}} for personalization"
@@ -410,24 +515,12 @@ export function CreateCampaignModal({
           </section>
 
           {/* Section 5: Product (optional) */}
-          <section className="space-y-3">
-            <p className="text-[11px] font-medium text-on-surface-variant uppercase tracking-wide">
-              Product <span className="normal-case font-normal">(optional)</span>
-            </p>
-            <div>
-              <Label htmlFor="productId">Link to Product</Label>
-              <select
-                id="productId"
-                value={productId}
-                onChange={(e) => setProductId(e.target.value)}
-                className="w-full rounded-xl bg-surface-container-low px-4 py-3 text-[15px] text-on-surface outline-none focus:bg-surface-container focus:ring-2 focus:ring-primary/40"
-              >
-                <option value="">No product</option>
-                {(products ?? []).map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
+          <section>
+            <ProductSelectField
+              value={productId}
+              onChange={setProductId}
+              onBeforeRedirect={onClose}
+            />
           </section>
 
           {/* Section 6: Scheduling */}

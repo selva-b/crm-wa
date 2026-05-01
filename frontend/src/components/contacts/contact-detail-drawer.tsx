@@ -41,6 +41,7 @@ import type { LeadStatus } from "@/lib/types/contacts";
 import { useContactDeals } from "@/hooks/use-deals";
 import { CreateDealModal } from "@/components/deals/create-deal-modal";
 import { useProducts, useContactProducts, useAssignProduct, useUnassignProduct } from "@/hooks/use-products";
+import { ProductSelectField } from "@/components/ui/product-select-field";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFieldValues, setFieldValues, listFieldDefinitions, type CustomFieldValue } from "@/lib/api/custom-fields";
 import { exportContactData, eraseContactData } from "@/lib/api/gdpr";
@@ -656,28 +657,17 @@ function ContactProductsTab({ contactId }: { contactId: string }) {
         <p className="text-[12px] text-on-surface-variant/50">No products assigned.</p>
       )}
 
-      {available.length > 0 && (
-        <div className="pt-2">
-          <span className="text-[11px] font-medium text-on-surface-variant/60 uppercase tracking-wide">
-            Add Product
-          </span>
-          <select
-            onChange={(e) => {
-              if (e.target.value) {
-                assignProduct.mutate({ contactId, productId: e.target.value });
-                e.target.value = "";
-              }
-            }}
-            className="mt-1 w-full rounded-lg border border-outline-variant/20 bg-surface px-3 py-2 text-[13px] text-on-surface"
-            defaultValue=""
-          >
-            <option value="" disabled>Select a product...</option>
-            {available.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </div>
-      )}
+      <div className="pt-2">
+        <ProductSelectField
+          value=""
+          onChange={(productId) => {
+            if (productId) assignProduct.mutate({ contactId, productId });
+          }}
+          label="Add Product"
+          optional={false}
+          activeOnly
+        />
+      </div>
     </div>
   );
 }

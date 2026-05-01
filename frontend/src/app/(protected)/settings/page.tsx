@@ -36,6 +36,12 @@ import {
   FileCode,
   Activity,
   Shield,
+  ShoppingBag,
+  Package,
+  RotateCcw,
+  Check,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useAuthStore } from "@/stores/auth-store";
@@ -108,10 +114,10 @@ type SettingsTab =
   | "working-hours"
   | "features"
   | "notifications"
-  | "integrations"
   | "webhooks"
   | "developer-api"
-  | "sla";
+  | "sla"
+  | "shopify";
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: "organization", label: "Organization", icon: Building2 },
@@ -119,10 +125,10 @@ const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: "working-hours", label: "Working Hours", icon: Clock },
   { id: "features", label: "Feature Flags", icon: ToggleLeft },
   { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "integrations", label: "Integrations", icon: Plug },
   { id: "webhooks", label: "Webhooks", icon: Webhook },
   { id: "developer-api", label: "Developer API", icon: Code },
   { id: "sla", label: "SLA Policies", icon: Shield },
+  { id: "shopify", label: "Shopify", icon: ShoppingBag },
 ];
 
 const TIMEZONES = [
@@ -162,7 +168,7 @@ export default function SettingsPage() {
 
   const user = useAuthStore((s) => s.user);
   const searchParams = useSearchParams();
-  const VALID_TABS: SettingsTab[] = ["organization","whatsapp","working-hours","features","notifications","integrations","webhooks","developer-api","sla"];
+  const VALID_TABS: SettingsTab[] = ["organization","whatsapp","working-hours","features","notifications","webhooks","developer-api","sla","shopify"];
   const rawTab = searchParams.get("tab");
   const tabParam: SettingsTab | null = rawTab && VALID_TABS.includes(rawTab as SettingsTab) ? (rawTab as SettingsTab) : null;
   const [activeTab, setActiveTab] = useState<SettingsTab>(tabParam ?? "organization");
@@ -221,10 +227,10 @@ export default function SettingsPage() {
             </>
           )}
           {activeTab === "notifications" && <NotificationsSection />}
-          {activeTab === "integrations" && <IntegrationsSection />}
           {activeTab === "webhooks" && <WebhooksSection />}
           {activeTab === "developer-api" && <DeveloperApiSection />}
           {activeTab === "sla" && <SlaSection />}
+          {activeTab === "shopify" && <ShopifySection />}
         </div>
       </div>
     </div>
@@ -905,7 +911,7 @@ const NOTIFICATION_TYPE_LABELS: Record<NotificationType, { label: string; descri
   CONTACT_REASSIGNED: { label: "Contact Reassigned", description: "When a contact is reassigned" },
   CAMPAIGN_COMPLETED: { label: "Campaign Completed", description: "Campaign finish notifications" },
   CAMPAIGN_FAILED: { label: "Campaign Failed", description: "Campaign failure alerts" },
-  AUTOMATION_EXECUTED: { label: "Automation Executed", description: "Slow automation warnings" },
+  AUTOMATION_EXECUTED: { label: "Automation Executed", description: "When an automation rule executes" },
   AUTOMATION_FAILED: { label: "Automation Failed", description: "Automation failure alerts" },
   WHATSAPP_SESSION_DISCONNECTED: { label: "Session Disconnected", description: "WhatsApp session disconnects" },
   PAYMENT_FAILED: { label: "Payment Failed", description: "Payment failure alerts" },
@@ -996,9 +1002,10 @@ function NotificationsSection() {
                   <td className="py-3 text-center">
                     <button
                       onClick={() => togglePref(type, "inAppEnabled")}
+                      disabled={updateMutation.isPending}
                       className={`relative rounded-full transition-colors inline-block ${
                         getInApp(type) ? "bg-primary" : "bg-outline-variant/30"
-                      }`}
+                      } ${updateMutation.isPending ? "opacity-60 cursor-not-allowed" : ""}`}
                       style={{ width: 40, height: 22 }}
                     >
                       <span
@@ -1011,9 +1018,10 @@ function NotificationsSection() {
                   <td className="py-3 text-center">
                     <button
                       onClick={() => togglePref(type, "emailEnabled")}
+                      disabled={updateMutation.isPending}
                       className={`relative rounded-full transition-colors inline-block ${
                         getEmail(type) ? "bg-primary" : "bg-outline-variant/30"
-                      }`}
+                      } ${updateMutation.isPending ? "opacity-60 cursor-not-allowed" : ""}`}
                       style={{ width: 40, height: 22 }}
                     >
                       <span
@@ -1028,342 +1036,8 @@ function NotificationsSection() {
             })}
           </tbody>
         </table>
-        {updateMutation.isSuccess && (
-          <p className="text-[12px] text-primary pt-3">Preferences updated!</p>
-        )}
       </CardContent>
     </Card>
-  );
-}
-
-// ─── Integrations Section (EPIC 12) ──────────────
-
-const PROVIDER_META: Record<
-  IntegrationProvider,
-  { label: string; description: string; icon: string; fields: string[] }
-> = {
-  SMTP: {
-    label: "SMTP",
-    description: "Custom email server for transactional emails",
-    icon: "📧",
-    fields: ["host", "port", "username", "password"],
-  },
-  SENDGRID: {
-    label: "SendGrid",
-    description: "Email delivery service via API",
-    icon: "📨",
-    fields: ["apiKey"],
-  },
-  STRIPE: {
-    label: "Stripe",
-    description: "Payment processing and billing",
-    icon: "💳",
-    fields: ["secretKey"],
-  },
-  RAZORPAY: {
-    label: "Razorpay",
-    description: "Payment gateway for emerging markets",
-    icon: "💰",
-    fields: ["keyId", "keySecret"],
-  },
-};
-
-function IntegrationsSection() {
-  const { data: integrations, isLoading } = useIntegrations();
-  const createMutation = useCreateIntegration();
-  const deleteMutation = useDeleteIntegration();
-  const testMutation = useTestIntegration();
-
-  const [showForm, setShowForm] = useState(false);
-  const [formProvider, setFormProvider] = useState<IntegrationProvider>("SMTP");
-  const [formDisplayName, setFormDisplayName] = useState("");
-  const [formCredentials, setFormCredentials] = useState<Record<string, string>>({});
-
-  const configuredProviders = new Set(
-    (integrations ?? []).map((i) => i.provider),
-  );
-
-  const handleCreate = () => {
-    if (!formDisplayName) return;
-    const meta = PROVIDER_META[formProvider];
-    const missingField = meta.fields.some((f) => !formCredentials[f]);
-    if (missingField) return;
-
-    createMutation.mutate(
-      {
-        provider: formProvider,
-        displayName: formDisplayName,
-        credentials: formCredentials,
-      },
-      {
-        onSuccess: () => {
-          setShowForm(false);
-          setFormDisplayName("");
-          setFormCredentials({});
-        },
-      },
-    );
-  };
-
-  if (isLoading) {
-    return <SectionLoader />;
-  }
-
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Plug className="h-5 w-5" />
-              Integrations
-            </CardTitle>
-            <Button size="sm" onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4" />
-              Add Integration
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {(integrations ?? []).length === 0 && !showForm ? (
-            <div className="text-center py-8">
-              <Plug className="h-10 w-10 text-on-surface-variant/40 mx-auto mb-3" />
-              <p className="text-[13px] text-on-surface-variant">
-                No integrations configured
-              </p>
-              <p className="text-[11px] text-on-surface-variant/60 mt-1">
-                Connect external services like email providers and payment gateways
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {(integrations ?? []).map((integration) => (
-                <IntegrationCard
-                  key={integration.id}
-                  integration={integration}
-                  onTest={() => testMutation.mutate(integration.id)}
-                  onDelete={() => deleteMutation.mutate(integration.id)}
-                  isTesting={
-                    testMutation.isPending &&
-                    testMutation.variables === integration.id
-                  }
-                  testResult={
-                    testMutation.isSuccess &&
-                    testMutation.variables === integration.id
-                      ? testMutation.data
-                      : undefined
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Create Form */}
-      {showForm && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">New Integration</CardTitle>
-              <button onClick={() => setShowForm(false)}>
-                <X className="h-4 w-4 text-on-surface-variant" />
-              </button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Provider */}
-            <div className="space-y-1.5">
-              <label className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wider">
-                Provider
-              </label>
-              <select
-                value={formProvider}
-                onChange={(e) => {
-                  setFormProvider(e.target.value as IntegrationProvider);
-                  setFormCredentials({});
-                }}
-                className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-[14px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                {(
-                  Object.keys(PROVIDER_META) as IntegrationProvider[]
-                ).map((p) => (
-                  <option
-                    key={p}
-                    value={p}
-                    disabled={configuredProviders.has(p)}
-                  >
-                    {PROVIDER_META[p].label}
-                    {configuredProviders.has(p) ? " (already configured)" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Display Name */}
-            <div className="space-y-1.5">
-              <label className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wider">
-                Display Name
-              </label>
-              <input
-                type="text"
-                value={formDisplayName}
-                onChange={(e) => setFormDisplayName(e.target.value)}
-                placeholder={`My ${PROVIDER_META[formProvider].label}`}
-                className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-[14px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            {/* Credential Fields */}
-            {PROVIDER_META[formProvider].fields.map((field) => (
-              <div key={field} className="space-y-1.5">
-                <label className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wider">
-                  {field}
-                </label>
-                <input
-                  type={
-                    field.toLowerCase().includes("password") ||
-                    field.toLowerCase().includes("secret") ||
-                    field.toLowerCase().includes("key")
-                      ? "password"
-                      : "text"
-                  }
-                  value={formCredentials[field] ?? ""}
-                  onChange={(e) =>
-                    setFormCredentials((prev) => ({
-                      ...prev,
-                      [field]: e.target.value,
-                    }))
-                  }
-                  placeholder={field}
-                  className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-[14px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary font-mono"
-                />
-              </div>
-            ))}
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                size="sm"
-                onClick={handleCreate}
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending
-                  ? "Creating..."
-                  : "Create Integration"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowForm(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-function IntegrationCard({
-  integration,
-  onTest,
-  onDelete,
-  isTesting,
-  testResult,
-}: {
-  integration: IntegrationConfig;
-  onTest: () => void;
-  onDelete: () => void;
-  isTesting: boolean;
-  testResult?: { success: boolean; error?: string };
-}) {
-  const meta = PROVIDER_META[integration.provider];
-
-  const statusColor =
-    integration.status === "ACTIVE"
-      ? "bg-primary"
-      : integration.status === "ERROR"
-        ? "bg-error"
-        : "bg-outline-variant/40";
-
-  const statusLabel =
-    integration.status === "ACTIVE"
-      ? "Active"
-      : integration.status === "ERROR"
-        ? "Error"
-        : "Inactive";
-
-  return (
-    <div className="px-4 py-3 rounded-lg bg-surface-container/30 border border-outline-variant/10">
-      <div className="flex items-center gap-3">
-        <span className="text-xl">{meta.icon}</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-[13px] font-medium text-on-surface">
-              {integration.displayName}
-            </p>
-            <span
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                integration.status === "ACTIVE"
-                  ? "bg-primary/10 text-primary"
-                  : integration.status === "ERROR"
-                    ? "bg-error/10 text-error"
-                    : "bg-surface-container-high text-on-surface-variant"
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
-              {statusLabel}
-            </span>
-          </div>
-          <p className="text-[11px] text-on-surface-variant/60">
-            {meta.label} &middot;{" "}
-            {integration.credentialsSet
-              ? "Credentials configured"
-              : "No credentials"}
-          </p>
-          {integration.lastError && (
-            <p className="text-[11px] text-error/80 mt-0.5 truncate">
-              {integration.lastError}
-            </p>
-          )}
-          {testResult && (
-            <p
-              className={`text-[11px] mt-0.5 ${testResult.success ? "text-primary" : "text-error/80"}`}
-            >
-              {testResult.success
-                ? "Connection test passed!"
-                : `Test failed: ${testResult.error}`}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onTest}
-            disabled={isTesting}
-            title="Test Connection"
-          >
-            {isTesting ? (
-              <Spinner size="sm" />
-            ) : (
-              <Zap className="h-4 w-4" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDelete}
-            className="text-error hover:text-error"
-            title="Delete"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -1900,7 +1574,7 @@ function DeveloperApiSection() {
   };
 
   const usagePercent = stats?.messagesLimit
-    ? Math.min(100, Math.round((stats.messagesUsed / stats.messagesLimit) * 100))
+    ? Math.min(100, Math.round(((stats.messagesUsed ?? 0) / stats.messagesLimit) * 100))
     : 0;
 
   return (
@@ -1943,12 +1617,12 @@ function DeveloperApiSection() {
                   <CardContent className="pt-5">
                     <p className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wide">Messages Used</p>
                     <p className="text-2xl font-bold text-on-surface mt-1">
-                      {stats.messagesUsed.toLocaleString()}
+                      {(stats.messagesUsed ?? 0).toLocaleString()}
                       <span className="text-[13px] font-normal text-on-surface-variant">
-                        {" / "}{stats.messagesLimit > 0 ? stats.messagesLimit.toLocaleString() : "∞"}
+                        {" / "}{(stats.messagesLimit ?? 0) > 0 ? (stats.messagesLimit ?? 0).toLocaleString() : "∞"}
                       </span>
                     </p>
-                    {stats.messagesLimit > 0 && (
+                    {(stats.messagesLimit ?? 0) > 0 && (
                       <div className="mt-2 h-2 bg-surface-container rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${
@@ -1977,7 +1651,7 @@ function DeveloperApiSection() {
                 <Card>
                   <CardContent className="pt-5">
                     <p className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wide">Contacts</p>
-                    <p className="text-2xl font-bold text-on-surface mt-1">{stats.totalContacts.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-on-surface mt-1">{(stats.totalContacts ?? 0).toLocaleString()}</p>
                     <p className="text-[12px] text-on-surface-variant mt-1">Total contacts</p>
                   </CardContent>
                 </Card>
@@ -2555,6 +2229,308 @@ function SlaSection() {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Shopify Section ────────────────────────────────────────────────────────
+
+const SHOPIFY_EVENTS = [
+  { icon: Package, label: "Order Created", desc: "Auto-create/update contact + note when customer places order" },
+  { icon: Zap, label: "Order Fulfilled", desc: "Fire automation when order is shipped" },
+  { icon: RotateCcw, label: "Cart Abandoned", desc: "Trigger WhatsApp reminder when checkout is abandoned" },
+];
+
+function ShopifyWebhookUrlCard({ orgId }: { orgId: string }) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") ?? "https://your-backend.com";
+  const url = `${baseUrl}/api/v1/webhooks/shopify/${orgId}`;
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="rounded-xl bg-surface-container border border-outline-variant/10 p-4 space-y-2">
+      <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider">
+        Your Shopify Webhook URL
+      </p>
+      <p className="text-[11px] text-on-surface-variant/60 leading-relaxed">
+        Register this URL in Shopify Admin → Settings → Notifications → Webhooks.
+        Subscribe to: <span className="font-mono text-primary">orders/create</span>,{" "}
+        <span className="font-mono text-primary">orders/fulfilled</span>,{" "}
+        <span className="font-mono text-primary">checkouts/create</span>.
+      </p>
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/10">
+        <code className="flex-1 text-[11px] font-mono text-on-surface truncate">{url}</code>
+        <button
+          onClick={handleCopy}
+          className="shrink-0 p-1 rounded hover:bg-surface-container transition-colors text-on-surface-variant hover:text-on-surface"
+          title="Copy URL"
+        >
+          {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ShopifyIntegrationForm({ existing, onSuccess, onCancel }: { existing?: IntegrationConfig; onSuccess: () => void; onCancel: () => void }) {
+  const createIntegration = useCreateIntegration();
+  const updateIntegration = useUpdateIntegration();
+
+  const [shopDomain, setShopDomain] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [showToken, setShowToken] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isPending = createIntegration.isPending || updateIntegration.isPending;
+  const isEditing = !!existing;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const domain = shopDomain.trim().replace(/^https?:\/\//, "").replace(/\/$/, "");
+    if (!isEditing && !domain.endsWith(".myshopify.com") && !domain.includes(".")) {
+      setError("Enter a valid shop domain (e.g. mystore.myshopify.com)");
+      return;
+    }
+    const credentials = { shopDomain: domain || undefined, accessToken: accessToken.trim() || undefined, webhookSecret: webhookSecret.trim() || undefined };
+    if (isEditing && existing) {
+      updateIntegration.mutate({ id: existing.id, credentials, version: existing.version }, { onSuccess, onError: (err: Error) => setError(err.message) });
+    } else {
+      createIntegration.mutate({ provider: "SHOPIFY", displayName: `Shopify — ${domain}`, credentials: { shopDomain: domain, accessToken: accessToken.trim(), webhookSecret: webhookSecret.trim() } }, { onSuccess, onError: (err: Error) => setError(err.message) });
+    }
+  }
+
+  const inputCls = "w-full px-3 py-2.5 rounded-lg bg-surface-container border border-outline-variant/15 text-[13px] text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-2 focus:ring-primary/30";
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-1.5">
+        <label className="text-[12px] font-medium text-on-surface-variant">Shop Domain {!isEditing && <span className="text-error">*</span>}</label>
+        <input type="text" value={shopDomain} onChange={(e) => setShopDomain(e.target.value)} required={!isEditing} placeholder="mystore.myshopify.com" className={inputCls} />
+        {isEditing && <p className="text-[11px] text-on-surface-variant/50">Currently connected. Leave blank to keep existing domain.</p>}
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-[12px] font-medium text-on-surface-variant">Admin API Access Token {!isEditing && <span className="text-error">*</span>}</label>
+        <div className="relative">
+          <input type={showToken ? "text" : "password"} value={accessToken} onChange={(e) => setAccessToken(e.target.value)} required={!isEditing} placeholder={isEditing ? "Leave blank to keep existing" : "shpat_xxxxxxxxxxxx"} className={`${inputCls} pr-10`} />
+          <button type="button" onClick={() => setShowToken(!showToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 hover:text-on-surface-variant transition-colors">
+            {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+        <p className="text-[11px] text-on-surface-variant/50">Shopify Admin → Apps → Develop apps → Admin API access token. Requires: <code className="text-primary">read_orders</code>, <code className="text-primary">read_customers</code>.</p>
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-[12px] font-medium text-on-surface-variant">Webhook Signing Secret {!isEditing && <span className="text-error">*</span>}</label>
+        <div className="relative">
+          <input type={showSecret ? "text" : "password"} value={webhookSecret} onChange={(e) => setWebhookSecret(e.target.value)} required={!isEditing} placeholder={isEditing ? "Leave blank to keep existing" : "Your webhook signing secret"} className={`${inputCls} pr-10`} />
+          <button type="button" onClick={() => setShowSecret(!showSecret)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 hover:text-on-surface-variant transition-colors">
+            {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+        <p className="text-[11px] text-on-surface-variant/50">Shopify Admin → Settings → Notifications → Webhooks → Signing secret.</p>
+      </div>
+      {error && (
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-error/10 border border-error/20">
+          <AlertCircle className="h-4 w-4 text-error shrink-0" />
+          <p className="text-[12px] text-error">{error}</p>
+        </div>
+      )}
+      <div className="flex items-center justify-end gap-2 pt-1">
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={isPending}>Cancel</Button>
+        <Button type="submit" size="sm" disabled={isPending}>
+          {isPending ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : null}
+          {isEditing ? "Update" : "Connect Shopify"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function ShopifySection() {
+  const user = useAuthStore((s) => s.user);
+  const { data: integrations, isLoading } = useIntegrations();
+  const testIntegration = useTestIntegration();
+  const deleteIntegration = useDeleteIntegration();
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; error?: string } | null>(null);
+
+  const shopifyIntegration = integrations?.find((i) => i.provider === "SHOPIFY");
+
+  useEffect(() => {
+    if (!isLoading && !shopifyIntegration) setShowForm(true);
+  }, [isLoading, shopifyIntegration]);
+
+  function handleTest() {
+    if (!shopifyIntegration) return;
+    setTestResult(null);
+    testIntegration.mutate(shopifyIntegration.id, {
+      onSuccess: (result) => setTestResult(result),
+      onError: (err) => setTestResult({ success: false, error: err.message }),
+    });
+  }
+
+  function handleDelete() {
+    if (!shopifyIntegration) return;
+    if (!confirm("Disconnect Shopify? Existing contacts and notes will be kept.")) return;
+    deleteIntegration.mutate(shopifyIntegration.id);
+  }
+
+  if (isLoading) return <SectionLoader />;
+
+  const statusColor =
+    shopifyIntegration?.status === "ACTIVE" ? "text-green-600 bg-green-100" :
+    shopifyIntegration?.status === "ERROR"  ? "text-red-600 bg-red-100" :
+    "text-on-surface-variant bg-surface-container";
+
+  return (
+    <div className="space-y-5 max-w-2xl">
+      <div>
+        <h2 className="text-[17px] font-semibold text-on-surface flex items-center gap-2">
+          <ShoppingBag className="h-5 w-5 text-green-600" />
+          Shopify Integration
+        </h2>
+        <p className="text-[13px] text-on-surface-variant mt-0.5">
+          Sync orders, customers, and abandoned carts with your CRM
+        </p>
+      </div>
+
+      {/* What you get — shown when not yet connected */}
+      {!shopifyIntegration && (
+        <div className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-4 space-y-3">
+          <p className="text-[13px] font-semibold text-on-surface">What this integration does</p>
+          <div className="space-y-2.5">
+            {SHOPIFY_EVENTS.map((ev) => {
+              const Icon = ev.icon;
+              return (
+                <div key={ev.label} className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-medium text-on-surface">{ev.label}</p>
+                    <p className="text-[12px] text-on-surface-variant/60 mt-0.5">{ev.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Connected state */}
+      {shopifyIntegration && !editing && (
+        <div className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-outline-variant/8">
+            <div className="h-9 w-9 rounded-xl bg-green-100 flex items-center justify-center">
+              <ShoppingBag className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[14px] font-semibold text-on-surface">{shopifyIntegration.displayName}</p>
+              <p className="text-[11px] text-on-surface-variant/60">Connected · {new Date(shopifyIntegration.updatedAt).toLocaleDateString()}</p>
+            </div>
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${statusColor}`}>{shopifyIntegration.status}</span>
+          </div>
+          <div className="px-4 py-3 space-y-2.5 border-b border-outline-variant/8">
+            <p className="text-[11px] font-semibold text-on-surface-variant/60 uppercase tracking-wider">Listening For</p>
+            {SHOPIFY_EVENTS.map((ev) => {
+              const Icon = ev.icon;
+              return (
+                <div key={ev.label} className="flex items-start gap-2.5">
+                  <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[12px] font-medium text-on-surface">{ev.label}</p>
+                    <p className="text-[11px] text-on-surface-variant/60">{ev.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="px-4 py-3 border-b border-outline-variant/8">
+            <ShopifyWebhookUrlCard orgId={user?.orgId ?? ""} />
+          </div>
+          {shopifyIntegration.lastError && (
+            <div className="px-4 py-2 border-b border-outline-variant/8">
+              <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-error/8 border border-error/15">
+                <AlertCircle className="h-3.5 w-3.5 text-error shrink-0 mt-0.5" />
+                <p className="text-[11px] text-error">{shopifyIntegration.lastError}</p>
+              </div>
+            </div>
+          )}
+          {testResult && (
+            <div className="px-4 py-2 border-b border-outline-variant/8">
+              <div className={`flex items-center gap-2 px-3 py-2.5 rounded-lg ${testResult.success ? "bg-green-50 border border-green-200" : "bg-error/8 border border-error/15"}`}>
+                {testResult.success
+                  ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                  : <AlertCircle className="h-3.5 w-3.5 text-error shrink-0" />
+                }
+                <p className={`text-[11px] ${testResult.success ? "text-green-700" : "text-error"}`}>
+                  {testResult.success ? "Connection verified — credentials are valid" : testResult.error}
+                </p>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-2 px-4 py-3">
+            <Button variant="secondary" size="sm" onClick={handleTest} disabled={testIntegration.isPending}>
+              {testIntegration.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : null}
+              Test Connection
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>Edit Credentials</Button>
+            <a
+              href={`https://${shopifyIntegration.displayName.replace("Shopify — ", "")}/admin`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto inline-flex items-center gap-1.5 text-[12px] text-on-surface-variant hover:text-primary transition-colors"
+            >
+              Open Shopify Admin
+              <ExternalLink className="h-3 w-3" />
+            </a>
+            <button
+              onClick={handleDelete}
+              disabled={deleteIntegration.isPending}
+              className="p-1.5 rounded-lg hover:bg-error/10 text-on-surface-variant/40 hover:text-error transition-colors"
+              title="Disconnect Shopify"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Setup / Edit form */}
+      {(!shopifyIntegration || editing) && (showForm || editing) && (
+        <div className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-5">
+          <h3 className="text-[14px] font-semibold text-on-surface mb-4">
+            {editing ? "Update Shopify Credentials" : "Connect Your Shopify Store"}
+          </h3>
+          <ShopifyIntegrationForm
+            existing={editing ? shopifyIntegration : undefined}
+            onSuccess={() => { setShowForm(false); setEditing(false); }}
+            onCancel={() => { setShowForm(false); setEditing(false); }}
+          />
+        </div>
+      )}
+
+      {/* Setup guide */}
+      <div className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-4 space-y-2">
+        <p className="text-[12px] font-semibold text-on-surface-variant/60 uppercase tracking-wider">Setup Guide</p>
+        <ol className="space-y-2 text-[12px] text-on-surface-variant leading-relaxed list-decimal list-inside">
+          <li>Go to Shopify Admin → Apps → Develop apps → Create an app</li>
+          <li>Under Admin API, add scopes: <code className="text-primary bg-primary/8 px-1 rounded">read_orders</code> <code className="text-primary bg-primary/8 px-1 rounded">read_customers</code></li>
+          <li>Install the app and copy the Admin API access token</li>
+          <li>Go to Settings → Notifications → Webhooks and copy the signing secret</li>
+          <li>Paste the Webhook URL (shown after connecting) and subscribe to the 3 topics</li>
+        </ol>
+      </div>
     </div>
   );
 }

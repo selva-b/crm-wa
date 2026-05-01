@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { contactsApi } from "@/lib/api/contacts";
 import { useAuthStore } from "@/stores/auth-store";
 import type {
@@ -102,9 +103,8 @@ export function useCreateContact() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateContactRequest) => contactsApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contactKeys.all });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: contactKeys.all }); toast.success("Contact created"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to create contact"),
   });
 }
 
@@ -118,10 +118,10 @@ export function useUpdateContact() {
       contactsApi.update(contactId, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: contactKeys.all });
-      queryClient.invalidateQueries({
-        queryKey: contactKeys.detail(variables.contactId),
-      });
+      queryClient.invalidateQueries({ queryKey: contactKeys.detail(variables.contactId) });
+      toast.success("Contact updated");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to update contact"),
   });
 }
 
@@ -129,9 +129,8 @@ export function useDeleteContact() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (contactId: string) => contactsApi.delete(contactId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contactKeys.all });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: contactKeys.all }); toast.success("Contact deleted"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to delete contact"),
   });
 }
 
@@ -165,13 +164,11 @@ export function useAssignContact() {
       contactsApi.assign(contactId, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: contactKeys.all });
-      queryClient.invalidateQueries({
-        queryKey: contactKeys.detail(variables.contactId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: contactKeys.ownerHistory(variables.contactId),
-      });
+      queryClient.invalidateQueries({ queryKey: contactKeys.detail(variables.contactId) });
+      queryClient.invalidateQueries({ queryKey: contactKeys.ownerHistory(variables.contactId) });
+      toast.success("Owner assigned");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to assign owner"),
   });
 }
 
@@ -179,9 +176,8 @@ export function useMergeContacts() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: MergeContactsRequest) => contactsApi.merge(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: contactKeys.all });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: contactKeys.all }); toast.success("Contacts merged"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to merge contacts"),
   });
 }
 
@@ -258,6 +254,7 @@ export function useImportContacts() {
 export function useExportContacts() {
   return useMutation({
     mutationFn: () => contactsApi.exportCsv(),
+    onError: (err: Error) => toast.error(err.message || "Export failed"),
     onSuccess: (blob: Blob) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

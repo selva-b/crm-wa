@@ -55,6 +55,9 @@ import { SequenceStepWorker } from './sequence/sequence-step.worker';
 import { SequencesModule } from '@/modules/sequences/sequences.module';
 import { SendChannelMessageWorker } from './channel/send-channel-message.worker';
 import { ProcessChannelInboundWorker } from './channel/process-channel-inbound.worker';
+// Shopify Integration workers
+import { ShopifyWebhookWorker } from './shopify/shopify-webhook.worker';
+import { ShopifyModule } from '@/modules/shopify/shopify.module';
 
 @Module({
   imports: [
@@ -74,6 +77,7 @@ import { ProcessChannelInboundWorker } from './channel/process-channel-inbound.w
     ChannelsModule,
     LeadAdsModule,
     SequencesModule,
+    ShopifyModule,
   ],
   providers: [
     SendEmailWorker,
@@ -118,6 +122,8 @@ import { ProcessChannelInboundWorker } from './channel/process-channel-inbound.w
     ProcessLeadAdWorker,
     // Drip Sequence workers
     SequenceStepWorker,
+    // Shopify Integration workers
+    ShopifyWebhookWorker,
   ],
 })
 export class JobsModule {}

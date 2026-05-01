@@ -15,11 +15,62 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
 import { ProductRepository } from '../../infrastructure/repositories/product.repository';
-import { CreateProductDto, UpdateProductDto, AssignProductDto } from '../../application/dto';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  AssignProductDto,
+  CreateProductCategoryDto,
+  UpdateProductCategoryDto,
+} from '../../application/dto';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly repo: ProductRepository) {}
+
+  // ─── Product Categories ──────────────────────────────────────────────────
+
+  @Get('categories')
+  @Permissions(PERMISSIONS.CONTACTS_READ)
+  async listCategories(@CurrentUser('orgId') orgId: string) {
+    return this.repo.findCategoriesByOrg(orgId);
+  }
+
+  @Post('categories')
+  @Permissions(PERMISSIONS.CONTACTS_CREATE)
+  @HttpCode(HttpStatus.CREATED)
+  async createCategory(
+    @CurrentUser('orgId') orgId: string,
+    @Body() dto: CreateProductCategoryDto,
+  ) {
+    return this.repo.createCategory({ orgId, ...dto });
+  }
+
+  @Patch('categories/:id')
+  @Permissions(PERMISSIONS.CONTACTS_CREATE)
+  async updateCategory(
+    @CurrentUser('orgId') orgId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProductCategoryDto,
+  ) {
+    const cat = await this.repo.findCategoryByIdAndOrg(id, orgId);
+    if (!cat) throw new NotFoundException('Category not found');
+    return this.repo.updateCategory(id, dto);
+  }
+
+  @Delete('categories/:id')
+  @Permissions(PERMISSIONS.CONTACTS_CREATE)
+  @HttpCode(HttpStatus.OK)
+  async deleteCategory(
+    @CurrentUser('orgId') orgId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const cat = await this.repo.findCategoryByIdAndOrg(id, orgId);
+    if (!cat) throw new NotFoundException('Category not found');
+    await this.repo.deleteCategory(id);
+    return { success: true };
+  }
+
+  // ─── Products ────────────────────────────────────────────────────────────
 
   @Post()
   @Permissions(PERMISSIONS.CONTACTS_CREATE)

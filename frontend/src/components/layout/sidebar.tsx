@@ -23,6 +23,7 @@ import {
   Target,
   Star,
   Kanban,
+  TrendingUp,
   Bot,
   Workflow,
   BookOpen,
@@ -51,28 +52,61 @@ interface NavItemDef {
   feature?: "campaigns" | "automation";
 }
 
-const navItems: NavItemDef[] = [
-  { href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" />, label: "Dashboard" },
-  { href: "/inbox", icon: <MessageSquare className="h-5 w-5" />, label: "Inbox", countKey: "inbox" },
-  { href: "/contacts", icon: <Users className="h-5 w-5" />, label: "Contacts" },
-  { href: "/deals", icon: <Kanban className="h-5 w-5" />, label: "Deals", roles: ["ADMIN", "MANAGER"] },
-  { href: "/campaigns", icon: <Megaphone className="h-5 w-5" />, label: "Campaigns", roles: ["ADMIN", "MANAGER"], feature: "campaigns" },
-  { href: "/sequences", icon: <Workflow className="h-5 w-5" />, label: "Sequences", roles: ["ADMIN", "MANAGER"], feature: "campaigns" },
-  { href: "/scheduler", icon: <Clock className="h-5 w-5" />, label: "Scheduler", roles: ["ADMIN", "MANAGER"] },
-  { href: "/automation", icon: <Zap className="h-5 w-5" />, label: "Automation", roles: ["ADMIN", "MANAGER"], feature: "automation" },
-  { href: "/chatbot", icon: <Bot className="h-5 w-5" />, label: "Chatbot", roles: ["ADMIN", "MANAGER"] },
-  { href: "/sla", icon: <ShieldCheck className="h-5 w-5" />, label: "SLA Tracking", roles: ["ADMIN", "MANAGER"] },
-  { href: "/lead-ads", icon: <Target className="h-5 w-5" />, label: "Lead Ads", roles: ["ADMIN", "MANAGER"] },
-  { href: "/knowledge-base", icon: <BookOpen className="h-5 w-5" />, label: "Knowledge Base", roles: ["ADMIN", "MANAGER"] },
-  { href: "/csat", icon: <Star className="h-5 w-5" />, label: "CSAT", roles: ["ADMIN", "MANAGER"] },
-  { href: "/settings", icon: <Settings className="h-5 w-5" />, label: "Settings", roles: ["ADMIN"] },
-  { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
-  { href: "/settings/channels", icon: <Radio className="h-5 w-5" />, label: "Channels", roles: ["ADMIN", "MANAGER"] },
-  { href: "/settings/products", icon: <Package className="h-5 w-5" />, label: "Products", roles: ["ADMIN"] },
-  { href: "/settings/templates", icon: <FileText className="h-5 w-5" />, label: "Templates", roles: ["ADMIN", "MANAGER"] },
-  { href: "/settings/sla", icon: <Shield className="h-5 w-5" />, label: "SLA Policies", roles: ["ADMIN"] },
-  { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN", "MANAGER"] },
-  { href: "/support", icon: <LifeBuoy className="h-5 w-5" />, label: "Support" },
+interface NavGroup {
+  label: string;
+  /** If set, entire group is hidden unless user has one of these roles. */
+  roles?: Role[];
+  items: NavItemDef[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: "Core",
+    items: [
+      { href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" />, label: "Dashboard" },
+      { href: "/inbox", icon: <MessageSquare className="h-5 w-5" />, label: "Inbox", countKey: "inbox" },
+    ],
+  },
+  {
+    label: "CRM",
+    items: [
+      { href: "/contacts", icon: <Users className="h-5 w-5" />, label: "Contacts" },
+      { href: "/deals", icon: <Kanban className="h-5 w-5" />, label: "Deals", roles: ["ADMIN", "MANAGER"] },
+      { href: "/lead-scoring", icon: <TrendingUp className="h-5 w-5" />, label: "Lead Scoring", roles: ["ADMIN", "MANAGER"] },
+      { href: "/lead-ads", icon: <Target className="h-5 w-5" />, label: "Lead Ads", roles: ["ADMIN", "MANAGER"] },
+      { href: "/csat", icon: <Star className="h-5 w-5" />, label: "CSAT", roles: ["ADMIN", "MANAGER"] },
+    ],
+  },
+  {
+    label: "Messaging",
+    roles: ["ADMIN", "MANAGER"],
+    items: [
+      { href: "/campaigns", icon: <Megaphone className="h-5 w-5" />, label: "Campaigns", feature: "campaigns" },
+      { href: "/sequences", icon: <Workflow className="h-5 w-5" />, label: "Sequences", feature: "campaigns" },
+      { href: "/scheduler", icon: <Clock className="h-5 w-5" />, label: "Scheduler" },
+      { href: "/automation", icon: <Zap className="h-5 w-5" />, label: "Automation", feature: "automation" },
+      { href: "/chatbot", icon: <Bot className="h-5 w-5" />, label: "Chatbot" },
+    ],
+  },
+  {
+    label: "Configuration",
+    items: [
+      { href: "/knowledge-base", icon: <BookOpen className="h-5 w-5" />, label: "Knowledge Base", roles: ["ADMIN", "MANAGER"] },
+      { href: "/sla", icon: <ShieldCheck className="h-5 w-5" />, label: "SLA Tracking", roles: ["ADMIN", "MANAGER"] },
+      { href: "/settings", icon: <Settings className="h-5 w-5" />, label: "Settings", roles: ["ADMIN"] },
+      { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
+      { href: "/settings/channels", icon: <Radio className="h-5 w-5" />, label: "Channels", roles: ["ADMIN", "MANAGER"] },
+      { href: "/settings/products", icon: <Package className="h-5 w-5" />, label: "Products", roles: ["ADMIN"] },
+      { href: "/settings/templates", icon: <FileText className="h-5 w-5" />, label: "Templates", roles: ["ADMIN", "MANAGER"] },
+      { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN", "MANAGER"] },
+    ],
+  },
+  {
+    label: "Support",
+    items: [
+      { href: "/support", icon: <LifeBuoy className="h-5 w-5" />, label: "Support" },
+    ],
+  },
 ];
 
 const adminNavItems = [
@@ -133,63 +167,90 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
-        {navItems
-          .filter((item) => !item.roles || item.roles.includes(user?.role as Role))
-          .filter((item) => isFeatureAllowed(item.feature))
-          .map((item) => (
-          <NavItem
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            label={item.label}
-            count={undefined}
-            collapsed={collapsed}
-          />
-        ))}
+      <nav className="flex-1 overflow-y-auto px-2 py-2">
+        {navGroups.map((group) => {
+          // Hide group if user doesn't have required role
+          if (group.roles && !group.roles.includes(user?.role as Role)) return null;
+
+          // Filter items by role and feature
+          const visibleItems = group.items
+            .filter((item) => !item.roles || item.roles.includes(user?.role as Role))
+            .filter((item) => isFeatureAllowed(item.feature));
+
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={group.label} className="mb-1">
+              {/* Group header */}
+              {!collapsed ? (
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/50 px-2 pt-3 pb-1 block">
+                  {group.label}
+                </span>
+              ) : (
+                <div className="my-2 mx-1 border-t border-outline-variant/15" />
+              )}
+              <div className="space-y-1">
+                {visibleItems.map((item) => (
+                  <NavItem
+                    key={item.href}
+                    href={item.href}
+                    icon={item.icon}
+                    label={item.label}
+                    count={undefined}
+                    collapsed={collapsed}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
 
         {/* Manager section */}
         {user?.role === "MANAGER" && (
-          <>
-            <div className={cn("pt-3 pb-1", collapsed ? "px-0" : "px-2")}>
-              {!collapsed && (
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/50">
-                  Team
-                </span>
-              )}
+          <div className="mb-1">
+            {!collapsed ? (
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/50 px-2 pt-3 pb-1 block">
+                Team
+              </span>
+            ) : (
+              <div className="my-2 mx-1 border-t border-outline-variant/15" />
+            )}
+            <div className="space-y-1">
+              {managerNavItems.map((item) => (
+                <NavItem
+                  key={item.href}
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  collapsed={collapsed}
+                />
+              ))}
             </div>
-            {managerNavItems.map((item) => (
-              <NavItem
-                key={item.href}
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                collapsed={collapsed}
-              />
-            ))}
-          </>
+          </div>
         )}
 
         {/* Admin section */}
         {user?.role === "ADMIN" && (
-          <>
-            <div className={cn("pt-3 pb-1", collapsed ? "px-0" : "px-2")}>
-              {!collapsed && (
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/50">
-                  Admin
-                </span>
-              )}
+          <div className="mb-1">
+            {!collapsed ? (
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/50 px-2 pt-3 pb-1 block">
+                Admin
+              </span>
+            ) : (
+              <div className="my-2 mx-1 border-t border-outline-variant/15" />
+            )}
+            <div className="space-y-1">
+              {adminNavItems.map((item) => (
+                <NavItem
+                  key={item.href}
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  collapsed={collapsed}
+                />
+              ))}
             </div>
-            {adminNavItems.map((item) => (
-              <NavItem
-                key={item.href}
-                href={item.href}
-                icon={item.icon}
-                label={item.label}
-                collapsed={collapsed}
-              />
-            ))}
-          </>
+          </div>
         )}
       </nav>
 

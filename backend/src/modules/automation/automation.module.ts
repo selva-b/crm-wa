@@ -1,6 +1,8 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AuditModule } from '@/modules/audit/audit.module';
 import { BillingModule } from '@/modules/billing/billing.module';
+import { MessagesModule } from '@/modules/messages/messages.module';
+import { WhatsAppModule } from '@/modules/whatsapp/whatsapp.module';
 
 // Repository
 import { AutomationRepository } from './infrastructure/repositories/automation.repository';
@@ -27,7 +29,7 @@ import {
 import { AutomationController } from './interfaces/controllers/automation.controller';
 
 @Module({
-  imports: [AuditModule, BillingModule],
+  imports: [AuditModule, BillingModule, MessagesModule, WhatsAppModule],
   controllers: [AutomationController],
   providers: [
     // Repository

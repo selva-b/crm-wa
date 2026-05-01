@@ -77,7 +77,7 @@ export interface UpdateFeatureFlagsRequest {
 
 // ─── Integration Configurations (EPIC 12) ───
 
-export type IntegrationProvider = 'SMTP' | 'SENDGRID' | 'STRIPE' | 'RAZORPAY';
+export type IntegrationProvider = 'SMTP' | 'SENDGRID' | 'STRIPE' | 'RAZORPAY' | 'SHOPIFY';
 export type IntegrationStatus = 'ACTIVE' | 'INACTIVE' | 'ERROR';
 
 export interface IntegrationConfig {

@@ -95,6 +95,7 @@ enum ContactSource {
   FACEBOOK_LEAD_AD
   INSTAGRAM_LEAD_AD
   WHATSAPP_LEAD_AD
+  SHOPIFY
 }
 
 // ─────────────────────────────────────────────
@@ -337,6 +338,9 @@ enum AutomationTriggerType {
   TIME_BASED
   NO_REPLY
   LEAD_AD_RECEIVED
+  SHOPIFY_ORDER_CREATED
+  SHOPIFY_ORDER_FULFILLED
+  SHOPIFY_CART_ABANDONED
 }
 
 enum AutomationConditionOperator {
@@ -487,6 +491,7 @@ model Organization {
   kbDocuments              KbDocument[]
   sequenceTemplates        SequenceTemplate[]
   products                 Product[]
+  productCategories        ProductCategory[]
   helpTickets              HelpTicket[]
 
   @@index([slug])
@@ -1967,6 +1972,7 @@ enum IntegrationProvider {
   STRIPE
   RAZORPAY
   CUSTOM_WEBHOOK
+  SHOPIFY
 }
 
 enum IntegrationStatus {
@@ -2783,17 +2789,45 @@ enum ProductStatus {
   INACTIVE
 }
 
+model ProductCategory {
+  id          String    @id @default(uuid()) @db.Uuid
+  orgId       String    @map("org_id") @db.Uuid
+  name        String    @db.VarChar(100)
+  description String?   @db.VarChar(500)
+  color       String?   @db.VarChar(7)
+  sortOrder   Int       @default(0) @map("sort_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  parentId    String?   @map("parent_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  organization Organization      @relation(fields: [orgId], references: [id])
+  parent       ProductCategory?  @relation("CategoryParent", fields: [parentId], references: [id])
+  children     ProductCategory[] @relation("CategoryParent")
+  products     Product[]
+
+  @@unique([orgId, name])
+  @@index([orgId])
+  @@index([parentId])
+  @@map("product_categories")
+}
+
 model Product {
   id          String        @id @default(uuid()) @db.Uuid
   orgId       String        @map("org_id") @db.Uuid
   name        String        @db.VarChar(255)
   description String?       @db.Text
+  price       Decimal?      @db.Decimal(10, 2)
+  currency    String?       @default("INR") @db.VarChar(10)
+  sku         String?       @db.VarChar(100)
+  imageUrl    String?       @map("image_url") @db.VarChar(2048)
+  categoryId  String?       @map("category_id") @db.Uuid
   status      ProductStatus @default(ACTIVE)
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   deletedAt   DateTime?     @map("deleted_at")
 
   organization      Organization       @relation(fields: [orgId], references: [id])
+  category          ProductCategory?   @relation(fields: [categoryId], references: [id])
   contactProducts   ContactProduct[]
   deals             Deal[]
   csatSurveys       CsatSurvey[]

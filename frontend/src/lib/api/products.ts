@@ -1,7 +1,15 @@
 import apiClient from "./client";
-import type { Product, CreateProductRequest, UpdateProductRequest } from "@/lib/types/products";
+import type {
+  Product,
+  ProductCategory,
+  CreateProductRequest,
+  UpdateProductRequest,
+  CreateProductCategoryRequest,
+  UpdateProductCategoryRequest,
+} from "@/lib/types/products";
 
 export const productsApi = {
+  // ─── Products ─────────────────────────────────────────────────────────────
   list: () =>
     apiClient.get<Product[]>("/products").then((r) => r.data),
 
@@ -22,4 +30,17 @@ export const productsApi = {
 
   getContactProducts: (contactId: string) =>
     apiClient.get<Product[]>(`/products/by-contact/${contactId}`).then((r) => r.data),
+
+  // ─── Categories ──────────────────────────────────────────────────────────
+  listCategories: () =>
+    apiClient.get<ProductCategory[]>("/products/categories").then((r) => r.data),
+
+  createCategory: (data: CreateProductCategoryRequest) =>
+    apiClient.post<ProductCategory>("/products/categories", data).then((r) => r.data),
+
+  updateCategory: (id: string, data: UpdateProductCategoryRequest) =>
+    apiClient.patch<ProductCategory>(`/products/categories/${id}`, data).then((r) => r.data),
+
+  deleteCategory: (id: string) =>
+    apiClient.delete(`/products/categories/${id}`).then((r) => r.data),
 };

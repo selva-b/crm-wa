@@ -54,6 +54,7 @@ export function ChannelForm({
   const [config, setConfig] = useState<Record<string, string>>({});
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Step 1: Type selection (create mode only)
   if (!isEdit && !selectedType) {
@@ -98,6 +99,21 @@ export function ChannelForm({
   const configFields = selectedType ? CHANNEL_CONFIG_FIELDS[selectedType] : [];
 
   const handleSubmit = () => {
+    const e: Record<string, string> = {};
+    if (!name.trim()) e.name = "Channel name is required.";
+    else if (name.trim().length > 100) e.name = "Name must be 100 characters or less.";
+    if (rateLimitPerMin) {
+      const r = parseInt(rateLimitPerMin);
+      if (isNaN(r) || r < 1 || r > 1000) e.rateLimitPerMin = "Rate limit must be between 1 and 1000.";
+    }
+    if (!isEdit || showConfigPanel) {
+      configFields.filter((f) => f.required).forEach((f) => {
+        if (!config[f.key]?.trim()) e[f.key] = `${f.label} is required.`;
+      });
+    }
+    setErrors(e);
+    if (Object.keys(e).length > 0) return;
+
     if (isEdit) {
       const data: UpdateChannelRequest = {};
       if (name !== channel.name) data.name = name;
@@ -122,7 +138,6 @@ export function ChannelForm({
   const isValid = () => {
     if (!name.trim()) return false;
     if (isEdit && !showConfigPanel) return true;
-    // Check required config fields
     return configFields
       .filter((f) => f.required)
       .every((f) => config[f.key]?.trim());
@@ -155,9 +170,10 @@ export function ChannelForm({
           </label>
           <Input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: "" })); }}
             placeholder={`e.g. Main ${CHANNEL_TYPE_LABELS[selectedType!]}`}
           />
+          {errors.name && <p className="text-[11px] text-error mt-1">{errors.name}</p>}
         </div>
 
         {/* Rate Limit */}
@@ -168,14 +184,15 @@ export function ChannelForm({
           <Input
             type="number"
             value={rateLimitPerMin}
-            onChange={(e) => setRateLimitPerMin(e.target.value)}
+            onChange={(e) => { setRateLimitPerMin(e.target.value); setErrors((p) => ({ ...p, rateLimitPerMin: "" })); }}
             placeholder="60 (default)"
             min={1}
             max={1000}
           />
-          <p className="text-xs text-on-surface-variant mt-1">
-            Leave empty for default (60/min)
-          </p>
+          {errors.rateLimitPerMin
+            ? <p className="text-[11px] text-error mt-1">{errors.rateLimitPerMin}</p>
+            : <p className="text-xs text-on-surface-variant mt-1">Leave empty for default (60/min)</p>
+          }
         </div>
 
         {/* Config fields */}
@@ -194,11 +211,12 @@ export function ChannelForm({
                     key={field.key}
                     field={field}
                     value={config[field.key] ?? ""}
-                    onChange={(val) => setConfig({ ...config, [field.key]: val })}
+                    onChange={(val) => { setConfig({ ...config, [field.key]: val }); setErrors((p) => ({ ...p, [field.key]: "" })); }}
                     showPassword={showPasswords[field.key] ?? false}
                     togglePassword={() =>
                       setShowPasswords({ ...showPasswords, [field.key]: !showPasswords[field.key] })
                     }
+                    error={errors[field.key]}
                   />
                 ))}
               </div>
@@ -214,11 +232,12 @@ export function ChannelForm({
                 key={field.key}
                 field={field}
                 value={config[field.key] ?? ""}
-                onChange={(val) => setConfig({ ...config, [field.key]: val })}
+                onChange={(val) => { setConfig({ ...config, [field.key]: val }); setErrors((p) => ({ ...p, [field.key]: "" })); }}
                 showPassword={showPasswords[field.key] ?? false}
                 togglePassword={() =>
                   setShowPasswords({ ...showPasswords, [field.key]: !showPasswords[field.key] })
                 }
+                error={errors[field.key]}
               />
             ))}
           </div>
@@ -251,12 +270,14 @@ function ConfigFieldInput({
   onChange,
   showPassword,
   togglePassword,
+  error,
 }: {
   field: { key: string; label: string; type: string; required: boolean; placeholder: string };
   value: string;
   onChange: (val: string) => void;
   showPassword: boolean;
   togglePassword: () => void;
+  error?: string;
 }) {
   return (
     <div>
@@ -281,6 +302,7 @@ function ConfigFieldInput({
           </button>
         )}
       </div>
+      {error && <p className="text-[11px] text-error mt-1">{error}</p>}
     </div>
   );
 }

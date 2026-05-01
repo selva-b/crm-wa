@@ -5,7 +5,11 @@ export type AutomationTriggerType =
   | "CONTACT_CREATED"
   | "LEAD_STATUS_CHANGED"
   | "TIME_BASED"
-  | "NO_REPLY";
+  | "NO_REPLY"
+  | "LEAD_AD_RECEIVED"
+  | "SHOPIFY_ORDER_CREATED"
+  | "SHOPIFY_ORDER_FULFILLED"
+  | "SHOPIFY_CART_ABANDONED";
 
 export type AutomationConditionOperator =
   | "EQUALS"

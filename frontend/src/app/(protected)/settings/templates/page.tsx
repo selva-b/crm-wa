@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, FileText, Trash2, Pencil, Search, Package, GripVertical, User, Sparkles, X } from "lucide-react";
+import { Plus, FileText, Trash2, Pencil, Search, Package, GripVertical, User, Sparkles, X, ShoppingBag, ShoppingCart, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -28,7 +28,24 @@ import { useProducts } from "@/hooks/use-products";
 import { listFieldDefinitions, type CustomFieldDefinition } from "@/lib/api/custom-fields";
 import type { MessageTemplate } from "@/lib/types/templates";
 
-const CATEGORIES = ["", "MARKETING", "UTILITY", "AUTHENTICATION"] as const;
+const CATEGORIES = ["", "MARKETING", "UTILITY", "AUTHENTICATION", "SHOPIFY"] as const;
+
+const SHOPIFY_TEMPLATE_TYPES: Record<string, string> = {
+  order_confirmation: "Order Confirmation",
+  order_fulfilled: "Order Fulfilled",
+  cart_abandoned: "Cart Abandoned",
+  post_purchase: "Post Purchase",
+  order_cancelled: "Order Cancelled",
+};
+
+function isShopifyTemplate(tpl: MessageTemplate): boolean {
+  return tpl.category === "SHOPIFY";
+}
+
+function getShopifyType(tpl: MessageTemplate): string | null {
+  const ev = tpl.exampleValues as Record<string, string> | null;
+  return ev?.shopifyType ?? null;
+}
 const LANGUAGES = [
   { value: "en", label: "English" },
   { value: "hi", label: "Hindi" },
@@ -79,8 +96,10 @@ export default function TemplatesPage() {
   const [language, setLanguage] = useState("en");
   const [productId, setProductId] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [deleteTarget, setDeleteTarget] = useState<MessageTemplate | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [formError, setFormError] = useState("");
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiCategory, setAiCategory] = useState("");
@@ -102,14 +121,17 @@ export default function TemplatesPage() {
 
   const filtered = useMemo(() => {
     if (!templates) return [];
-    if (!search.trim()) return templates;
-    const q = search.toLowerCase();
-    return templates.filter(
-      (t) =>
-        t.name.toLowerCase().includes(q) ||
-        extractBody(t).toLowerCase().includes(q),
-    );
-  }, [templates, search]);
+    let result = templates;
+    if (categoryFilter) result = result.filter((t) => t.category === categoryFilter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (t) => t.name.toLowerCase().includes(q) || extractBody(t).toLowerCase().includes(q),
+      );
+    }
+    return result;
+  }, [templates, search, categoryFilter]);
+
 
   const insertAtCursor = useCallback((variable: string) => {
     const el = textareaRef.current;
@@ -134,6 +156,7 @@ export default function TemplatesPage() {
     setLanguage("en");
     setProductId("");
     setEditId(null);
+    setFormError("");
     setShowForm(false);
   };
 
@@ -159,7 +182,11 @@ export default function TemplatesPage() {
   };
 
   const handleSave = () => {
-    if (!name.trim() || !body.trim()) return;
+    setFormError("");
+    if (!name.trim()) { setFormError("Template name is required."); return; }
+    if (name.trim().length > 255) { setFormError("Name must be 255 characters or less."); return; }
+    if (!body.trim()) { setFormError("Message body is required."); return; }
+    if (body.trim().length > 4096) { setFormError("Message body must be 4096 characters or less."); return; }
     const payload = {
       name: name.trim(),
       body: body.trim(),
@@ -170,10 +197,13 @@ export default function TemplatesPage() {
     if (editId) {
       updateTemplate.mutate(
         { id: editId, ...payload, productId: productId || null },
-        { onSuccess: resetForm },
+        { onSuccess: resetForm, onError: (err) => setFormError((err as Error).message || "Failed to save template.") },
       );
     } else {
-      createTemplate.mutate(payload, { onSuccess: resetForm });
+      createTemplate.mutate(payload, {
+        onSuccess: resetForm,
+        onError: (err) => setFormError((err as Error).message || "Failed to create template."),
+      });
     }
   };
 
@@ -293,6 +323,12 @@ export default function TemplatesPage() {
                 </div>
               </div>
 
+              {formError && (
+                <p className="text-[12px] text-error bg-error/8 border border-error/15 px-3 py-2 rounded-lg">
+                  {formError}
+                </p>
+              )}
+
               <div className="flex gap-2 justify-end pt-1">
                 <Button variant="ghost" size="sm" onClick={resetForm}>
                   Cancel
@@ -300,12 +336,7 @@ export default function TemplatesPage() {
                 <Button
                   size="sm"
                   onClick={handleSave}
-                  disabled={
-                    !name.trim() ||
-                    !body.trim() ||
-                    createTemplate.isPending ||
-                    updateTemplate.isPending
-                  }
+                  disabled={createTemplate.isPending || updateTemplate.isPending}
                   loading={createTemplate.isPending || updateTemplate.isPending}
                 >
                   {editId ? "Update Template" : "Create Template"}
@@ -398,16 +429,51 @@ export default function TemplatesPage() {
         </div>
       )}
 
-      {/* Search */}
+      {/* Filter tabs + Search */}
       {templates && templates.length > 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/10 max-w-sm">
-          <Search className="h-4 w-4 text-on-surface-variant/40" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search templates..."
-            className="flex-1 bg-transparent text-[13px] text-on-surface outline-none placeholder:text-on-surface-variant/40"
-          />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          {/* Category tabs */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-surface-container border border-outline-variant/10">
+            {(["", "MARKETING", "UTILITY", "AUTHENTICATION", "SHOPIFY"] as const).map((cat) => {
+              const label = cat === "" ? "All" : cat === "SHOPIFY" ? "Shopify" : cat;
+              const count = cat === "" ? templates.length : templates.filter((t) => t.category === cat).length;
+              if (count === 0 && cat !== "") return null;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCategoryFilter(cat)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                    categoryFilter === cat
+                      ? cat === "SHOPIFY"
+                        ? "bg-emerald-500/15 text-emerald-700"
+                        : "bg-primary/10 text-primary"
+                      : "text-on-surface-variant hover:text-on-surface hover:bg-surface"
+                  }`}
+                >
+                  {cat === "SHOPIFY" && <ShoppingBag className="h-3 w-3" />}
+                  {label}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                    categoryFilter === cat
+                      ? cat === "SHOPIFY" ? "bg-emerald-500/20 text-emerald-700" : "bg-primary/15 text-primary"
+                      : "bg-outline-variant/15 text-on-surface-variant/60"
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container border border-outline-variant/10 min-w-[200px]">
+            <Search className="h-4 w-4 text-on-surface-variant/40 shrink-0" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search templates..."
+              className="flex-1 bg-transparent text-[13px] text-on-surface outline-none placeholder:text-on-surface-variant/40"
+            />
+          </div>
         </div>
       )}
 
@@ -431,16 +497,29 @@ export default function TemplatesPage() {
                 const bodyText = extractBody(tpl);
                 const linkedProductId = getProductId(tpl);
                 const linkedProductName = linkedProductId ? productMap[linkedProductId] : null;
+                const isShopify = isShopifyTemplate(tpl);
+                const shopifyType = isShopify ? getShopifyType(tpl) : null;
+                const ShopifyIcon = shopifyType === "cart_abandoned" ? ShoppingCart : ShoppingBag;
                 return (
                   <TableRow key={tpl.id}>
                     <TableCell>
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <FileText className="h-4 w-4 text-primary" />
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isShopify ? "bg-emerald-500/10" : "bg-primary/10"}`}>
+                          {isShopify
+                            ? <ShopifyIcon className="h-4 w-4 text-emerald-600" />
+                            : <FileText className="h-4 w-4 text-primary" />
+                          }
                         </div>
-                        <span className="text-[13px] font-medium text-on-surface">
-                          {tpl.name}
-                        </span>
+                        <div>
+                          <span className="text-[13px] font-medium text-on-surface">
+                            {tpl.name}
+                          </span>
+                          {isShopify && (
+                            <p className="text-[11px] text-emerald-600/70 leading-none mt-0.5">
+                              {shopifyType ? SHOPIFY_TEMPLATE_TYPES[shopifyType] ?? shopifyType : "Shopify"}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
 
@@ -455,8 +534,17 @@ export default function TemplatesPage() {
                       )}
                     </TableCell>
 
-                    <TableCell className="text-[12px] text-on-surface-variant">
-                      {tpl.category || "—"}
+                    <TableCell>
+                      {isShopify ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-[11px] font-medium text-emerald-700 border border-emerald-500/20">
+                          <ShoppingBag className="h-3 w-3" />
+                          Shopify
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-on-surface-variant">
+                          {tpl.category || "—"}
+                        </span>
+                      )}
                     </TableCell>
 
                     <TableCell className="text-[12px] text-on-surface-variant uppercase">
@@ -484,13 +572,22 @@ export default function TemplatesPage() {
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
-                        <button
-                          onClick={() => setDeleteTarget(tpl)}
-                          className="p-1.5 rounded-lg text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {isShopify ? (
+                          <span
+                            title="System template — cannot be deleted"
+                            className="p-1.5 rounded-lg text-on-surface-variant/25 cursor-not-allowed"
+                          >
+                            <Lock className="h-3.5 w-3.5" />
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setDeleteTarget(tpl)}
+                            className="p-1.5 rounded-lg text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

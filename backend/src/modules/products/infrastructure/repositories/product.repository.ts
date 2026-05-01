@@ -10,15 +10,98 @@ export class ProductRepository {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async create(data: { orgId: string; name: string; description?: string }) {
+  // ─── Product Category ────────────────────────────────────────────────────
+
+  async createCategory(data: {
+    orgId: string;
+    name: string;
+    description?: string;
+    color?: string;
+    sortOrder?: number;
+    parentId?: string;
+  }) {
+    return this.prisma.productCategory.create({
+      data,
+      include: { parent: true, children: true },
+    });
+  }
+
+  async findCategoriesByOrg(orgId: string) {
+    return this.prisma.productCategory.findMany({
+      where: { orgId },
+      include: { parent: true, children: { orderBy: { sortOrder: 'asc' } } },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+    });
+  }
+
+  async findCategoryByIdAndOrg(id: string, orgId: string) {
+    return this.prisma.productCategory.findFirst({
+      where: { id, orgId },
+      include: { parent: true, children: true },
+    });
+  }
+
+  async updateCategory(id: string, data: {
+    name?: string;
+    description?: string;
+    color?: string;
+    sortOrder?: number;
+    parentId?: string;
+    isActive?: boolean;
+  }) {
+    return this.prisma.productCategory.update({
+      where: { id },
+      data,
+      include: { parent: true, children: true },
+    });
+  }
+
+  async deleteCategory(id: string) {
+    // Re-parent children to this category's parent (or null)
+    const cat = await this.prisma.productCategory.findUnique({ where: { id } });
+    await this.prisma.productCategory.updateMany({
+      where: { parentId: id },
+      data: { parentId: cat?.parentId ?? null },
+    });
+    // Null out categoryId on related products
+    await this.prisma.product.updateMany({
+      where: { categoryId: id },
+      data: { categoryId: null },
+    });
+    return this.prisma.productCategory.delete({ where: { id } });
+  }
+
+  // ─── Product ─────────────────────────────────────────────────────────────
+
+  async create(data: {
+    orgId: string;
+    name: string;
+    description?: string;
+    price?: number;
+    currency?: string;
+    sku?: string;
+    imageUrl?: string;
+    categoryId?: string;
+  }) {
     return this.prisma.product.create({
-      data: { orgId: data.orgId, name: data.name, description: data.description || null },
+      data: {
+        orgId: data.orgId,
+        name: data.name,
+        description: data.description ?? null,
+        price: data.price ?? null,
+        currency: data.currency ?? 'INR',
+        sku: data.sku ?? null,
+        imageUrl: data.imageUrl ?? null,
+        categoryId: data.categoryId ?? null,
+      },
+      include: { category: true },
     });
   }
 
   async findByOrg(orgId: string) {
     return this.prisma.product.findMany({
       where: { orgId, deletedAt: null },
+      include: { category: true },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -26,11 +109,25 @@ export class ProductRepository {
   async findByIdAndOrg(id: string, orgId: string) {
     return this.prisma.product.findFirst({
       where: { id, orgId, deletedAt: null },
+      include: { category: true },
     });
   }
 
-  async update(id: string, data: { name?: string; description?: string; status?: any }) {
-    return this.prisma.product.update({ where: { id }, data });
+  async update(id: string, data: {
+    name?: string;
+    description?: string;
+    price?: number;
+    currency?: string;
+    sku?: string;
+    imageUrl?: string;
+    categoryId?: string;
+    status?: any;
+  }) {
+    return this.prisma.product.update({
+      where: { id },
+      data,
+      include: { category: true },
+    });
   }
 
   async softDelete(id: string) {
@@ -56,7 +153,7 @@ export class ProductRepository {
   async findByContact(contactId: string, orgId: string) {
     const items = await this.prisma.contactProduct.findMany({
       where: { contactId, orgId, product: { deletedAt: null } },
-      include: { product: true },
+      include: { product: { include: { category: true } } },
       orderBy: { createdAt: 'desc' },
     });
     return items.map((cp) => cp.product);

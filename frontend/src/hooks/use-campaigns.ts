@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { campaignsApi } from "@/lib/api/campaigns";
 import type {
   ListCampaignsParams,
@@ -65,9 +66,8 @@ export function useCreateCampaign() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateCampaignRequest) => campaignsApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: campaignKeys.all });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: campaignKeys.all }); toast.success("Campaign created"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to create campaign"),
   });
 }
 
@@ -81,10 +81,10 @@ export function useUpdateCampaign() {
       campaignsApi.update(campaignId, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: campaignKeys.all });
-      queryClient.invalidateQueries({
-        queryKey: campaignKeys.detail(variables.campaignId),
-      });
+      queryClient.invalidateQueries({ queryKey: campaignKeys.detail(variables.campaignId) });
+      toast.success("Campaign updated");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to update campaign"),
   });
 }
 
@@ -94,10 +94,10 @@ export function useExecuteCampaign() {
     mutationFn: (campaignId: string) => campaignsApi.execute(campaignId),
     onSuccess: (_data, campaignId) => {
       queryClient.invalidateQueries({ queryKey: campaignKeys.all });
-      queryClient.invalidateQueries({
-        queryKey: campaignKeys.detail(campaignId),
-      });
+      queryClient.invalidateQueries({ queryKey: campaignKeys.detail(campaignId) });
+      toast.success("Campaign started");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to start campaign"),
   });
 }
 
@@ -111,10 +111,10 @@ export function useScheduleCampaign() {
       campaignsApi.schedule(campaignId, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: campaignKeys.all });
-      queryClient.invalidateQueries({
-        queryKey: campaignKeys.detail(variables.campaignId),
-      });
+      queryClient.invalidateQueries({ queryKey: campaignKeys.detail(variables.campaignId) });
+      toast.success("Campaign scheduled");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to schedule campaign"),
   });
 }
 
@@ -124,10 +124,10 @@ export function usePauseCampaign() {
     mutationFn: (campaignId: string) => campaignsApi.pause(campaignId),
     onSuccess: (_data, campaignId) => {
       queryClient.invalidateQueries({ queryKey: campaignKeys.all });
-      queryClient.invalidateQueries({
-        queryKey: campaignKeys.detail(campaignId),
-      });
+      queryClient.invalidateQueries({ queryKey: campaignKeys.detail(campaignId) });
+      toast.success("Campaign paused");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to pause campaign"),
   });
 }
 
@@ -137,10 +137,10 @@ export function useResumeCampaign() {
     mutationFn: (campaignId: string) => campaignsApi.resume(campaignId),
     onSuccess: (_data, campaignId) => {
       queryClient.invalidateQueries({ queryKey: campaignKeys.all });
-      queryClient.invalidateQueries({
-        queryKey: campaignKeys.detail(campaignId),
-      });
+      queryClient.invalidateQueries({ queryKey: campaignKeys.detail(campaignId) });
+      toast.success("Campaign resumed");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to resume campaign"),
   });
 }
 
@@ -150,10 +150,10 @@ export function useCancelCampaign() {
     mutationFn: (campaignId: string) => campaignsApi.cancel(campaignId),
     onSuccess: (_data, campaignId) => {
       queryClient.invalidateQueries({ queryKey: campaignKeys.all });
-      queryClient.invalidateQueries({
-        queryKey: campaignKeys.detail(campaignId),
-      });
+      queryClient.invalidateQueries({ queryKey: campaignKeys.detail(campaignId) });
+      toast.success("Campaign cancelled");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to cancel campaign"),
   });
 }
 

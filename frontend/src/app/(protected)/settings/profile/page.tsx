@@ -19,6 +19,7 @@ export default function ProfilePage() {
   const [lastName, setLastName] = useState(user?.lastName ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [profileSuccess, setProfileSuccess] = useState(false);
+  const [profileError, setProfileError] = useState("");
 
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -31,10 +32,19 @@ export default function ProfilePage() {
 
   const handleProfileSave = () => {
     setProfileSuccess(false);
+    setProfileError("");
+    if (!firstName.trim()) { setProfileError("First name is required."); return; }
+    if (!lastName.trim()) { setProfileError("Last name is required."); return; }
+    if (!email.trim()) { setProfileError("Email is required."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setProfileError("Enter a valid email address."); return; }
     updateProfile.mutate(
       { firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() },
       {
         onSuccess: () => setProfileSuccess(true),
+        onError: (err: unknown) => {
+          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+          setProfileError(Array.isArray(msg) ? msg[0] : msg || "Failed to update profile.");
+        },
       },
     );
   };
@@ -43,18 +53,15 @@ export default function ProfilePage() {
     setPasswordError("");
     setPasswordSuccess(false);
 
-    if (!oldPassword || !newPassword) {
-      setPasswordError("All password fields are required");
-      return;
-    }
-    if (newPassword.length < 8) {
-      setPasswordError("New password must be at least 8 characters");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("New passwords do not match");
-      return;
-    }
+    if (!oldPassword) { setPasswordError("Current password is required."); return; }
+    if (!newPassword) { setPasswordError("New password is required."); return; }
+    if (!confirmPassword) { setPasswordError("Please confirm your new password."); return; }
+    if (newPassword.length < 8) { setPasswordError("New password must be at least 8 characters."); return; }
+    if (!/[A-Z]/.test(newPassword)) { setPasswordError("Password must contain at least one uppercase letter."); return; }
+    if (!/[a-z]/.test(newPassword)) { setPasswordError("Password must contain at least one lowercase letter."); return; }
+    if (!/[0-9]/.test(newPassword)) { setPasswordError("Password must contain at least one number."); return; }
+    if (!/[^A-Za-z0-9]/.test(newPassword)) { setPasswordError("Password must contain at least one special character."); return; }
+    if (newPassword !== confirmPassword) { setPasswordError("New passwords do not match."); return; }
 
     changePassword.mutate(
       { oldPassword, newPassword },
@@ -77,11 +84,6 @@ export default function ProfilePage() {
   };
 
   if (!user) return null;
-
-  const profileChanged =
-    firstName.trim() !== user.firstName ||
-    lastName.trim() !== user.lastName ||
-    email.trim() !== user.email;
 
   return (
     <div className="flex flex-col h-[calc(100vh-var(--header-height))]">
@@ -128,8 +130,8 @@ export default function ProfilePage() {
             <Alert variant="success">Profile updated successfully</Alert>
           )}
 
-          {updateProfile.isError && (
-            <Alert variant="error">Failed to update profile</Alert>
+          {(updateProfile.isError || profileError) && (
+            <Alert variant="error">{profileError || "Failed to update profile"}</Alert>
           )}
 
           <div className="grid grid-cols-2 gap-3">
@@ -169,7 +171,7 @@ export default function ProfilePage() {
 
           <Button
             onClick={handleProfileSave}
-            disabled={!profileChanged || updateProfile.isPending}
+            disabled={updateProfile.isPending}
             loading={updateProfile.isPending}
             size="sm"
           >

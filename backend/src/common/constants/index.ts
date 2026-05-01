@@ -77,6 +77,8 @@ export const QUEUE_NAMES = {
   SEQUENCE_SEND_STEP: 'sequence-send-step',
   // Developer API queues
   DEVELOPER_WEBHOOK_DELIVER: 'developer-webhook-deliver',
+  // Shopify integration queues
+  PROCESS_SHOPIFY_WEBHOOK: 'process-shopify-webhook',
 } as const;
 
 export const EVENT_NAMES = {

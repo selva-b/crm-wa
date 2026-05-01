@@ -1,13 +1,30 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import {
+  ReactFlow,
+  ReactFlowProvider,
+  Background,
+  Controls,
+  MiniMap,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  Handle,
+  Position,
+  BackgroundVariant,
+  type Node,
+  type Edge,
+  type Connection,
+  type NodeProps,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import {
   ArrowLeft,
   Save,
   Play,
   Pause,
-  Plus,
   MessageSquare,
   HelpCircle,
   GitBranch,
@@ -25,6 +42,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import {
@@ -40,24 +58,506 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import type { ChatbotNode, ChatbotNodeType } from "@/lib/types/chatbot";
+import type { ChatbotNodeType } from "@/lib/types/chatbot";
 
-const NODE_TYPES: { type: ChatbotNodeType; label: string; icon: typeof MessageSquare; color: string }[] = [
-  { type: "SEND_MESSAGE", label: "Send Message", icon: MessageSquare, color: "#6366f1" },
-  { type: "ASK_QUESTION", label: "Ask Question", icon: HelpCircle, color: "#3b82f6" },
-  { type: "CONDITION", label: "Condition", icon: GitBranch, color: "#f59e0b" },
-  { type: "DELAY", label: "Delay", icon: Clock, color: "#8b5cf6" },
-  { type: "ASSIGN_AGENT", label: "Assign Agent", icon: UserPlus, color: "#22c55e" },
-  { type: "SET_TAG", label: "Set Tag", icon: Tag, color: "#ec4899" },
-  { type: "API_CALL", label: "API Call", icon: Globe, color: "#06b6d4" },
-  { type: "AI_REPLY", label: "AI Reply", icon: Sparkles, color: "#f97316" },
-];
+// ─── Node type metadata ───────────────────────────────────────────────────────
 
-interface CanvasNode extends ChatbotNode {
-  // Extended for canvas rendering
+const NODE_META: Record<ChatbotNodeType, { label: string; icon: React.ElementType; color: string; bg: string }> = {
+  SEND_MESSAGE: { label: "Send Message", icon: MessageSquare, color: "#6366f1", bg: "#6366f115" },
+  ASK_QUESTION: { label: "Ask Question", icon: HelpCircle, color: "#3b82f6", bg: "#3b82f615" },
+  CONDITION:    { label: "Condition",    icon: GitBranch,   color: "#f59e0b", bg: "#f59e0b15" },
+  DELAY:        { label: "Delay",        icon: Clock,       color: "#8b5cf6", bg: "#8b5cf615" },
+  ASSIGN_AGENT: { label: "Assign Agent", icon: UserPlus,    color: "#22c55e", bg: "#22c55e15" },
+  SET_TAG:      { label: "Set Tag",      icon: Tag,         color: "#ec4899", bg: "#ec489915" },
+  API_CALL:     { label: "API Call",     icon: Globe,       color: "#06b6d4", bg: "#06b6d415" },
+  AI_REPLY:     { label: "AI Reply",     icon: Sparkles,    color: "#f97316", bg: "#f9731615" },
+};
+
+const NODE_TYPE_LIST = Object.entries(NODE_META) as [ChatbotNodeType, typeof NODE_META[ChatbotNodeType]][];
+
+// ─── Default data per type ───────────────────────────────────────────────────
+
+function defaultData(type: ChatbotNodeType): Record<string, unknown> {
+  switch (type) {
+    case "SEND_MESSAGE":  return { message: "" };
+    case "ASK_QUESTION":  return { question: "", variableName: "" };
+    case "CONDITION":     return { field: "", operator: "equals", value: "" };
+    case "DELAY":         return { seconds: 5 };
+    case "ASSIGN_AGENT":  return { strategy: "round_robin" };
+    case "SET_TAG":       return { tagName: "" };
+    case "API_CALL":      return { url: "", method: "GET", headers: {} };
+    case "AI_REPLY":      return { systemPrompt: "You are a helpful customer support agent. Be concise and friendly.", maxTokens: 500 };
+    default:              return {};
+  }
 }
 
-export default function ChatbotEditorPage() {
+// ─── Node preview text ────────────────────────────────────────────────────────
+
+function nodePreview(type: ChatbotNodeType, data: Record<string, unknown>): string {
+  switch (type) {
+    case "SEND_MESSAGE":  return String(data.message || "").slice(0, 60) || "No message set";
+    case "ASK_QUESTION":  return String(data.question || "").slice(0, 60) || "No question set";
+    case "CONDITION":     return data.field ? `If ${data.field} ${data.operator} "${data.value}"` : "Not configured";
+    case "DELAY":         return `Wait ${data.seconds ?? 5}s`;
+    case "ASSIGN_AGENT":  return `Strategy: ${data.strategy ?? "round_robin"}`;
+    case "SET_TAG":       return String(data.tagName || "") || "No tag set";
+    case "API_CALL":      return String(data.url || "").slice(0, 50) || "No URL set";
+    case "AI_REPLY":      return String(data.systemPrompt || "").slice(0, 60) || "AI reply";
+    default:              return "";
+  }
+}
+
+// ─── Custom Node Component ────────────────────────────────────────────────────
+
+interface FlowNodeData {
+  nodeType: ChatbotNodeType;
+  nodeData: Record<string, unknown>;
+  selected: boolean;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
+  [key: string]: unknown;
+}
+
+function FlowNode({ id, data, selected }: NodeProps) {
+  const d = data as FlowNodeData;
+  const meta = NODE_META[d.nodeType];
+  if (!meta) return null;
+  const Icon = meta.icon;
+  const preview = nodePreview(d.nodeType, d.nodeData);
+
+  return (
+    <div
+      onClick={() => d.onSelect(id)}
+      className="relative cursor-pointer"
+      style={{ minWidth: 200 }}
+    >
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="!w-3 !h-3 !border-2 !bg-white"
+        style={{ borderColor: meta.color }}
+      />
+
+      <div
+        className="rounded-xl border-2 transition-all shadow-sm"
+        style={{
+          borderColor: selected ? meta.color : "rgba(0,0,0,0.08)",
+          backgroundColor: "#ffffff",
+          boxShadow: selected ? `0 0 0 3px ${meta.color}30` : "0 1px 4px rgba(0,0,0,0.06)",
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-t-xl"
+          style={{ backgroundColor: meta.bg }}
+        >
+          <div
+            className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+            style={{ backgroundColor: meta.color + "25" }}
+          >
+            <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
+          </div>
+          <span className="text-[12px] font-semibold flex-1" style={{ color: meta.color }}>
+            {meta.label}
+          </span>
+          <button
+            onMouseDown={(e) => { e.stopPropagation(); d.onDelete(id); }}
+            className="p-0.5 rounded hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+            style={{ color: "#ef4444" }}
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+
+        {/* Preview */}
+        <div className="px-3 py-2">
+          <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">
+            {preview}
+          </p>
+        </div>
+      </div>
+
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!w-3 !h-3 !border-2 !bg-white"
+        style={{ borderColor: meta.color }}
+      />
+
+      {/* Condition node has two outputs */}
+      {d.nodeType === "CONDITION" && (
+        <>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="false"
+            className="!w-3 !h-3 !border-2 !bg-white"
+            style={{ borderColor: "#ef4444", top: "60%" }}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+const nodeTypes = { chatbotNode: FlowNode };
+
+// ─── Left Panel ───────────────────────────────────────────────────────────────
+
+interface LeftPanelProps {
+  triggerType: string;
+  setTriggerType: (v: string) => void;
+  triggerValue: string;
+  setTriggerValue: (v: string) => void;
+  aiEnabled: boolean;
+  setAiEnabled: (v: boolean) => void;
+  aiSystemPrompt: string;
+  setAiSystemPrompt: (v: string) => void;
+  useKnowledgeBase: boolean;
+  setUseKnowledgeBase: (v: boolean) => void;
+  selectedProductIds: string[];
+  setSelectedProductIds: (v: string[]) => void;
+  flowId: string;
+  onAddNode: (type: ChatbotNodeType) => void;
+}
+
+function LeftPanel({
+  triggerType, setTriggerType,
+  triggerValue, setTriggerValue,
+  aiEnabled, setAiEnabled,
+  aiSystemPrompt, setAiSystemPrompt,
+  useKnowledgeBase, setUseKnowledgeBase,
+  selectedProductIds, setSelectedProductIds,
+  flowId, onAddNode,
+}: LeftPanelProps) {
+  const { data: documents } = useKbDocuments(flowId);
+  const uploadDoc = useUploadDocument();
+  const deleteDoc = useDeleteDocument();
+  const { data: availableProducts } = useProducts();
+
+  return (
+    <div className="w-[220px] shrink-0 border-r border-black/[0.06] bg-white flex flex-col overflow-y-auto">
+      <div className="p-3 space-y-4">
+        {/* Trigger */}
+        <section className="space-y-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Trigger</p>
+          <select
+            value={triggerType}
+            onChange={(e) => setTriggerType(e.target.value)}
+            className="w-full px-2.5 py-1.5 rounded-lg border border-black/10 text-[12px] text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="KEYWORD">Keyword Match</option>
+            <option value="FIRST_MESSAGE">First Message</option>
+            <option value="BUTTON_REPLY">Button Reply</option>
+          </select>
+          {triggerType === "KEYWORD" && (
+            <input
+              value={triggerValue}
+              onChange={(e) => setTriggerValue(e.target.value)}
+              placeholder="e.g. hello, hi, start"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-black/10 text-[12px] text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          )}
+        </section>
+
+        {/* AI Toggle */}
+        <section className="border-t border-black/[0.06] pt-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Bot className="h-3.5 w-3.5 text-primary" />
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">AI Mode</p>
+            </div>
+            <button
+              onClick={() => setAiEnabled(!aiEnabled)}
+              className={`relative w-9 h-5 rounded-full transition-colors ${aiEnabled ? "bg-primary" : "bg-gray-200"}`}
+            >
+              <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${aiEnabled ? "translate-x-4" : "translate-x-0.5"}`} />
+            </button>
+          </div>
+          {aiEnabled && (
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-gray-500">System Prompt</label>
+              <textarea
+                value={aiSystemPrompt}
+                onChange={(e) => setAiSystemPrompt(e.target.value)}
+                rows={4}
+                placeholder="You are a helpful customer support agent for [Company]. Be concise and friendly."
+                className="w-full px-2.5 py-2 rounded-lg border border-black/10 bg-gray-50 text-[11px] text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          )}
+        </section>
+
+        {/* Product scope */}
+        {aiEnabled && availableProducts && availableProducts.filter((p) => p.status === "ACTIVE").length > 0 && (
+          <section className="border-t border-black/[0.06] pt-3 space-y-2">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Product Scope</p>
+            <p className="text-[10px] text-gray-400">Leave empty for all products</p>
+            {availableProducts.filter((p) => p.status === "ACTIVE").map((p) => (
+              <label key={p.id} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedProductIds.includes(p.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) setSelectedProductIds([...selectedProductIds, p.id]);
+                    else setSelectedProductIds(selectedProductIds.filter((id) => id !== p.id));
+                  }}
+                  className="rounded h-3.5 w-3.5"
+                />
+                <span className="text-[12px] text-gray-700">{p.name}</span>
+              </label>
+            ))}
+          </section>
+        )}
+
+        {/* Knowledge Base */}
+        {aiEnabled && (
+          <section className="border-t border-black/[0.06] pt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <BookOpen className="h-3.5 w-3.5 text-primary" />
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Product Docs</p>
+              </div>
+              <button
+                onClick={() => setUseKnowledgeBase(!useKnowledgeBase)}
+                className={`relative w-9 h-5 rounded-full transition-colors ${useKnowledgeBase ? "bg-primary" : "bg-gray-200"}`}
+              >
+                <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${useKnowledgeBase ? "translate-x-4" : "translate-x-0.5"}`} />
+              </button>
+            </div>
+            {useKnowledgeBase && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-200 hover:border-primary/40 cursor-pointer transition-colors">
+                  <Upload className="h-3.5 w-3.5 text-gray-400" />
+                  <span className="text-[11px] text-gray-500">
+                    {uploadDoc.isPending ? "Uploading..." : "Upload PDF / TXT"}
+                  </span>
+                  <input type="file" accept=".pdf,.txt,.csv,.md" className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) { uploadDoc.mutate({ file, flowId }); e.target.value = ""; }
+                    }}
+                  />
+                </label>
+                {documents && documents.length > 0 && (
+                  <div className="space-y-1">
+                    {documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gray-50 text-[11px]">
+                        <FileText className="h-3 w-3 shrink-0 text-gray-400" />
+                        <span className="flex-1 truncate text-gray-700">{doc.title}</span>
+                        {doc.status === "READY"      && <CheckCircle2 className="h-3 w-3 text-green-500 shrink-0" />}
+                        {doc.status === "PROCESSING" && <Loader2 className="h-3 w-3 text-yellow-500 shrink-0 animate-spin" />}
+                        {doc.status === "FAILED"     && <AlertTriangle className="h-3 w-3 text-red-400 shrink-0" />}
+                        <button onClick={() => deleteDoc.mutate(doc.id)} className="p-0.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors shrink-0">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Node palette */}
+        {!aiEnabled && (
+          <section className="border-t border-black/[0.06] pt-3 space-y-1.5">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Add Node</p>
+            <p className="text-[10px] text-gray-400 mb-2">Drag onto canvas or click to add</p>
+            {NODE_TYPE_LIST.map(([type, meta]) => {
+              const Icon = meta.icon;
+              return (
+                <button
+                  key={type}
+                  onClick={() => onAddNode(type)}
+                  draggable
+                  onDragStart={(e) => e.dataTransfer.setData("nodeType", type)}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-left group cursor-grab active:cursor-grabbing"
+                >
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: meta.bg }}>
+                    <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
+                  </div>
+                  <span className="text-[12px] font-medium text-gray-700">{meta.label}</span>
+                </button>
+              );
+            })}
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Right config panel ───────────────────────────────────────────────────────
+
+interface RightPanelProps {
+  nodeId: string;
+  nodeType: ChatbotNodeType;
+  nodeData: Record<string, unknown>;
+  allNodes: Node[];
+  onUpdate: (id: string, data: Record<string, unknown>) => void;
+  onClose: () => void;
+}
+
+function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPanelProps) {
+  const meta = NODE_META[nodeType];
+
+  function field(label: string, children: React.ReactNode) {
+    return (
+      <div className="space-y-1.5">
+        <label className="text-[12px] font-medium text-gray-600">{label}</label>
+        {children}
+      </div>
+    );
+  }
+
+  const inputCls = "w-full px-3 py-2 rounded-lg border border-black/10 text-[12px] text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20";
+  const textareaCls = `${inputCls} resize-none`;
+
+  return (
+    <div className="w-[270px] shrink-0 border-l border-black/[0.06] bg-white flex flex-col overflow-y-auto">
+      {/* Header */}
+      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/[0.06]" style={{ borderBottom: `2px solid ${meta.color}20` }}>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: meta.bg }}>
+            <meta.icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
+          </div>
+          <span className="text-[13px] font-semibold text-gray-800">{meta.label}</span>
+        </div>
+        <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {nodeType === "SEND_MESSAGE" && (
+          field("Message", (
+            <>
+              <textarea
+                value={String(nodeData.message ?? "")}
+                onChange={(e) => onUpdate(nodeId, { message: e.target.value })}
+                rows={5}
+                placeholder="Type your message here..."
+                className={textareaCls}
+              />
+              <p className="text-[10px] text-gray-400">Use {"{{contact.name}}"} for personalization</p>
+            </>
+          ))
+        )}
+
+        {nodeType === "ASK_QUESTION" && (
+          <>
+            {field("Question", (
+              <textarea
+                value={String(nodeData.question ?? "")}
+                onChange={(e) => onUpdate(nodeId, { question: e.target.value })}
+                rows={3}
+                placeholder="Ask the user something..."
+                className={textareaCls}
+              />
+            ))}
+            {field("Save answer to variable", (
+              <input
+                value={String(nodeData.variableName ?? "")}
+                onChange={(e) => onUpdate(nodeId, { variableName: e.target.value })}
+                placeholder="e.g. customer_name"
+                className={inputCls}
+              />
+            ))}
+          </>
+        )}
+
+        {nodeType === "CONDITION" && (
+          <>
+            {field("Variable", (
+              <input value={String(nodeData.field ?? "")} onChange={(e) => onUpdate(nodeId, { field: e.target.value })} placeholder="e.g. last_reply" className={inputCls} />
+            ))}
+            {field("Operator", (
+              <select value={String(nodeData.operator ?? "equals")} onChange={(e) => onUpdate(nodeId, { operator: e.target.value })} className={inputCls}>
+                <option value="equals">Equals</option>
+                <option value="contains">Contains</option>
+                <option value="not_equals">Not Equals</option>
+              </select>
+            ))}
+            {field("Value", (
+              <input value={String(nodeData.value ?? "")} onChange={(e) => onUpdate(nodeId, { value: e.target.value })} placeholder="Expected value" className={inputCls} />
+            ))}
+            <div className="rounded-lg bg-amber-50 border border-amber-100 p-3 text-[11px] text-amber-700 space-y-1">
+              <p className="font-medium">Two outputs:</p>
+              <p>• Bottom handle → True (condition met)</p>
+              <p>• Right handle → False (condition not met)</p>
+            </div>
+          </>
+        )}
+
+        {nodeType === "DELAY" && (
+          field("Delay (seconds)", (
+            <input
+              type="number"
+              value={String(nodeData.seconds ?? 5)}
+              onChange={(e) => onUpdate(nodeId, { seconds: parseInt(e.target.value) || 1 })}
+              min={1}
+              className={inputCls}
+            />
+          ))
+        )}
+
+        {nodeType === "ASSIGN_AGENT" && (
+          field("Assignment Strategy", (
+            <select value={String(nodeData.strategy ?? "round_robin")} onChange={(e) => onUpdate(nodeId, { strategy: e.target.value })} className={inputCls}>
+              <option value="round_robin">Round Robin</option>
+            </select>
+          ))
+        )}
+
+        {nodeType === "SET_TAG" && (
+          field("Tag Name", (
+            <input value={String(nodeData.tagName ?? "")} onChange={(e) => onUpdate(nodeId, { tagName: e.target.value })} placeholder="e.g. hot-lead, interested" className={inputCls} />
+          ))
+        )}
+
+        {nodeType === "API_CALL" && (
+          <>
+            {field("URL", (
+              <input value={String(nodeData.url ?? "")} onChange={(e) => onUpdate(nodeId, { url: e.target.value })} placeholder="https://api.example.com/webhook" className={inputCls} />
+            ))}
+            {field("Method", (
+              <select value={String(nodeData.method ?? "GET")} onChange={(e) => onUpdate(nodeId, { method: e.target.value })} className={inputCls}>
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+              </select>
+            ))}
+            {field("Save response as", (
+              <input value={String(nodeData.saveAs ?? "")} onChange={(e) => onUpdate(nodeId, { saveAs: e.target.value })} placeholder="e.g. api_result (optional)" className={inputCls} />
+            ))}
+          </>
+        )}
+
+        {nodeType === "AI_REPLY" && (
+          <>
+            {field("System Prompt", (
+              <textarea
+                value={String(nodeData.systemPrompt ?? "")}
+                onChange={(e) => onUpdate(nodeId, { systemPrompt: e.target.value })}
+                rows={5}
+                placeholder="You are a helpful support agent..."
+                className={textareaCls}
+              />
+            ))}
+            {field("Max Tokens", (
+              <input type="number" value={String(nodeData.maxTokens ?? 500)} onChange={(e) => onUpdate(nodeId, { maxTokens: parseInt(e.target.value) || 500 })} className={inputCls} />
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Editor (inner, needs ReactFlow context) ─────────────────────────────
+
+function ChatbotEditorInner() {
   const params = useParams();
   const router = useRouter();
   const flowId = params.id as string;
@@ -70,8 +570,13 @@ export default function ChatbotEditorPage() {
   const activateFlow = useActivateChatbotFlow();
   const deactivateFlow = useDeactivateChatbotFlow();
 
-  const [nodes, setNodes] = useState<CanvasNode[]>([]);
+  // ReactFlow state
+  const [rfNodes, setRfNodes, onNodesChange] = useNodesState<Node>([]);
+  const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  // Flow meta state
   const [flowName, setFlowName] = useState("");
   const [triggerType, setTriggerType] = useState("KEYWORD");
   const [triggerValue, setTriggerValue] = useState("");
@@ -81,72 +586,184 @@ export default function ChatbotEditorPage() {
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
 
-  // Document hooks
-  const { data: documents } = useKbDocuments(flowId);
-  const uploadDoc = useUploadDocument();
-  const deleteDoc = useDeleteDocument();
-  const { data: availableProducts } = useProducts();
-
-  // Initialize from flow data
-  if (flow && !initialized) {
-    setNodes(flow.nodes as CanvasNode[]);
+  // Initialize from API
+  useEffect(() => {
+    if (!flow || initialized) return;
     setFlowName(flow.name);
     setTriggerType(flow.trigger.type);
     setTriggerValue(flow.trigger.value || "");
     setAiEnabled(flow.aiEnabled ?? false);
     setAiSystemPrompt(flow.aiSystemPrompt ?? "");
     setUseKnowledgeBase(flow.useKnowledgeBase ?? false);
-    setSelectedProductIds((flow as any).productIds ?? []);
+    setSelectedProductIds((flow as Record<string, unknown>).productIds as string[] ?? []);
+
+    // Convert backend nodes → ReactFlow nodes + edges
+    const nodes: Node[] = flow.nodes.map((n) => ({
+      id: n.id,
+      type: "chatbotNode",
+      position: n.position,
+      data: {
+        nodeType: n.type,
+        nodeData: n.data,
+        selected: false,
+        onSelect: () => {},
+        onDelete: () => {},
+      },
+    }));
+
+    const edges: Edge[] = [];
+    flow.nodes.forEach((n) => {
+      n.nextNodes.forEach((nn, i) => {
+        edges.push({
+          id: `${n.id}-${nn.nodeId}-${i}`,
+          source: n.id,
+          target: nn.nodeId,
+          sourceHandle: nn.condition === "false" ? "false" : undefined,
+          label: nn.condition ? nn.condition : undefined,
+          type: "smoothstep",
+          style: { stroke: "#6b7280", strokeWidth: 2 },
+          labelStyle: { fontSize: 10, fill: "#6b7280" },
+          animated: false,
+        });
+      });
+    });
+
+    setRfNodes(nodes);
+    setRfEdges(edges);
     setInitialized(true);
-  }
+  }, [flow, initialized, setRfNodes, setRfEdges]);
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId);
-
-  const addNode = useCallback((type: ChatbotNodeType) => {
-    const newNode: CanvasNode = {
-      id: crypto.randomUUID(),
-      flowId,
-      type,
-      data: getDefaultData(type),
-      position: { x: 250, y: (nodes.length + 1) * 120 },
-      nextNodes: [],
-    };
-    setNodes((prev) => [...prev, newNode]);
-    setSelectedNodeId(newNode.id);
-  }, [nodes.length, flowId]);
-
-  const updateNodeData = useCallback((nodeId: string, data: Record<string, unknown>) => {
-    setNodes((prev) => prev.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n)));
+  // Keep callbacks fresh in node data after nodes change
+  const handleSelectNode = useCallback((id: string) => {
+    setSelectedNodeId((prev) => (prev === id ? null : id));
   }, []);
 
-  const deleteNode = useCallback((nodeId: string) => {
-    setNodes((prev) => prev.filter((n) => n.id !== nodeId));
-    if (selectedNodeId === nodeId) setSelectedNodeId(null);
-  }, [selectedNodeId]);
+  const handleDeleteNode = useCallback((id: string) => {
+    setRfNodes((nds) => nds.filter((n) => n.id !== id));
+    setRfEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
+    setSelectedNodeId((prev) => (prev === id ? null : prev));
+  }, [setRfNodes, setRfEdges]);
 
-  const connectNodes = useCallback((fromId: string, toId: string, condition?: string) => {
-    setNodes((prev) =>
-      prev.map((n) =>
-        n.id === fromId
-          ? { ...n, nextNodes: [...n.nextNodes.filter((nn) => nn.nodeId !== toId), { nodeId: toId, condition }] }
+  // Re-inject callbacks into node data so they're always fresh
+  useEffect(() => {
+    setRfNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          selected: n.id === selectedNodeId,
+          onSelect: handleSelectNode,
+          onDelete: handleDeleteNode,
+        },
+      }))
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNodeId, handleSelectNode, handleDeleteNode]);
+
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      setRfEdges((eds) =>
+        addEdge({
+          ...connection,
+          type: "smoothstep",
+          style: { stroke: "#6b7280", strokeWidth: 2 },
+          animated: false,
+        }, eds)
+      );
+    },
+    [setRfEdges],
+  );
+
+  const addNodeToCanvas = useCallback((type: ChatbotNodeType) => {
+    const id = crypto.randomUUID();
+    const newNode: Node = {
+      id,
+      type: "chatbotNode",
+      position: { x: 300 + Math.random() * 100, y: 100 + rfNodes.length * 140 },
+      data: {
+        nodeType: type,
+        nodeData: defaultData(type),
+        selected: false,
+        onSelect: handleSelectNode,
+        onDelete: handleDeleteNode,
+      },
+    };
+    setRfNodes((nds) => [...nds, newNode]);
+    setSelectedNodeId(id);
+  }, [rfNodes.length, handleSelectNode, handleDeleteNode, setRfNodes]);
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const type = e.dataTransfer.getData("nodeType") as ChatbotNodeType;
+      if (!type || !reactFlowWrapper.current) return;
+
+      const bounds = reactFlowWrapper.current.getBoundingClientRect();
+      const position = {
+        x: e.clientX - bounds.left - 100,
+        y: e.clientY - bounds.top - 30,
+      };
+
+      const id = crypto.randomUUID();
+      const newNode: Node = {
+        id,
+        type: "chatbotNode",
+        position,
+        data: {
+          nodeType: type,
+          nodeData: defaultData(type),
+          selected: false,
+          onSelect: handleSelectNode,
+          onDelete: handleDeleteNode,
+        },
+      };
+      setRfNodes((nds) => [...nds, newNode]);
+      setSelectedNodeId(id);
+    },
+    [handleSelectNode, handleDeleteNode, setRfNodes],
+  );
+
+  const updateNodeData = useCallback((nodeId: string, data: Record<string, unknown>) => {
+    setRfNodes((nds) =>
+      nds.map((n) =>
+        n.id === nodeId
+          ? { ...n, data: { ...n.data, nodeData: { ...(n.data.nodeData as Record<string, unknown>), ...data } } }
           : n,
       ),
     );
-  }, []);
+  }, [setRfNodes]);
 
   const handleSave = () => {
-    updateFlow.mutate({ flowId, name: flowName, trigger: { type: triggerType as any, value: triggerValue || undefined }, aiEnabled, aiSystemPrompt: aiSystemPrompt || undefined, useKnowledgeBase, productIds: selectedProductIds.length > 0 ? selectedProductIds : undefined } as any);
-    saveNodes.mutate({
-      flowId,
-      nodes: nodes.map((n) => ({
+    // Convert ReactFlow nodes + edges back to backend format
+    const backendNodes = rfNodes.map((n) => {
+      const d = n.data as FlowNodeData;
+      const outEdges = rfEdges.filter((e) => e.source === n.id);
+      const nextNodes = outEdges.map((e) => ({
+        nodeId: e.target,
+        condition: e.sourceHandle === "false" ? "false" : (e.label ? String(e.label) : undefined),
+      }));
+      return {
         id: n.id,
-        type: n.type,
-        data: n.data,
+        type: d.nodeType,
+        data: d.nodeData,
         position: n.position,
-        nextNodes: n.nextNodes,
-      })),
+        nextNodes,
+      };
     });
+
+    updateFlow.mutate({
+      flowId,
+      name: flowName,
+      trigger: { type: triggerType as "KEYWORD" | "FIRST_MESSAGE" | "BUTTON_REPLY", value: triggerValue || undefined },
+      aiEnabled,
+      aiSystemPrompt: aiSystemPrompt || undefined,
+      useKnowledgeBase,
+    } as Parameters<typeof updateFlow.mutate>[0]);
+
+    saveNodes.mutate({ flowId, nodes: backendNodes });
   };
+
+  const selectedRfNode = rfNodes.find((n) => n.id === selectedNodeId);
 
   if (isLoading) {
     return (
@@ -159,567 +776,183 @@ export default function ChatbotEditorPage() {
   if (!flow) {
     return (
       <div className="flex h-[calc(100vh-var(--header-height))] items-center justify-center">
-        <p className="text-on-surface-variant">Flow not found</p>
+        <p className="text-gray-400 text-[14px]">Flow not found</p>
       </div>
     );
   }
 
+  const isSaving = saveNodes.isPending || updateFlow.isPending;
+
   return (
-    <div className="flex flex-col h-[calc(100vh-var(--header-height))]">
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/10 bg-surface-container/30">
+    <div className="flex flex-col h-[calc(100vh-var(--header-height))] bg-white">
+      {/* ── Top bar ── */}
+      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-black/[0.06] bg-white z-10">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/chatbot")} className="text-on-surface-variant hover:text-on-surface">
+          <button
+            onClick={() => router.push("/chatbot")}
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <Input
+          <input
             value={flowName}
             onChange={(e) => setFlowName(e.target.value)}
-            className="text-[15px] font-semibold border-none bg-transparent px-0 w-[200px]"
+            className="text-[15px] font-semibold text-gray-800 bg-transparent border-none outline-none w-[220px] focus:ring-0"
           />
-          <Badge variant={flow.isActive ? "success" : "muted"}>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${flow.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
             {flow.isActive ? "Active" : "Draft"}
-          </Badge>
+          </span>
+          {aiEnabled && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-600">
+              <Sparkles className="h-3 w-3" />
+              AI Mode
+            </span>
+          )}
         </div>
+
         <div className="flex items-center gap-2">
           {flow.isActive ? (
-            <Button variant="secondary" size="sm" onClick={() => deactivateFlow.mutate(flowId)}>
+            <Button variant="secondary" size="sm" onClick={() => deactivateFlow.mutate(flowId)} disabled={isSaving}>
               <Pause className="h-3.5 w-3.5 mr-1.5" />
               Deactivate
             </Button>
           ) : (
-            <Button variant="secondary" size="sm" onClick={() => activateFlow.mutate(flowId)} className="text-success">
+            <Button variant="secondary" size="sm" onClick={() => activateFlow.mutate(flowId)} disabled={isSaving}>
               <Play className="h-3.5 w-3.5 mr-1.5" />
               Activate
             </Button>
           )}
-          <Button size="sm" onClick={handleSave} disabled={saveNodes.isPending || updateFlow.isPending}>
-            <Save className="h-3.5 w-3.5 mr-1.5" />
+          <Button size="sm" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
             Save
           </Button>
         </div>
       </div>
 
+      {/* ── Body ── */}
       <div className="flex flex-1 min-h-0">
-        {/* Left: Node palette */}
-        <div className="w-[220px] shrink-0 border-r border-outline-variant/10 p-3 space-y-3 overflow-y-auto">
-          {/* Trigger config */}
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Trigger</p>
-            <select
-              value={triggerType}
-              onChange={(e) => setTriggerType(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/10 text-[12px]"
-            >
-              <option value="KEYWORD">Keyword Match</option>
-              <option value="FIRST_MESSAGE">First Message</option>
-              <option value="BUTTON_REPLY">Button Reply</option>
-            </select>
-            {triggerType === "KEYWORD" && (
-              <Input
-                value={triggerValue}
-                onChange={(e) => setTriggerValue(e.target.value)}
-                placeholder="hello, hi, start"
-                className="text-[12px]"
-              />
-            )}
-          </div>
+        {/* Left panel */}
+        <LeftPanel
+          triggerType={triggerType}
+          setTriggerType={setTriggerType}
+          triggerValue={triggerValue}
+          setTriggerValue={setTriggerValue}
+          aiEnabled={aiEnabled}
+          setAiEnabled={setAiEnabled}
+          aiSystemPrompt={aiSystemPrompt}
+          setAiSystemPrompt={setAiSystemPrompt}
+          useKnowledgeBase={useKnowledgeBase}
+          setUseKnowledgeBase={setUseKnowledgeBase}
+          selectedProductIds={selectedProductIds}
+          setSelectedProductIds={setSelectedProductIds}
+          flowId={flowId}
+          onAddNode={addNodeToCanvas}
+        />
 
-          {/* AI Auto-Reply */}
-          <div className="border-t border-outline-variant/10 pt-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Bot className="h-3.5 w-3.5 text-primary" />
-                <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">AI Auto-Reply</p>
-              </div>
-              <button
-                onClick={() => setAiEnabled(!aiEnabled)}
-                className={`relative w-9 h-5 rounded-full transition-colors ${aiEnabled ? "bg-primary" : "bg-outline-variant/30"}`}
-              >
-                <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform ${aiEnabled ? "translate-x-4" : "translate-x-0.5"}`} />
-              </button>
-            </div>
-            {aiEnabled && (
-              <div className="space-y-1.5">
-                <label className="text-[11px] text-on-surface-variant">System Prompt</label>
-                <textarea
-                  value={aiSystemPrompt}
-                  onChange={(e) => setAiSystemPrompt(e.target.value)}
-                  rows={4}
-                  placeholder="You are a helpful customer support agent for [Your Company]. Be concise, friendly, and professional."
-                  className="w-full px-2.5 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-[11px] resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
-                />
-                <p className="text-[10px] text-on-surface-variant/50">
-                  When enabled, AI replies to every incoming message automatically. No nodes needed.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Knowledge Base / Product Documents */}
-          {/* Product Scope */}
-          {aiEnabled && availableProducts && availableProducts.length > 0 && (
-            <div className="border-t border-outline-variant/10 pt-3 space-y-2">
-              <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Product Scope</p>
-              <p className="text-[10px] text-on-surface-variant/50">Select which products this chatbot handles. Leave empty for all.</p>
-              {availableProducts.filter((p) => p.status === "ACTIVE").map((p) => (
-                <label key={p.id} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedProductIds.includes(p.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) setSelectedProductIds([...selectedProductIds, p.id]);
-                      else setSelectedProductIds(selectedProductIds.filter((id) => id !== p.id));
-                    }}
-                    className="rounded border-outline-variant/30 text-primary focus:ring-primary h-3.5 w-3.5"
-                  />
-                  <span className="text-[12px] text-on-surface">{p.name}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          {aiEnabled && (
-            <div className="border-t border-outline-variant/10 pt-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <BookOpen className="h-3.5 w-3.5 text-primary" />
-                  <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Product Docs</p>
-                </div>
-                <button
-                  onClick={() => setUseKnowledgeBase(!useKnowledgeBase)}
-                  className={`relative w-9 h-5 rounded-full transition-colors ${useKnowledgeBase ? "bg-primary" : "bg-outline-variant/30"}`}
-                >
-                  <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white transition-transform ${useKnowledgeBase ? "translate-x-4" : "translate-x-0.5"}`} />
-                </button>
-              </div>
-              {useKnowledgeBase && (
-                <div className="space-y-2">
-                  {/* Upload button */}
-                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-outline-variant/30 hover:border-primary/40 cursor-pointer transition-colors">
-                    <Upload className="h-3.5 w-3.5 text-on-surface-variant" />
-                    <span className="text-[11px] text-on-surface-variant">
-                      {uploadDoc.isPending ? "Uploading..." : "Upload PDF / TXT"}
-                    </span>
-                    <input
-                      type="file"
-                      accept=".pdf,.txt,.csv,.md"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          uploadDoc.mutate({ file, flowId });
-                          e.target.value = "";
-                        }
-                      }}
-                    />
-                  </label>
-
-                  {/* Document list */}
-                  {documents && documents.length > 0 && (
-                    <div className="space-y-1">
-                      {documents.map((doc) => (
-                        <div
-                          key={doc.id}
-                          className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-surface-container/50 text-[11px]"
-                        >
-                          <FileText className="h-3 w-3 shrink-0 text-on-surface-variant" />
-                          <span className="flex-1 truncate text-on-surface">{doc.title}</span>
-                          {doc.status === "READY" && <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />}
-                          {doc.status === "PROCESSING" && <Loader2 className="h-3 w-3 text-warning shrink-0 animate-spin" />}
-                          {doc.status === "FAILED" && <AlertTriangle className="h-3 w-3 text-error shrink-0" />}
-                          <button
-                            onClick={() => deleteDoc.mutate(doc.id)}
-                            className="p-0.5 rounded hover:bg-error/10 text-on-surface-variant/30 hover:text-error transition-colors shrink-0"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="text-[10px] text-on-surface-variant/50">
-                    Upload product docs. AI will use them to answer customer questions.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!aiEnabled && (
-            <div className="border-t border-outline-variant/10 pt-3">
-              <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Add Node</p>
-              <div className="space-y-1.5">
-                {NODE_TYPES.map((nt) => {
-                  const Icon = nt.icon;
-                  return (
-                    <button
-                      key={nt.type}
-                      onClick={() => addNode(nt.type)}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-container transition-colors text-left"
-                    >
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: nt.color + "20" }}>
-                        <Icon className="h-3.5 w-3.5" style={{ color: nt.color }} />
-                      </div>
-                      <span className="text-[12px] font-medium text-on-surface">{nt.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Center: Canvas */}
-        <div className="flex-1 overflow-auto bg-surface-container/20 p-6">
-          {nodes.length === 0 && aiEnabled ? (
+        {/* Canvas */}
+        <div
+          ref={reactFlowWrapper}
+          className="flex-1 min-w-0"
+          style={{ background: "#f8f9fa" }}
+          onDrop={onDrop}
+          onDragOver={(e) => e.preventDefault()}
+        >
+          {aiEnabled ? (
+            /* AI mode — no canvas needed */
             <div className="flex items-center justify-center h-full">
               <div className="max-w-sm text-center space-y-4">
                 <div className="flex justify-center">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-7 w-7 text-primary" />
+                  <div className="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center">
+                    <Sparkles className="h-7 w-7 text-orange-500" />
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-[15px] font-semibold text-on-surface">AI Auto-Reply Mode</h3>
-                  <p className="text-[12px] text-on-surface-variant mt-1.5 leading-relaxed">
-                    This chatbot uses AI to automatically reply to every customer message. No flow nodes needed.
+                  <h3 className="text-[16px] font-semibold text-gray-800">AI Auto-Reply Mode</h3>
+                  <p className="text-[13px] text-gray-500 mt-1.5 leading-relaxed">
+                    AI will reply to every incoming message automatically. No flow nodes needed.
                   </p>
                 </div>
-                <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-4 text-left space-y-2.5">
+                <div className="bg-white rounded-xl border border-black/[0.08] p-4 text-left space-y-2.5">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-[12px] text-on-surface">AI Auto-Reply is ON</span>
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <span className="text-[12px] text-gray-700">AI Auto-Reply is enabled</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {useKnowledgeBase ? (
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                    {aiSystemPrompt.trim() ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                     ) : (
-                      <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+                      <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
                     )}
-                    <span className="text-[12px] text-on-surface">
-                      Product Docs: {useKnowledgeBase ? "Enabled" : "Not enabled — AI will reply without product knowledge"}
+                    <span className="text-[12px] text-gray-700">
+                      {aiSystemPrompt.trim() ? "System prompt configured" : "No system prompt — set one in the left panel"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {documents && documents.length > 0 ? (
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                    ) : (
-                      <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
-                    )}
-                    <span className="text-[12px] text-on-surface">
-                      {documents && documents.length > 0
-                        ? `${documents.length} document${documents.length > 1 ? "s" : ""} uploaded`
-                        : "No documents — upload product PDFs in the left panel"}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-[11px] text-on-surface-variant/50 space-y-1">
-                  <p>1. Upload product docs (left panel) → 2. Save → 3. Activate</p>
-                  <p>Customers will get AI replies based on your product knowledge.</p>
                 </div>
               </div>
-            </div>
-          ) : nodes.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-on-surface-variant/40 text-[13px]">
-              Add nodes from the left panel to build your flow
             </div>
           ) : (
-            <div className="space-y-3">
-              {/* Trigger indicator */}
-              <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-[12px] text-primary font-medium">
-                <Play className="h-3.5 w-3.5" />
-                Trigger: {triggerType === "KEYWORD" ? `"${triggerValue}"` : triggerType.replace("_", " ")}
-              </div>
+            <ReactFlow
+              nodes={rfNodes}
+              edges={rfEdges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              nodeTypes={nodeTypes}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              minZoom={0.3}
+              maxZoom={2}
+              defaultEdgeOptions={{
+                type: "smoothstep",
+                style: { stroke: "#9ca3af", strokeWidth: 2 },
+              }}
+              proOptions={{ hideAttribution: true }}
+            >
+              <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e7eb" />
+              <Controls className="[&>button]:border-black/10 [&>button]:bg-white [&>button]:text-gray-600 [&>button:hover]:bg-gray-50" />
+              <MiniMap
+                nodeColor={(n) => {
+                  const d = n.data as FlowNodeData;
+                  return d ? (NODE_META[d.nodeType]?.color ?? "#6b7280") : "#6b7280";
+                }}
+                className="!bg-white !border !border-black/[0.08] !rounded-xl"
+              />
 
-              {/* Nodes */}
-              {nodes.map((node, idx) => {
-                const nodeType = NODE_TYPES.find((nt) => nt.type === node.type);
-                const Icon = nodeType?.icon || MessageSquare;
-                const isSelected = selectedNodeId === node.id;
-
-                return (
-                  <div key={node.id}>
-                    {idx > 0 && (
-                      <div className="flex items-center justify-center py-1">
-                        <div className="w-px h-6 bg-outline-variant/30" />
-                      </div>
-                    )}
-                    <div
-                      onClick={() => setSelectedNodeId(isSelected ? null : node.id)}
-                      className={`relative w-[320px] rounded-xl border p-3.5 cursor-pointer transition-all ${
-                        isSelected
-                          ? "border-primary shadow-md bg-surface-container-lowest"
-                          : "border-outline-variant/10 bg-surface-container-lowest hover:border-outline-variant/30"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <div
-                          className="w-7 h-7 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: (nodeType?.color || "#6b7280") + "15" }}
-                        >
-                          <Icon className="h-4 w-4" style={{ color: nodeType?.color || "#6b7280" }} />
-                        </div>
-                        <span className="text-[13px] font-semibold text-on-surface">{nodeType?.label || node.type}</span>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }}
-                          className="ml-auto p-1 rounded text-on-surface-variant/30 hover:text-error transition-colors"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-
-                      {/* Node data preview */}
-                      {!!node.data.message && (
-                        <p className="text-[12px] text-on-surface-variant line-clamp-2">
-                          {String(node.data.message)}
-                        </p>
-                      )}
-                      {!!node.data.question && (
-                        <p className="text-[12px] text-on-surface-variant line-clamp-2">
-                          Q: {String(node.data.question)}
-                        </p>
-                      )}
-                      {node.type === "DELAY" && !!node.data.seconds && (
-                        <p className="text-[12px] text-on-surface-variant">
-                          Wait {String(node.data.seconds)}s
-                        </p>
-                      )}
-                      {node.type === "AI_REPLY" && (
-                        <p className="text-[12px] text-on-surface-variant line-clamp-2">
-                          <Sparkles className="inline h-3 w-3 mr-1" />
-                          {node.data.systemPrompt ? String(node.data.systemPrompt).slice(0, 60) + "..." : "AI-generated reply"}
-                        </p>
-                      )}
-                      {node.type === "CONDITION" && !!node.data.field && (
-                        <p className="text-[12px] text-on-surface-variant">
-                          If {String(node.data.field)} {String(node.data.operator)} {String(node.data.value)}
-                        </p>
-                      )}
-
-                      {/* Connection points */}
-                      {node.nextNodes.length > 0 && (
-                        <div className="mt-2 flex gap-1 flex-wrap">
-                          {node.nextNodes.map((nn) => (
-                            <Badge key={nn.nodeId} variant="muted" className="text-[9px]">
-                              {nn.condition ? `${nn.condition} →` : "→"} {nodes.find((n) => n.id === nn.nodeId)?.type || "?"}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+              {/* Empty canvas hint */}
+              {rfNodes.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-center space-y-2">
+                    <p className="text-[15px] text-gray-400 font-medium">Drag nodes here or click from the left panel</p>
+                    <p className="text-[12px] text-gray-300">Connect nodes by dragging from the bottom handle to the top handle of another node</p>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              )}
+            </ReactFlow>
           )}
         </div>
 
-        {/* Right: Node config panel */}
-        {selectedNode && !aiEnabled && (
-          <div className="w-[280px] shrink-0 border-l border-outline-variant/10 p-4 overflow-y-auto space-y-4">
-            <h3 className="text-[14px] font-semibold text-on-surface">
-              {NODE_TYPES.find((nt) => nt.type === selectedNode.type)?.label}
-            </h3>
-
-            {(selectedNode.type === "SEND_MESSAGE") && (
-              <div className="space-y-1.5">
-                <label className="text-[12px] font-medium text-on-surface-variant">Message</label>
-                <textarea
-                  value={String(selectedNode.data.message || "")}
-                  onChange={(e) => updateNodeData(selectedNode.id, { message: e.target.value })}
-                  rows={4}
-                  className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-[13px] resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  placeholder="Type message..."
-                />
-                <p className="text-[10px] text-on-surface-variant/50">
-                  Use {"{{contact.name}}"} for variables
-                </p>
-              </div>
-            )}
-
-            {selectedNode.type === "ASK_QUESTION" && (
-              <>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-on-surface-variant">Question</label>
-                  <textarea
-                    value={String(selectedNode.data.question || "")}
-                    onChange={(e) => updateNodeData(selectedNode.id, { question: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-[13px] resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    placeholder="Ask a question..."
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-on-surface-variant">Save answer as</label>
-                  <Input
-                    value={String(selectedNode.data.variableName || "")}
-                    onChange={(e) => updateNodeData(selectedNode.id, { variableName: e.target.value })}
-                    placeholder="e.g. customer_name"
-                    className="text-[12px]"
-                  />
-                </div>
-              </>
-            )}
-
-            {selectedNode.type === "CONDITION" && (
-              <>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-on-surface-variant">Variable</label>
-                  <Input
-                    value={String(selectedNode.data.field || "")}
-                    onChange={(e) => updateNodeData(selectedNode.id, { field: e.target.value })}
-                    placeholder="e.g. last_reply"
-                    className="text-[12px]"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-on-surface-variant">Operator</label>
-                  <select
-                    value={String(selectedNode.data.operator || "equals")}
-                    onChange={(e) => updateNodeData(selectedNode.id, { operator: e.target.value })}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/10 text-[12px]"
-                  >
-                    <option value="equals">Equals</option>
-                    <option value="contains">Contains</option>
-                    <option value="not_equals">Not Equals</option>
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-on-surface-variant">Value</label>
-                  <Input
-                    value={String(selectedNode.data.value || "")}
-                    onChange={(e) => updateNodeData(selectedNode.id, { value: e.target.value })}
-                    placeholder="Expected value"
-                    className="text-[12px]"
-                  />
-                </div>
-              </>
-            )}
-
-            {selectedNode.type === "DELAY" && (
-              <div className="space-y-1.5">
-                <label className="text-[12px] font-medium text-on-surface-variant">Delay (seconds)</label>
-                <Input
-                  type="number"
-                  value={String(selectedNode.data.seconds || "5")}
-                  onChange={(e) => updateNodeData(selectedNode.id, { seconds: parseInt(e.target.value) })}
-                  className="text-[12px]"
-                />
-              </div>
-            )}
-
-            {selectedNode.type === "SET_TAG" && (
-              <div className="space-y-1.5">
-                <label className="text-[12px] font-medium text-on-surface-variant">Tag Name</label>
-                <Input
-                  value={String(selectedNode.data.tagName || "")}
-                  onChange={(e) => updateNodeData(selectedNode.id, { tagName: e.target.value })}
-                  placeholder="e.g. hot-lead"
-                  className="text-[12px]"
-                />
-              </div>
-            )}
-
-            {selectedNode.type === "API_CALL" && (
-              <>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-on-surface-variant">URL</label>
-                  <Input
-                    value={String(selectedNode.data.url || "")}
-                    onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })}
-                    placeholder="https://api.example.com/..."
-                    className="text-[12px]"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-on-surface-variant">Method</label>
-                  <select
-                    value={String(selectedNode.data.method || "GET")}
-                    onChange={(e) => updateNodeData(selectedNode.id, { method: e.target.value })}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/10 text-[12px]"
-                  >
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                  </select>
-                </div>
-              </>
-            )}
-
-            {selectedNode.type === "AI_REPLY" && (
-              <>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-on-surface-variant">System Prompt</label>
-                  <textarea
-                    value={String(selectedNode.data.systemPrompt || "")}
-                    onChange={(e) => updateNodeData(selectedNode.id, { systemPrompt: e.target.value })}
-                    rows={4}
-                    className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-[13px] resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
-                    placeholder="You are a helpful support agent..."
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-medium text-on-surface-variant">Max Tokens</label>
-                  <Input
-                    type="number"
-                    value={String(selectedNode.data.maxTokens || "500")}
-                    onChange={(e) => updateNodeData(selectedNode.id, { maxTokens: parseInt(e.target.value) })}
-                    className="text-[12px]"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Connect to next node */}
-            <div className="border-t border-outline-variant/10 pt-3 space-y-1.5">
-              <label className="text-[12px] font-medium text-on-surface-variant">Connect to next node</label>
-              <select
-                value=""
-                onChange={(e) => {
-                  if (e.target.value) {
-                    connectNodes(selectedNode.id, e.target.value);
-                    e.target.value = "";
-                  }
-                }}
-                className="w-full px-2.5 py-1.5 rounded-lg bg-surface-container border border-outline-variant/10 text-[12px]"
-              >
-                <option value="">Select node...</option>
-                {nodes
-                  .filter((n) => n.id !== selectedNode.id)
-                  .map((n) => (
-                    <option key={n.id} value={n.id}>
-                      {NODE_TYPES.find((nt) => nt.type === n.type)?.label} - {String(n.data.message || n.data.question || n.type).slice(0, 30)}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </div>
+        {/* Right config panel */}
+        {selectedRfNode && !aiEnabled && (
+          <RightPanel
+            nodeId={selectedRfNode.id}
+            nodeType={(selectedRfNode.data as FlowNodeData).nodeType}
+            nodeData={(selectedRfNode.data as FlowNodeData).nodeData}
+            allNodes={rfNodes}
+            onUpdate={updateNodeData}
+            onClose={() => setSelectedNodeId(null)}
+          />
         )}
       </div>
     </div>
   );
 }
 
-function getDefaultData(type: ChatbotNodeType): Record<string, unknown> {
-  switch (type) {
-    case "SEND_MESSAGE":
-      return { message: "" };
-    case "ASK_QUESTION":
-      return { question: "", variableName: "" };
-    case "CONDITION":
-      return { field: "", operator: "equals", value: "" };
-    case "DELAY":
-      return { seconds: 5 };
-    case "ASSIGN_AGENT":
-      return { strategy: "round_robin" };
-    case "SET_TAG":
-      return { tagName: "" };
-    case "API_CALL":
-      return { url: "", method: "GET", headers: {}, saveAs: "" };
-    case "AI_REPLY":
-      return { systemPrompt: "You are a helpful customer support agent. Be concise and friendly.", maxTokens: 500 };
-    default:
-      return {};
-  }
+// ─── Page export (wrapped in ReactFlowProvider) ───────────────────────────────
+
+export default function ChatbotEditorPage() {
+  return (
+    <ReactFlowProvider>
+      <ChatbotEditorInner />
+    </ReactFlowProvider>
+  );
 }

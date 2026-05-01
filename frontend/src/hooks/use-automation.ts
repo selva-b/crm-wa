@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { automationApi } from "@/lib/api/automation";
 import type {
   ListAutomationRulesParams,
@@ -51,11 +52,9 @@ export function useExecutionLogs(params?: ListExecutionLogsParams) {
 export function useCreateAutomationRule() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateAutomationRuleRequest) =>
-      automationApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: automationKeys.rules });
-    },
+    mutationFn: (data: CreateAutomationRuleRequest) => automationApi.create(data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: automationKeys.rules }); toast.success("Automation rule created"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to create automation rule"),
   });
 }
 
@@ -69,10 +68,10 @@ export function useUpdateAutomationRule() {
       automationApi.update(ruleId, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: automationKeys.rules });
-      queryClient.invalidateQueries({
-        queryKey: automationKeys.ruleDetail(variables.ruleId),
-      });
+      queryClient.invalidateQueries({ queryKey: automationKeys.ruleDetail(variables.ruleId) });
+      toast.success("Automation rule updated");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to update automation rule"),
   });
 }
 
@@ -80,9 +79,8 @@ export function useDeleteAutomationRule() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (ruleId: string) => automationApi.delete(ruleId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: automationKeys.rules });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: automationKeys.rules }); toast.success("Automation rule deleted"); },
+    onError: (err: Error) => toast.error(err.message || "Failed to delete automation rule"),
   });
 }
 
@@ -92,10 +90,10 @@ export function useEnableAutomationRule() {
     mutationFn: (ruleId: string) => automationApi.enable(ruleId),
     onSuccess: (_data, ruleId) => {
       queryClient.invalidateQueries({ queryKey: automationKeys.rules });
-      queryClient.invalidateQueries({
-        queryKey: automationKeys.ruleDetail(ruleId),
-      });
+      queryClient.invalidateQueries({ queryKey: automationKeys.ruleDetail(ruleId) });
+      toast.success("Automation rule enabled");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to enable automation rule"),
   });
 }
 
@@ -105,9 +103,9 @@ export function useDisableAutomationRule() {
     mutationFn: (ruleId: string) => automationApi.disable(ruleId),
     onSuccess: (_data, ruleId) => {
       queryClient.invalidateQueries({ queryKey: automationKeys.rules });
-      queryClient.invalidateQueries({
-        queryKey: automationKeys.ruleDetail(ruleId),
-      });
+      queryClient.invalidateQueries({ queryKey: automationKeys.ruleDetail(ruleId) });
+      toast.success("Automation rule disabled");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to disable automation rule"),
   });
 }

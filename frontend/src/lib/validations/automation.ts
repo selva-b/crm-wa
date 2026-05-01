@@ -6,6 +6,8 @@ const triggerConfigSchema = z.object({
   toStatus: z.string().optional().or(z.literal("")),
   cronExpression: z.string().optional().or(z.literal("")),
   delaySeconds: z.number().int().min(0).optional(),
+  minOrderValue: z.number().min(0).optional(),
+  minCartValue: z.number().min(0).optional(),
 });
 
 const conditionSchema = z.object({
@@ -38,6 +40,10 @@ export const createAutomationRuleSchema = z.object({
     "LEAD_STATUS_CHANGED",
     "TIME_BASED",
     "NO_REPLY",
+    "LEAD_AD_RECEIVED",
+    "SHOPIFY_ORDER_CREATED",
+    "SHOPIFY_ORDER_FULFILLED",
+    "SHOPIFY_CART_ABANDONED",
   ]),
   triggerConfig: triggerConfigSchema,
   conditions: z.array(conditionSchema).optional(),
@@ -57,6 +63,10 @@ export const updateAutomationRuleSchema = z.object({
       "LEAD_STATUS_CHANGED",
       "TIME_BASED",
       "NO_REPLY",
+      "LEAD_AD_RECEIVED",
+      "SHOPIFY_ORDER_CREATED",
+      "SHOPIFY_ORDER_FULFILLED",
+      "SHOPIFY_CART_ABANDONED",
     ])
     .optional(),
   triggerConfig: triggerConfigSchema.optional(),

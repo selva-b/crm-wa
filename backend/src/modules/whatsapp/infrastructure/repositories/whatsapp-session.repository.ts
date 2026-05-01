@@ -81,6 +81,18 @@ export class WhatsAppSessionRepository {
     });
   }
 
+  /** Fallback: find any connected session in the org (for system-triggered messages) */
+  async findAnyActiveByOrgId(orgId: string) {
+    return this.prisma.whatsAppSession.findFirst({
+      where: {
+        orgId,
+        deletedAt: null,
+        status: WhatsAppSessionStatus.CONNECTED,
+      },
+      orderBy: { lastActiveAt: 'desc' },
+    });
+  }
+
   async findByIdempotencyKey(key: string) {
     return this.prisma.whatsAppSession.findUnique({
       where: { idempotencyKey: key },

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCreateDeal, usePipelines } from "@/hooks/use-deals";
 import { useContacts } from "@/hooks/use-contacts";
-import { useProducts } from "@/hooks/use-products";
+import { ProductSelectField } from "@/components/ui/product-select-field";
 import type { PipelineStage } from "@/lib/types/deals";
 
 interface CreateDealModalProps {
@@ -37,17 +37,15 @@ export function CreateDealModal({
   const [value, setValue] = useState("");
   const [expectedClose, setExpectedClose] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Auto-fetch pipelines when not provided externally
   const { data: pipelines } = usePipelines();
-  const { data: products } = useProducts();
   const needsFetch = !externalPipelineId || !externalStages;
 
   const activePipelineId = externalPipelineId || selectedPipelineId;
   const activePipeline = pipelines?.find((p) => p.id === activePipelineId);
   const activeStages = externalStages || activePipeline?.stages || [];
 
-  // Initialize pipeline and stage when data loads
   useEffect(() => {
     if (needsFetch && pipelines?.length && !selectedPipelineId) {
       const def = pipelines.find((p) => p.isDefault) || pipelines[0];
@@ -56,14 +54,12 @@ export function CreateDealModal({
     }
   }, [needsFetch, pipelines, selectedPipelineId]);
 
-  // Set stage when external stages provided
   useEffect(() => {
     if (externalStages?.length && !stageId) {
       setStageId(externalStages[0].id);
     }
   }, [externalStages, stageId]);
 
-  // Prefill contact
   useEffect(() => {
     if (prefilledContactId && open) {
       setSelectedContactId(prefilledContactId);
@@ -76,13 +72,27 @@ export function CreateDealModal({
     contactSearch.length >= 2 ? { search: contactSearch, take: 5 } : undefined,
   );
 
+  function validate() {
+    const e: Record<string, string> = {};
+    if (!title.trim()) e.title = "Deal title is required.";
+    else if (title.trim().length > 255) e.title = "Title must be 255 characters or less.";
+    if (!selectedContactId) e.contact = "Select a contact.";
+    if (!stageId) e.stage = "Select a stage.";
+    if (value && (isNaN(parseFloat(value)) || parseFloat(value) < 0))
+      e.value = "Enter a valid positive number.";
+    if (expectedClose && new Date(expectedClose) < new Date(new Date().toDateString()))
+      e.expectedClose = "Expected close date cannot be in the past.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
   const handleSubmit = () => {
-    if (!title.trim() || !selectedContactId || !stageId || !activePipelineId) return;
+    if (!validate()) return;
     createDeal.mutate(
       {
         pipelineId: activePipelineId,
         stageId,
-        contactId: selectedContactId,
+        contactId: selectedContactId!,
         title: title.trim(),
         value: value ? parseFloat(value) : undefined,
         expectedClose: expectedClose || undefined,
@@ -92,13 +102,17 @@ export function CreateDealModal({
         onSuccess: () => {
           setTitle("");
           setContactSearch("");
+          setValue("");
+          setExpectedClose("");
+          setErrors({});
           if (!lockContact) {
             setSelectedContactId(null);
             setSelectedContactName("");
           }
-          setValue("");
-          setExpectedClose("");
           onClose();
+        },
+        onError: (err) => {
+          setErrors({ submit: (err as Error).message || "Failed to create deal." });
         },
       },
     );
@@ -117,19 +131,31 @@ export function CreateDealModal({
           </button>
         </div>
 
+        {/* Title */}
         <div className="space-y-1.5">
-          <label className="text-[12px] font-medium text-on-surface-variant">Deal Title</label>
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Enterprise License" />
+          <label className="text-[12px] font-medium text-on-surface-variant">
+            Deal Title <span className="text-error">*</span>
+          </label>
+          <Input
+            value={title}
+            onChange={(e) => { setTitle(e.target.value); setErrors((p) => ({ ...p, title: "" })); }}
+            placeholder="e.g. Enterprise License"
+            maxLength={255}
+          />
+          {errors.title && <p className="text-[11px] text-error">{errors.title}</p>}
         </div>
 
+        {/* Contact */}
         <div className="space-y-1.5">
-          <label className="text-[12px] font-medium text-on-surface-variant">Contact</label>
+          <label className="text-[12px] font-medium text-on-surface-variant">
+            Contact <span className="text-error">*</span>
+          </label>
           {selectedContactId ? (
             <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10">
               <span className="text-[13px] text-on-surface">{selectedContactName}</span>
               {!lockContact && (
                 <button
-                  onClick={() => { setSelectedContactId(null); setSelectedContactName(""); setContactSearch(""); }}
+                  onClick={() => { setSelectedContactId(null); setSelectedContactName(""); setContactSearch(""); setErrors((p) => ({ ...p, contact: "" })); }}
                   className="text-on-surface-variant hover:text-error"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -140,7 +166,7 @@ export function CreateDealModal({
             <>
               <Input
                 value={contactSearch}
-                onChange={(e) => setContactSearch(e.target.value)}
+                onChange={(e) => { setContactSearch(e.target.value); setErrors((p) => ({ ...p, contact: "" })); }}
                 placeholder="Search contacts..."
               />
               {contactsData?.contacts && contactsData.contacts.length > 0 && (
@@ -152,6 +178,7 @@ export function CreateDealModal({
                         setSelectedContactId(c.id);
                         setSelectedContactName(c.name || c.phoneNumber);
                         setContactSearch("");
+                        setErrors((p) => ({ ...p, contact: "" }));
                       }}
                       className="w-full text-left px-3 py-2 text-[13px] text-on-surface hover:bg-surface-container transition-colors"
                     >
@@ -163,9 +190,10 @@ export function CreateDealModal({
               )}
             </>
           )}
+          {errors.contact && <p className="text-[11px] text-error">{errors.contact}</p>}
         </div>
 
-        {/* Pipeline selector — only shown when not provided externally */}
+        {/* Pipeline selector */}
         {needsFetch && pipelines && pipelines.length > 1 && (
           <div className="space-y-1.5">
             <label className="text-[12px] font-medium text-on-surface-variant">Pipeline</label>
@@ -185,44 +213,58 @@ export function CreateDealModal({
           </div>
         )}
 
+        {/* Stage */}
         <div className="space-y-1.5">
-          <label className="text-[12px] font-medium text-on-surface-variant">Stage</label>
+          <label className="text-[12px] font-medium text-on-surface-variant">
+            Stage <span className="text-error">*</span>
+          </label>
           <select
             value={stageId}
-            onChange={(e) => setStageId(e.target.value)}
+            onChange={(e) => { setStageId(e.target.value); setErrors((p) => ({ ...p, stage: "" })); }}
             className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-[13px] text-on-surface"
           >
             {activeStages.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
+          {errors.stage && <p className="text-[11px] text-error">{errors.stage}</p>}
         </div>
 
+        {/* Value + Expected Close */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="text-[12px] font-medium text-on-surface-variant">Value</label>
-            <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="0" />
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={value}
+              onChange={(e) => { setValue(e.target.value); setErrors((p) => ({ ...p, value: "" })); }}
+              placeholder="0.00"
+            />
+            {errors.value && <p className="text-[11px] text-error">{errors.value}</p>}
           </div>
           <div className="space-y-1.5">
             <label className="text-[12px] font-medium text-on-surface-variant">Expected Close</label>
-            <Input type="date" value={expectedClose} onChange={(e) => setExpectedClose(e.target.value)} />
+            <Input
+              type="date"
+              value={expectedClose}
+              onChange={(e) => { setExpectedClose(e.target.value); setErrors((p) => ({ ...p, expectedClose: "" })); }}
+            />
+            {errors.expectedClose && <p className="text-[11px] text-error">{errors.expectedClose}</p>}
           </div>
         </div>
 
-        {products && products.length > 0 && (
-          <div className="space-y-1.5">
-            <label className="text-[12px] font-medium text-on-surface-variant">Product</label>
-            <select
-              value={selectedProductId}
-              onChange={(e) => setSelectedProductId(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-surface-container border border-outline-variant/10 text-[13px] text-on-surface"
-            >
-              <option value="">No product</option>
-              {products.filter((p) => p.status === "ACTIVE").map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
+        <ProductSelectField
+          value={selectedProductId}
+          onChange={setSelectedProductId}
+          onBeforeRedirect={onClose}
+        />
+
+        {errors.submit && (
+          <p className="text-[12px] text-error bg-error/8 border border-error/15 px-3 py-2 rounded-lg">
+            {errors.submit}
+          </p>
         )}
 
         <div className="flex justify-end gap-2 pt-2">
@@ -230,7 +272,6 @@ export function CreateDealModal({
           <Button
             size="sm"
             onClick={handleSubmit}
-            disabled={!title.trim() || !selectedContactId || !activePipelineId || createDeal.isPending}
             loading={createDeal.isPending}
           >
             Create Deal

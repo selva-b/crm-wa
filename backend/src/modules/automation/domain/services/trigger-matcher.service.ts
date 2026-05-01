@@ -30,6 +30,16 @@ export class TriggerMatcherService {
         // No-reply triggers are evaluated by the follow-up worker
         return false;
 
+      case AutomationTriggerType.SHOPIFY_ORDER_CREATED:
+        return this.matchShopifyOrder(input.triggerConfig, input.eventPayload);
+
+      case AutomationTriggerType.SHOPIFY_ORDER_FULFILLED:
+        return this.matchShopifyOrder(input.triggerConfig, input.eventPayload);
+
+      case AutomationTriggerType.SHOPIFY_CART_ABANDONED:
+        // All abandoned carts match unless a minimum cart value is configured
+        return this.matchAbandonedCart(input.triggerConfig, input.eventPayload);
+
       default:
         this.logger.warn(`Unknown trigger type: ${input.triggerType}`);
         return false;
@@ -81,6 +91,32 @@ export class TriggerMatcherService {
       return false;
     }
 
+    return true;
+  }
+
+  private matchShopifyOrder(
+    config: Record<string, unknown>,
+    payload: Record<string, unknown>,
+  ): boolean {
+    // Optional: filter by minimum order value
+    const minOrderValue = config.minOrderValue as number | undefined;
+    if (minOrderValue !== undefined) {
+      const totalPrice = parseFloat(payload.totalPrice as string ?? '0');
+      if (totalPrice < minOrderValue) return false;
+    }
+    return true;
+  }
+
+  private matchAbandonedCart(
+    config: Record<string, unknown>,
+    payload: Record<string, unknown>,
+  ): boolean {
+    // Optional: filter by minimum cart value
+    const minCartValue = config.minCartValue as number | undefined;
+    if (minCartValue !== undefined) {
+      const cartTotal = parseFloat(payload.cartTotal as string ?? '0');
+      if (cartTotal < minCartValue) return false;
+    }
     return true;
   }
 }
