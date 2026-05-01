@@ -3137,10 +3137,11 @@ model HelpTicket {
   description String         @db.Text
   category    TicketCategory
   priority    TicketPriority @default(MEDIUM)
-  status      TicketStatus   @default(OPEN)
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
-  closedAt    DateTime?      @map("closed_at")
+  status        TicketStatus   @default(OPEN)
+  attachmentUrl String?        @map("attachment_url") @db.Text
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  closedAt      DateTime?      @map("closed_at")
 
   organization Organization  @relation(fields: [orgId], references: [id])
   user         User          @relation(fields: [userId], references: [id])

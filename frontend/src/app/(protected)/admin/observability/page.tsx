@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import type { HealthStatus, QueueHealth, AlertRule, AlertEvent, ErrorGroup } from "@/lib/types/observability";
+import { PAGE_SIZE } from "@/lib/constants";
 
 type ObsTab = "overview" | "queues" | "alerts" | "errors";
 
@@ -363,7 +364,6 @@ function QueueStat({
 
 function AlertsSection() {
   const { data: rules, isLoading: rulesLoading } = useAlertRules();
-  const PAGE_SIZE = 10;
   const [historyPage, setHistoryPage] = useState(1);
   const { data: history, isLoading: historyLoading } = useAlertHistory({
     limit: PAGE_SIZE,

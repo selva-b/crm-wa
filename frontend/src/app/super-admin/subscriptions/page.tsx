@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSASubscriptions } from "@/hooks/use-super-admin";
 import { Spinner } from "@/components/ui/spinner";
+import { PAGE_SIZE } from "@/lib/constants";
 
 const STATUS_OPTIONS = ["", "ACTIVE", "TRIAL", "PAST_DUE", "GRACE_PERIOD", "EXPIRED", "CANCELLED"];
 
@@ -23,7 +24,7 @@ function statusBadge(status: string) {
 export default function SuperAdminSubscriptionsPage() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useSASubscriptions({ page, limit: 25, status: status || undefined });
+  const { data, isLoading } = useSASubscriptions({ page, limit: PAGE_SIZE, status: status || undefined });
 
   return (
     <div className="p-6 space-y-5">

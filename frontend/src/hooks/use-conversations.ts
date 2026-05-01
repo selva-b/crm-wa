@@ -125,3 +125,22 @@ export function useReopenConversation() {
     },
   });
 }
+
+export function useAssignConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      conversationId,
+      assignedToId,
+    }: {
+      conversationId: string;
+      assignedToId: string | null;
+    }) => conversationsApi.assign(conversationId, assignedToId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}

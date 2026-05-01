@@ -144,6 +144,7 @@ export const EVENT_NAMES = {
   CONVERSATION_CREATED: 'conversation.created',
   CONVERSATION_UPDATED: 'conversation.updated',
   CONVERSATION_CLOSED: 'conversation.closed',
+  CONVERSATION_ASSIGNED: 'conversation.assigned',
   RATE_LIMIT_EXCEEDED: 'message.rate_limit_exceeded',
 
   // Campaign Management events (EPIC 6)

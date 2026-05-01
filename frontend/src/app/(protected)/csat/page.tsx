@@ -21,8 +21,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import type { AnalyticsPeriod } from "@/lib/types/analytics";
-
-const PAGE_SIZE = 10;
+import { PAGE_SIZE } from "@/lib/constants";
 
 function periodToDateRange(period: AnalyticsPeriod) {
   const end = new Date();

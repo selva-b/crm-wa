@@ -34,4 +34,9 @@ export const conversationsApi = {
     apiClient
       .post(`/messaging/conversations/${conversationId}/reopen`)
       .then((r) => r.data),
+
+  assign: (conversationId: string, assignedToId: string | null) =>
+    apiClient
+      .post(`/messaging/conversations/${conversationId}/assign`, { assignedToId })
+      .then((r) => r.data),
 };

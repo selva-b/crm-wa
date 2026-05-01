@@ -23,6 +23,8 @@ import {
   ListConversationsQueryDto,
   ListDeadLettersQueryDto,
 } from '../../application/dto';
+import { AssignConversationDto } from '../../application/dto/assign-conversation.dto';
+import { AssignConversationUseCase } from '../../application/use-cases/assign-conversation.use-case';
 import {
   SendMessageUseCase,
   GetMessageUseCase,
@@ -48,6 +50,7 @@ export class MessagesController {
     private readonly reprocessDeadLetterUseCase: ReprocessDeadLetterUseCase,
     private readonly deleteConversationUseCase: DeleteConversationUseCase,
     private readonly closeConversationUseCase: CloseConversationUseCase,
+    private readonly assignConversationUseCase: AssignConversationUseCase,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -189,6 +192,24 @@ export class MessagesController {
       data: { status: 'OPEN' },
     });
     return { success: true, status: 'OPEN' };
+  }
+
+  @Post('conversations/:conversationId/assign')
+  @Roles('ADMIN', 'MANAGER')
+  @Permissions(PERMISSIONS.CONVERSATIONS_UPDATE)
+  @HttpCode(HttpStatus.OK)
+  async assignConversation(
+    @CurrentUser() user: JwtPayload,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Body() dto: AssignConversationDto,
+  ) {
+    return this.assignConversationUseCase.execute(
+      conversationId,
+      user.orgId,
+      user.sub,
+      user.role,
+      dto.assignedToId,
+    );
   }
 
   // ───── Conversation Labels ─────

@@ -24,8 +24,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import type { Team } from "@/lib/types/teams";
-
-const PAGE_SIZE = 10;
+import { PAGE_SIZE } from "@/lib/constants";
 
 export default function AdminTeamsPage() {
   usePageTitle("Teams");

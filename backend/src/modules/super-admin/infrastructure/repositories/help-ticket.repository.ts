@@ -9,6 +9,7 @@ export interface CreateTicketInput {
   description: string;
   category: TicketCategory;
   priority?: TicketPriority;
+  attachmentUrl?: string;
 }
 
 export interface ListTicketsFilter {
@@ -33,6 +34,7 @@ export class HelpTicketRepository {
         description: input.description,
         category: input.category,
         priority: input.priority ?? 'MEDIUM',
+        ...(input.attachmentUrl ? { attachmentUrl: input.attachmentUrl } : {}),
       },
       include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
     });

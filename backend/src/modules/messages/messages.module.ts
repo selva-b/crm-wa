@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { AuditModule } from '@/modules/audit/audit.module';
 import { WhatsAppModule } from '@/modules/whatsapp/whatsapp.module';
 import { TeamsModule } from '@/modules/teams/teams.module';
+import { UsersModule } from '@/modules/users/users.module';
 import { ChannelsModule } from '@/modules/channels/channels.module';
 import { AiModule } from '@/modules/ai/ai.module';
 import { EncryptionService } from '@/common/services';
@@ -30,6 +31,7 @@ import {
 } from './application/use-cases';
 import { DeleteConversationUseCase } from './application/use-cases/delete-conversation.use-case';
 import { CloseConversationUseCase } from './application/use-cases/close-conversation.use-case';
+import { AssignConversationUseCase } from './application/use-cases/assign-conversation.use-case';
 import { SyncTemplatesUseCase } from './application/use-cases/sync-templates.use-case';
 import { SendTemplateMessageUseCase } from './application/use-cases/send-template-message.use-case';
 import { GenerateTemplateUseCase } from './application/use-cases/generate-template.use-case';
@@ -40,7 +42,7 @@ import { CannedResponsesController } from './interfaces/controllers/canned-respo
 import { TemplatesController } from './interfaces/controllers/templates.controller';
 
 @Module({
-  imports: [AuditModule, forwardRef(() => WhatsAppModule), forwardRef(() => TeamsModule), ChannelsModule, AiModule],
+  imports: [AuditModule, forwardRef(() => WhatsAppModule), forwardRef(() => TeamsModule), forwardRef(() => UsersModule), ChannelsModule, AiModule],
   controllers: [MessagesController, CannedResponsesController, TemplatesController],
   providers: [
     // Repositories
@@ -64,6 +66,7 @@ import { TemplatesController } from './interfaces/controllers/templates.controll
     ReprocessDeadLetterUseCase,
     DeleteConversationUseCase,
     CloseConversationUseCase,
+    AssignConversationUseCase,
     CannedResponseRepository,
     TemplateRepository,
     SyncTemplatesUseCase,

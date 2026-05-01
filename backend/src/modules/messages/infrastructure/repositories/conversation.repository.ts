@@ -100,7 +100,7 @@ export class ConversationRepository {
     });
   }
 
-  async assignTo(id: string, assignedToId: string) {
+  async assignTo(id: string, assignedToId: string | null) {
     return this.prisma.conversation.update({
       where: { id },
       data: { assignedToId },

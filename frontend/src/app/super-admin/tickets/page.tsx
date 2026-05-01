@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSATickets } from "@/hooks/use-super-admin";
 import { Spinner } from "@/components/ui/spinner";
+import { PAGE_SIZE } from "@/lib/constants";
 
 const STATUS_OPTIONS = ["", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
 const CATEGORY_OPTIONS = ["", "BILLING", "TECHNICAL", "GENERAL", "FEATURE_REQUEST"];
@@ -39,7 +40,7 @@ export default function SuperAdminTicketsPage() {
   const [page, setPage] = useState(1);
   const orgId = searchParams.get("orgId") ?? undefined;
 
-  const { data, isLoading } = useSATickets({ page, limit: 25, status: status || undefined, category: category || undefined, priority: priority || undefined, orgId });
+  const { data, isLoading } = useSATickets({ page, limit: PAGE_SIZE, status: status || undefined, category: category || undefined, priority: priority || undefined, orgId });
 
   return (
     <div className="p-6 space-y-5">

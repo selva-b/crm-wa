@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSAOrgs } from "@/hooks/use-super-admin";
 import { Spinner } from "@/components/ui/spinner";
+import { PAGE_SIZE } from "@/lib/constants";
 
 const STATUS_OPTIONS = ["", "ACTIVE", "TRIAL", "PAST_DUE", "GRACE_PERIOD", "EXPIRED", "CANCELLED"];
 
@@ -31,7 +32,7 @@ export default function SuperAdminOrgsPage() {
   const [page, setPage] = useState(1);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const { data, isLoading } = useSAOrgs({ page, limit: 20, search: debouncedSearch || undefined, status: status || undefined });
+  const { data, isLoading } = useSAOrgs({ page, limit: PAGE_SIZE, search: debouncedSearch || undefined, status: status || undefined });
 
   const handleSearch = (v: string) => {
     setSearch(v);

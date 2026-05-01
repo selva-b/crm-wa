@@ -12,6 +12,7 @@ import {
   ChannelMessageReadEvent,
   ChannelMessageFailedEvent,
 } from '../event-bus';
+import type { ConversationAssignedEvent } from '@/modules/messages/application/use-cases/assign-conversation.use-case';
 
 @Injectable()
 export class ChannelEventsHandler {
@@ -106,5 +107,14 @@ export class ChannelEventsHandler {
         error: event.error,
       },
     );
+  }
+
+  @OnEvent(EVENT_NAMES.CONVERSATION_ASSIGNED)
+  handleConversationAssigned(event: ConversationAssignedEvent) {
+    this.wsGateway.emitToOrg(event.orgId, 'conversation:assigned', {
+      conversationId: event.conversationId,
+      assignedToId: event.assignedToId,
+      assignedById: event.assignedById,
+    });
   }
 }

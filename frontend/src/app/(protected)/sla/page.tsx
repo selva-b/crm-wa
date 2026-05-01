@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ShieldCheck, Settings2 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -13,7 +13,9 @@ import {
 import { useTeamPerformance } from "@/hooks/use-analytics";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
 import { PeriodSelector } from "@/components/analytics/period-selector";
+import { PAGE_SIZE } from "@/lib/constants";
 import { SlaKpiCards } from "@/components/sla/sla-kpi-cards";
 import { SlaBreachTable } from "@/components/sla/sla-breach-table";
 import { SlaTeamTable } from "@/components/sla/sla-team-table";
@@ -48,6 +50,7 @@ export default function SlaPage() {
   usePageTitle("SLA Tracking");
   const user = useAuthStore((s) => s.user);
   const [period, setPeriod] = useState<AnalyticsPeriod>("week");
+  const [breachPage, setBreachPage] = useState(1);
 
   const role = user?.role ?? "EMPLOYEE";
   const isManager = role === "ADMIN" || role === "MANAGER";
@@ -73,8 +76,12 @@ export default function SlaPage() {
   const { data: allBreaches } = useSlaBreaches({
     startDate: dates.startDate,
     endDate: dates.endDate,
-    limit: 20,
+    limit: PAGE_SIZE,
+    offset: (breachPage - 1) * PAGE_SIZE,
   });
+
+  // Reset breach page when period changes
+  useEffect(() => { setBreachPage(1); }, [period]);
 
   const { data: policies } = useSlaPolicies();
 
@@ -175,14 +182,24 @@ export default function SlaPage() {
 
               {/* Breach Table */}
               {allBreaches && policies && (
-                <SlaBreachTable
-                  breaches={allBreaches.data}
-                  policies={policies}
-                  onAcknowledge={
-                    isManager ? handleAcknowledge : undefined
-                  }
-                  isAcknowledging={acknowledgeMutation.isPending}
-                />
+                <div className="flex flex-col gap-3">
+                  <SlaBreachTable
+                    breaches={allBreaches.data}
+                    policies={policies}
+                    onAcknowledge={
+                      isManager ? handleAcknowledge : undefined
+                    }
+                    isAcknowledging={acknowledgeMutation.isPending}
+                  />
+                  {Math.ceil((allBreaches.total ?? 0) / PAGE_SIZE) > 1 && (
+                    <Pagination
+                      page={breachPage}
+                      totalPages={Math.ceil((allBreaches.total ?? 0) / PAGE_SIZE)}
+                      total={allBreaches.total ?? 0}
+                      onPageChange={setBreachPage}
+                    />
+                  )}
+                </div>
               )}
             </div>
 

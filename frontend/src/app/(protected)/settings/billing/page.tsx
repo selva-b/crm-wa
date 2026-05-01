@@ -70,6 +70,7 @@ import type {
   InvoiceStatus,
 } from "@/lib/types/billing";
 import { formatPlanPrice, getPlanFeatures } from "@/lib/types/billing";
+import { PAGE_SIZE } from "@/lib/constants";
 
 // ─── Status Helpers ───────────────────────────
 
@@ -128,11 +129,11 @@ export default function BillingPage() {
   const { data: selectedInvoice } = useInvoice(selectedInvoiceId);
   const { data: payments, isLoading: paymentsLoading } = usePayments({
     page: paymentPage,
-    limit: 10,
+    limit: PAGE_SIZE,
   });
   const { data: invoices, isLoading: invoicesLoading } = useInvoices({
     page: invoicePage,
-    limit: 10,
+    limit: PAGE_SIZE,
   });
   const subscribeMutation = useSubscribeToPlan();
   const changePlanMutation = useChangePlan();

@@ -1,5 +1,5 @@
 import {
-  IsString, IsNotEmpty, IsEnum, IsOptional, IsInt, Min, MaxLength, IsUUID,
+  IsString, IsNotEmpty, IsEnum, IsOptional, IsInt, Min, MaxLength, IsUUID, IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TicketCategory, TicketPriority, TicketStatus } from '@prisma/client';
@@ -22,6 +22,9 @@ export class CreateTicketDto {
 
   @IsOptional() @IsEnum(TicketPriority)
   priority?: TicketPriority;
+
+  @IsOptional() @IsString()
+  attachmentUrl?: string;
 }
 
 export class ReplyToTicketDto {

@@ -3,9 +3,24 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Send, Loader2 } from "lucide-react";
+import { ChevronLeft, Send, Loader2, ImageIcon } from "lucide-react";
 import { useSATicket, useSAReplyToTicket, useSAUpdateTicketStatus } from "@/hooks/use-super-admin";
 import { Spinner } from "@/components/ui/spinner";
+
+function AuthImage({ url, className }: { url: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return (
+    <div className="flex items-center gap-1.5 text-xs text-on-surface-variant bg-surface-container border border-outline-variant rounded-lg px-3 py-2 w-fit">
+      <ImageIcon className="h-3.5 w-3.5" /> Failed to load image
+    </div>
+  );
+  return (
+    <a href={url} target="_blank" rel="noreferrer">
+      <img src={url} alt="ticket attachment" className={className} onError={() => setFailed(true)} />
+    </a>
+  );
+}
 
 const STATUS_OPTIONS = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
 
@@ -59,6 +74,19 @@ export default function SATicketDetailPage() {
       <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
         <p className="text-sm text-on-surface whitespace-pre-wrap">{ticket.description}</p>
       </div>
+
+      {/* Attachment */}
+      {ticket.attachmentUrl && (
+        <div className="space-y-1.5">
+          <p className="text-xs text-on-surface-variant flex items-center gap-1">
+            <ImageIcon className="h-3.5 w-3.5" /> Attachment
+          </p>
+          <AuthImage
+            url={ticket.attachmentUrl}
+            className="max-h-64 rounded-xl border border-outline-variant object-contain bg-surface-container hover:opacity-90 transition-opacity cursor-pointer"
+          />
+        </div>
+      )}
 
       {/* Replies */}
       <div className="space-y-3">

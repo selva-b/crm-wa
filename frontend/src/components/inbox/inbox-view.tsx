@@ -22,12 +22,14 @@ import {
   useCloseConversation,
   useArchiveConversation,
   useReopenConversation,
+  useAssignConversation,
 } from "@/hooks/use-conversations";
 import { useSendCsatSurvey } from "@/hooks/use-csat";
 import { AiReplySuggestions } from "@/components/chat/ai-reply-suggestions";
 import { ConversationSummaryPanel } from "@/components/chat/conversation-summary-panel";
 import { AiInsightPanel } from "@/components/chat/ai-insight-panel";
 import { useContactByPhone, useChangeLeadStatus } from "@/hooks/use-contacts";
+import { useUsers } from "@/hooks/use-users";
 import { CreateDealModal } from "@/components/deals/create-deal-modal";
 import { useContactProducts } from "@/hooks/use-products";
 import { useInboxSocket } from "@/hooks/use-inbox-socket";
@@ -199,6 +201,8 @@ export function InboxView({
   const { data: contactData } = useContactByPhone(selectedRawConv?.contactPhone ?? null);
   const { data: contactProducts } = useContactProducts(contactData?.id ?? null);
   const changeLeadStatus = useChangeLeadStatus();
+  const assignConversation = useAssignConversation();
+  const { data: usersData } = useUsers({ status: "ACTIVE" });
 
   // ─── Map backend data to component props ───
   const conversations = useMemo<Conversation[]>(() => {
@@ -646,6 +650,15 @@ export function InboxView({
               changeLeadStatus.mutate({ contactId: cId, status });
             } : undefined}
             isUpdatingStatus={changeLeadStatus.isPending}
+            conversationAssignedToId={selectedRawConv?.assignedToId ?? null}
+            orgUsers={usersData?.users ?? []}
+            canAssign={user?.role === "ADMIN" || user?.role === "MANAGER"}
+            isAssigning={assignConversation.isPending}
+            onAssign={(assignedToId) => {
+              if (selectedId) {
+                assignConversation.mutate({ conversationId: selectedId, assignedToId });
+              }
+            }}
           />
         </div>
       )}

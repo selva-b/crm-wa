@@ -25,8 +25,7 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { useAuthStore } from "@/stores/auth-store";
 import type { AnalyticsPeriod } from "@/lib/types/analytics";
 import type { LeadAdPlatform, LeadAdStatus } from "@/lib/types/lead-ads";
-
-const PAGE_SIZE = 10;
+import { PAGE_SIZE } from "@/lib/constants";
 
 type StatusTab = "all" | "COMPLETED" | "FAILED" | "PENDING";
 

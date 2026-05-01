@@ -142,6 +142,24 @@ export function useInboxSocket() {
       );
     };
 
+    // ─── Conversation assigned ─────
+    const onConversationAssigned = (payload: { conversationId: string; assignedToId: string | null }) => {
+      queryClient.setQueriesData<ConversationListResponse>(
+        { queryKey: conversationKeys.all },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((conv: ConversationResponse) =>
+              conv.id === payload.conversationId
+                ? { ...conv, assignedToId: payload.assignedToId }
+                : conv,
+            ),
+          };
+        },
+      );
+    };
+
     socket.on("whatsapp:message:received", onMessageReceived);
     socket.on("whatsapp:message:queued", onMessageReceived); // Same handling
     socket.on("whatsapp:message:status", onMessageStatus);
@@ -151,6 +169,7 @@ export function useInboxSocket() {
     socket.on("channel:message:delivered", onChannelMessageDelivered);
     socket.on("channel:message:read", onChannelMessageRead);
     socket.on("channel:message:failed", onChannelMessageFailed);
+    socket.on("conversation:assigned", onConversationAssigned);
 
     return () => {
       socket.off("whatsapp:message:received", onMessageReceived);
@@ -161,6 +180,7 @@ export function useInboxSocket() {
       socket.off("channel:message:delivered", onChannelMessageDelivered);
       socket.off("channel:message:read", onChannelMessageRead);
       socket.off("channel:message:failed", onChannelMessageFailed);
+      socket.off("conversation:assigned", onConversationAssigned);
     };
   }, [accessToken, queryClient]);
 }

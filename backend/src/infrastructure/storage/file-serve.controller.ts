@@ -8,8 +8,9 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { JwtAuthGuard } from '@/modules/auth/interfaces/guards/jwt-auth.guard';
+import { Public } from '@/common/decorators';
 import { join, extname } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, createReadStream } from 'fs';
 
 const MIME_MAP: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -42,6 +43,7 @@ const SAFE_FILENAME = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 export class FileServeController {
   private readonly uploadsDir = join(process.cwd(), 'uploads');
 
+  @Public()
   @Get(':filename')
   async serveFile(
     @Param('filename') filename: string,
@@ -69,6 +71,6 @@ export class FileServeController {
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'private, max-age=3600');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.sendFile(filePath);
+    createReadStream(filePath).pipe(res);
   }
 }

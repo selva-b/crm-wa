@@ -19,6 +19,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import type { AuditLog, QueryAuditLogsParams } from "@/lib/types/rbac";
+import { PAGE_SIZE } from "@/lib/constants";
 
 const ACTION_OPTIONS = [
   { value: "", label: "All Actions" },
@@ -48,11 +49,9 @@ export default function AuditLogsPage() {
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const limit = 20;
-
   const params: QueryAuditLogsParams = {
-    take: limit,
-    skip: (page - 1) * limit,
+    take: PAGE_SIZE,
+    skip: (page - 1) * PAGE_SIZE,
     ...(actionFilter && { action: actionFilter }),
     ...(startDate && { startDate }),
     ...(endDate && { endDate }),
@@ -62,7 +61,7 @@ export default function AuditLogsPage() {
 
   const logs = data?.logs ?? [];
   const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const clearFilters = () => {
     setActionFilter("");

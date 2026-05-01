@@ -1,11 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Phone, Mail, Tag, StickyNote, UserCircle, ChevronDown, Check } from "lucide-react";
+import { X, Phone, Mail, Tag, StickyNote, UserCircle, ChevronDown, Check, UserCheck } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { LeadStatus } from "@/lib/types/contacts";
+
+export interface OrgUserOption {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
 
 export interface ContactInfo {
   id: string;
@@ -24,6 +31,12 @@ interface ContactPanelProps {
   onClose: () => void;
   onStatusChange?: (contactId: string, status: LeadStatus) => void;
   isUpdatingStatus?: boolean;
+  /** Conversation-level assignment (not contact owner) */
+  conversationAssignedToId?: string | null;
+  orgUsers?: OrgUserOption[];
+  canAssign?: boolean;
+  isAssigning?: boolean;
+  onAssign?: (assignedToId: string | null) => void;
 }
 
 const LEAD_STATUSES: { value: LeadStatus; label: string; dot: string }[] = [
@@ -42,11 +55,23 @@ const statusVariant: Record<LeadStatus, "info" | "primary" | "warning" | "succes
   CLOSED: "error",
 };
 
-export function ContactPanel({ contact, onClose, onStatusChange, isUpdatingStatus }: ContactPanelProps) {
+export function ContactPanel({
+  contact,
+  onClose,
+  onStatusChange,
+  isUpdatingStatus,
+  conversationAssignedToId,
+  orgUsers = [],
+  canAssign = false,
+  isAssigning = false,
+  onAssign,
+}: ContactPanelProps) {
   const [statusOpen, setStatusOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const assignDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  // Close status dropdown on outside click
   useEffect(() => {
     if (!statusOpen) return;
     function handleClick(e: MouseEvent) {
@@ -57,6 +82,25 @@ export function ContactPanel({ contact, onClose, onStatusChange, isUpdatingStatu
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [statusOpen]);
+
+  // Close assign dropdown on outside click
+  useEffect(() => {
+    if (!assignOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (assignDropdownRef.current && !assignDropdownRef.current.contains(e.target as Node)) {
+        setAssignOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [assignOpen]);
+
+  const assignedUser = conversationAssignedToId
+    ? orgUsers.find((u) => u.id === conversationAssignedToId)
+    : null;
+  const assignedLabel = assignedUser
+    ? `${assignedUser.firstName} ${assignedUser.lastName}`
+    : "Unassigned";
 
   const currentStatusConfig = LEAD_STATUSES.find((s) => s.value === contact.leadStatus) ?? LEAD_STATUSES[0];
 
@@ -139,6 +183,75 @@ export function ContactPanel({ contact, onClose, onStatusChange, isUpdatingStatu
               </div>
             )}
           </div>
+        </div>
+
+        {/* Conversation Assignment */}
+        <div>
+          <span className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wide">
+            Assigned To
+          </span>
+          {canAssign ? (
+            <div className="relative mt-1.5" ref={assignDropdownRef}>
+              <button
+                onClick={() => setAssignOpen((v) => !v)}
+                disabled={isAssigning}
+                className={cn(
+                  "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border transition-colors",
+                  "border-outline-variant/20 hover:border-outline-variant/40",
+                  "bg-surface-container text-on-surface text-[13px] font-medium",
+                  isAssigning && "opacity-60 cursor-not-allowed",
+                )}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <UserCheck className="h-4 w-4 text-on-surface-variant shrink-0" />
+                  <span className={cn("truncate", !conversationAssignedToId && "text-on-surface-variant/60")}>
+                    {assignedLabel}
+                  </span>
+                </div>
+                <ChevronDown className={cn("h-4 w-4 text-on-surface-variant shrink-0 transition-transform", assignOpen && "rotate-180")} />
+              </button>
+
+              {assignOpen && (
+                <div className="absolute z-20 top-full left-0 right-0 mt-1 py-1 rounded-lg border border-outline-variant/20 bg-surface-container-low shadow-lg max-h-48 overflow-y-auto">
+                  <button
+                    onClick={() => {
+                      onAssign?.(null);
+                      setAssignOpen(false);
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2 text-[13px] transition-colors hover:bg-surface-container",
+                      !conversationAssignedToId ? "text-primary font-medium" : "text-on-surface-variant",
+                    )}
+                  >
+                    <span className="flex-1 text-left">Unassigned</span>
+                    {!conversationAssignedToId && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  </button>
+                  {orgUsers.map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => {
+                        onAssign?.(u.id);
+                        setAssignOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-2.5 px-3 py-2 text-[13px] transition-colors hover:bg-surface-container",
+                        u.id === conversationAssignedToId ? "text-primary font-medium" : "text-on-surface",
+                      )}
+                    >
+                      <Avatar name={`${u.firstName} ${u.lastName}`} size="sm" />
+                      <span className="flex-1 text-left truncate">{u.firstName} {u.lastName}</span>
+                      {u.id === conversationAssignedToId && <Check className="h-4 w-4 text-primary shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-1.5 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-surface-container text-[13px] text-on-surface-variant/70">
+              <UserCheck className="h-4 w-4 shrink-0" />
+              <span>{assignedLabel}</span>
+            </div>
+          )}
         </div>
 
         {/* Details */}

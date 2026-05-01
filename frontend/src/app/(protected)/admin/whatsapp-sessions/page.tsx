@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { SessionStatusBadge } from "@/components/whatsapp/session-status-badge";
+import { PAGE_SIZE } from "@/lib/constants";
 
 type StatusFilter = "" | "CONNECTED" | "DISCONNECTED" | "RECONNECTING" | "CONNECTING";
 
@@ -20,12 +21,10 @@ export default function AdminWhatsAppSessionsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("");
   const [userSearch, setUserSearch] = useState("");
   const [page, setPage] = useState(1);
-  const limit = 10;
-
   const { data, isLoading } = useAdminSessions({
     status: statusFilter || undefined,
     page,
-    limit,
+    limit: PAGE_SIZE,
   });
 
   const forceDisconnect = useAdminForceDisconnect();
@@ -33,7 +32,7 @@ export default function AdminWhatsAppSessionsPage() {
 
   const sessions = data?.sessions ?? [];
   const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   // Sessions are ordered by createdAt DESC — first occurrence per userId = most recent
   const latestSessionIdPerUser = new Set(

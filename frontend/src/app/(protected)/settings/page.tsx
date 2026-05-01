@@ -83,6 +83,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { Pagination } from "@/components/ui/pagination";
+import { PAGE_SIZE } from "@/lib/constants";
 import type {
   UpdateOrgSettingsRequest,
   UpdateWhatsAppConfigRequest,
@@ -1427,7 +1429,16 @@ function WebhookCard({
 }
 
 function WebhookDeliveryLogs({ webhookId }: { webhookId: string }) {
-  const { data, isLoading } = useWebhookDeliveries(webhookId, { limit: 10 });
+  const [deliveryPage, setDeliveryPage] = useState(1);
+
+  useEffect(() => {
+    setDeliveryPage(1);
+  }, [webhookId]);
+
+  const { data, isLoading } = useWebhookDeliveries(webhookId, {
+    limit: PAGE_SIZE,
+    offset: (deliveryPage - 1) * PAGE_SIZE,
+  });
 
   if (isLoading) {
     return (
@@ -1449,6 +1460,8 @@ function WebhookDeliveryLogs({ webhookId }: { webhookId: string }) {
     );
   }
 
+  const totalPages = Math.ceil((data?.total ?? 0) / PAGE_SIZE);
+
   return (
     <div className="space-y-1.5">
       <p className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wider">
@@ -1459,10 +1472,13 @@ function WebhookDeliveryLogs({ webhookId }: { webhookId: string }) {
           <DeliveryRow key={d.id} delivery={d} />
         ))}
       </div>
-      {(data?.total ?? 0) > 10 && (
-        <p className="text-[11px] text-on-surface-variant/60 text-center pt-1">
-          Showing 10 of {data?.total} deliveries
-        </p>
+      {totalPages > 1 && (
+        <Pagination
+          page={deliveryPage}
+          totalPages={totalPages}
+          total={data?.total ?? 0}
+          onPageChange={setDeliveryPage}
+        />
       )}
     </div>
   );
