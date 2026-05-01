@@ -61,44 +61,61 @@ interface NavGroup {
 
 const navGroups: NavGroup[] = [
   {
-    label: "Core",
+    label: "Overview",
     items: [
       { href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" />, label: "Dashboard" },
+    ],
+  },
+  {
+    label: "Messaging",
+    items: [
       { href: "/inbox", icon: <MessageSquare className="h-5 w-5" />, label: "Inbox", countKey: "inbox" },
     ],
   },
   {
-    label: "CRM",
+    label: "Sales",
     items: [
       { href: "/contacts", icon: <Users className="h-5 w-5" />, label: "Contacts" },
       { href: "/deals", icon: <Kanban className="h-5 w-5" />, label: "Deals", roles: ["ADMIN", "MANAGER"] },
       { href: "/lead-scoring", icon: <TrendingUp className="h-5 w-5" />, label: "Lead Scoring", roles: ["ADMIN", "MANAGER"] },
       { href: "/lead-ads", icon: <Target className="h-5 w-5" />, label: "Lead Ads", roles: ["ADMIN", "MANAGER"] },
-      { href: "/csat", icon: <Star className="h-5 w-5" />, label: "CSAT", roles: ["ADMIN", "MANAGER"] },
     ],
   },
   {
-    label: "Messaging",
+    label: "Marketing",
     roles: ["ADMIN", "MANAGER"],
     items: [
       { href: "/campaigns", icon: <Megaphone className="h-5 w-5" />, label: "Campaigns", feature: "campaigns" },
       { href: "/sequences", icon: <Workflow className="h-5 w-5" />, label: "Sequences", feature: "campaigns" },
       { href: "/scheduler", icon: <Clock className="h-5 w-5" />, label: "Scheduler" },
+      { href: "/settings/templates", icon: <FileText className="h-5 w-5" />, label: "Templates", roles: ["ADMIN", "MANAGER"] },
+    ],
+  },
+  {
+    label: "Automation",
+    roles: ["ADMIN", "MANAGER"],
+    items: [
       { href: "/automation", icon: <Zap className="h-5 w-5" />, label: "Automation", feature: "automation" },
       { href: "/chatbot", icon: <Bot className="h-5 w-5" />, label: "Chatbot" },
     ],
   },
   {
-    label: "Configuration",
+    label: "Service",
+    roles: ["ADMIN", "MANAGER"],
     items: [
-      { href: "/knowledge-base", icon: <BookOpen className="h-5 w-5" />, label: "Knowledge Base", roles: ["ADMIN", "MANAGER"] },
-      { href: "/sla", icon: <ShieldCheck className="h-5 w-5" />, label: "SLA Tracking", roles: ["ADMIN", "MANAGER"] },
+      { href: "/csat", icon: <Star className="h-5 w-5" />, label: "CSAT" },
+      { href: "/sla", icon: <ShieldCheck className="h-5 w-5" />, label: "SLA Tracking" },
+      { href: "/knowledge-base", icon: <BookOpen className="h-5 w-5" />, label: "Knowledge Base" },
+    ],
+  },
+  {
+    label: "Settings",
+    items: [
       { href: "/settings", icon: <Settings className="h-5 w-5" />, label: "Settings", roles: ["ADMIN"] },
-      { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
       { href: "/settings/channels", icon: <Radio className="h-5 w-5" />, label: "Channels", roles: ["ADMIN", "MANAGER"] },
       { href: "/settings/products", icon: <Package className="h-5 w-5" />, label: "Products", roles: ["ADMIN"] },
-      { href: "/settings/templates", icon: <FileText className="h-5 w-5" />, label: "Templates", roles: ["ADMIN", "MANAGER"] },
-      { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN", "MANAGER"] },
+      { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN"] },
+      { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
     ],
   },
   {
@@ -161,7 +178,7 @@ export function Sidebar() {
         <Flame className="h-6 w-6 text-primary shrink-0" />
         {!collapsed && (
           <span className="text-[16px] font-bold text-on-surface tracking-tight">
-            CRM<span className="text-primary">-WA</span>
+            Waze<span className="text-primary">lo</span>
           </span>
         )}
       </div>
