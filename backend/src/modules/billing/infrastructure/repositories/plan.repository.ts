@@ -16,6 +16,13 @@ export interface CreatePlanInput {
   maxCampaignsPerMonth: number;
   campaignsEnabled: boolean;
   automationEnabled: boolean;
+  apiEnabled: boolean;
+  maxApiCallsPerMonth: number;
+  aiCreditsPerMonth: number;
+  aiEnabled: boolean;
+  maxMessageTemplates: number;
+  shopifyEnabled: boolean;
+  maxShopifyStores: number;
   softLimitPercent?: number;
   gracePeriodDays?: number;
   isDefault?: boolean;
@@ -49,6 +56,13 @@ export class PlanRepository {
         maxCampaignsPerMonth: input.maxCampaignsPerMonth,
         campaignsEnabled: input.campaignsEnabled,
         automationEnabled: input.automationEnabled,
+        apiEnabled: input.apiEnabled,
+        maxApiCallsPerMonth: input.maxApiCallsPerMonth,
+        aiCreditsPerMonth: input.aiCreditsPerMonth,
+        aiEnabled: input.aiEnabled,
+        maxMessageTemplates: input.maxMessageTemplates,
+        shopifyEnabled: input.shopifyEnabled,
+        maxShopifyStores: input.maxShopifyStores,
         softLimitPercent: input.softLimitPercent ?? 80,
         gracePeriodDays: input.gracePeriodDays ?? 3,
         isDefault: input.isDefault ?? false,

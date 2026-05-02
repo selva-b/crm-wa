@@ -58,6 +58,38 @@ export class UpdatePlanDto {
   automationEnabled?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  apiEnabled?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxApiCallsPerMonth?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  aiCreditsPerMonth?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  aiEnabled?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxMessageTemplates?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  shopifyEnabled?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxShopifyStores?: number;
+
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(100)

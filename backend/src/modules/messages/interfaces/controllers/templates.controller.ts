@@ -12,10 +12,14 @@ import {
   HttpStatus,
   ConflictException,
   NotFoundException,
+  UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
+import { UsageLimitGuard, USAGE_LIMIT_KEY } from '@/modules/billing/interfaces/guards/usage-limit.guard';
+import { UsageMetricType } from '@prisma/client';
 import { TemplateRepository } from '../../infrastructure/repositories/template.repository';
 import { SyncTemplatesUseCase } from '../../application/use-cases/sync-templates.use-case';
 import { SendTemplateMessageUseCase } from '../../application/use-cases/send-template-message.use-case';
@@ -97,6 +101,8 @@ export class TemplatesController {
 
   @Post()
   @Permissions(PERMISSIONS.MESSAGES_SEND)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.MESSAGE_TEMPLATES)
   async create(@CurrentUser() user: JwtPayload, @Body() dto: CreateTemplateDto) {
     const existing = await this.templateRepo.findByName(
       user.orgId,

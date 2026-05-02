@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { aiApi } from "@/lib/api/ai";
 
 export function useSmartReplies(conversationId: string | null) {
@@ -16,6 +17,7 @@ export function useSmartReplies(conversationId: string | null) {
 export function useSummarizeConversation() {
   return useMutation({
     mutationFn: (conversationId: string) => aiApi.summarize(conversationId),
+    onError: (err: Error) => toast.error(err.message || "Failed to summarize conversation"),
   });
 }
 
@@ -44,6 +46,7 @@ export function useApplyCategorization() {
   return useMutation({
     mutationFn: (conversationId: string) => aiApi.applyCategorization(conversationId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contacts"] }),
+    onError: (err: Error) => toast.error(err.message || "Failed to apply categorization"),
   });
 }
 
@@ -79,5 +82,6 @@ export function useDetectIntent(conversationId: string | null) {
 export function useFullAnalysis() {
   return useMutation({
     mutationFn: (conversationId: string) => aiApi.fullAnalysis(conversationId),
+    onError: (err: Error) => toast.error(err.message || "Failed to run full analysis"),
   });
 }

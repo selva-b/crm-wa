@@ -18,6 +18,8 @@ import {
   FileText,
   X,
   TrendingUp,
+  Code,
+  Sparkles,
 } from "lucide-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useAuthStore } from "@/stores/auth-store";
@@ -65,11 +67,12 @@ import {
 import { Pagination } from "@/components/ui/pagination";
 import type {
   Plan,
+  SubscriptionPlanSummary,
   SubscriptionStatus,
   PaymentStatus,
   InvoiceStatus,
 } from "@/lib/types/billing";
-import { formatPlanPrice, getPlanFeatures } from "@/lib/types/billing";
+import { formatPlanPrice } from "@/lib/types/billing";
 import { PAGE_SIZE } from "@/lib/constants";
 
 // ─── Status Helpers ───────────────────────────
@@ -405,7 +408,7 @@ export default function BillingPage() {
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
               <UsageCard
                 icon={Users}
                 label="Users"
@@ -432,6 +435,27 @@ export default function BillingPage() {
                 label="Campaigns"
                 current={usage.campaignExecutions.current}
                 limit={usage.campaignExecutions.limit}
+                isTrial={subscription?.status === "TRIAL"}
+              />
+              <UsageCard
+                icon={Code}
+                label="API Calls"
+                current={usage.apiCalls?.current ?? 0}
+                limit={usage.apiCalls?.limit ?? 0}
+                isTrial={subscription?.status === "TRIAL"}
+              />
+              <UsageCard
+                icon={Sparkles}
+                label="AI Credits"
+                current={usage.aiCredits?.current ?? 0}
+                limit={usage.aiCredits?.limit ?? 0}
+                isTrial={subscription?.status === "TRIAL"}
+              />
+              <UsageCard
+                icon={FileText}
+                label="Templates"
+                current={usage.messageTemplates?.current ?? 0}
+                limit={usage.messageTemplates?.limit ?? 0}
                 isTrial={subscription?.status === "TRIAL"}
               />
             </div>
@@ -472,46 +496,52 @@ export default function BillingPage() {
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {plans
+            {(() => {
+              const sortedVisiblePlans = plans
                 .filter((p) => p.isActive && p.slug !== "free-trial" && p.billingCycle === (showYearly ? "YEARLY" : "MONTHLY"))
-                .sort((a, b) => a.sortOrder - b.sortOrder)
-                .map((plan) => {
-                  const isCurrent = subscription?.plan.id === plan.id;
-                  const isEnterprise = plan.name === "Enterprise";
-                  const hasSubscription = !!subscription;
-                  return (
-                    <PlanCard
-                      key={plan.id}
-                      plan={plan}
-                      isCurrent={isCurrent}
-                      isEnterprise={isEnterprise}
-                      onSelect={() => handlePlanAction(plan)}
-                      isLoading={
-                        subscribeMutation.isPending || changePlanMutation.isPending ||
-                        createOrder.isPending || verifyPayment.isPending
-                      }
-                      disabled={!isAdmin || isEnterprise}
-                      isTrial={isCurrent && subscription?.status === "TRIAL"}
-                      buttonLabel={
-                        isCurrent
-                          ? subscription?.status === "TRIAL" ? "On Trial" : "Active Plan"
-                          : isEnterprise
-                            ? "Contact Us"
-                            : !isAdmin
-                              ? "View Only"
-                              : !hasSubscription
-                                ? "Select Plan"
-                                : subscription?.status === "TRIAL" && plan.priceInCents > 0
-                                  ? "Pay & Upgrade"
-                                  : plan.priceInCents > (subscription?.plan.priceInCents ?? 0)
-                                    ? "Upgrade"
-                                    : "Downgrade"
-                      }
-                    />
-                  );
-                })}
-            </div>
+                .sort((a, b) => a.sortOrder - b.sortOrder);
+              const popularIndex = Math.floor(sortedVisiblePlans.length / 2);
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {sortedVisiblePlans.map((plan, idx) => {
+                    const isCurrent = subscription?.plan.id === plan.id;
+                    const isEnterprise = plan.name === "Enterprise";
+                    const hasSubscription = !!subscription;
+                    return (
+                      <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        isCurrent={isCurrent}
+                        isEnterprise={isEnterprise}
+                        isPopular={idx === popularIndex && !isEnterprise && !isCurrent}
+                        onSelect={() => handlePlanAction(plan)}
+                        isLoading={
+                          subscribeMutation.isPending || changePlanMutation.isPending ||
+                          createOrder.isPending || verifyPayment.isPending
+                        }
+                        disabled={!isAdmin || isEnterprise}
+                        isTrial={isCurrent && subscription?.status === "TRIAL"}
+                        buttonLabel={
+                          isCurrent
+                            ? subscription?.status === "TRIAL" ? "On Trial" : "Active Plan"
+                            : isEnterprise
+                              ? "Contact Us"
+                              : !isAdmin
+                                ? "View Only"
+                                : !hasSubscription
+                                  ? "Select Plan"
+                                  : subscription?.status === "TRIAL" && plan.priceInCents > 0
+                                    ? "Pay & Upgrade"
+                                    : plan.priceInCents > (subscription?.plan.priceInCents ?? 0)
+                                      ? "Upgrade"
+                                      : "Downgrade"
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -779,7 +809,28 @@ function UsageCard({
   );
 }
 
-// ─── Plan Card (Stitch-aligned) ────────────────
+// ─── Feature+Limit helpers ─────────────────────
+
+function fmtFeatureLimit(value: number | undefined | null, suffix: string): string {
+  if (value == null) return "Included";
+  if (value === 0) return "Unlimited";
+  if (value >= 1000) return `${(value / 1000).toFixed(0)}k${suffix}`;
+  return `${value}${suffix}`;
+}
+
+function FeatureLimitRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-1.5">
+        <Check className="h-3.5 w-3.5 text-primary shrink-0" />
+        <span className="text-[12px] text-on-surface-variant">{label}</span>
+      </div>
+      <span className="text-[12px] font-medium text-on-surface">{value}</span>
+    </div>
+  );
+}
+
+// ─── Plan Card ─────────────────────────────────
 
 function PlanCard({
   plan,
@@ -790,6 +841,7 @@ function PlanCard({
   disabled,
   buttonLabel,
   isTrial,
+  isPopular,
 }: {
   plan: Plan;
   isCurrent: boolean;
@@ -799,33 +851,43 @@ function PlanCard({
   disabled?: boolean;
   buttonLabel: string;
   isTrial?: boolean;
+  isPopular?: boolean;
 }) {
-  const features = getPlanFeatures(plan);
-
   return (
     <Card
       className={`!p-0 overflow-hidden flex flex-col ${
         isCurrent
           ? "border-primary/30 ring-1 ring-primary/20"
-          : isEnterprise
-            ? "border-on-surface/10 bg-surface-container-low"
-            : "hover:border-outline-variant/30 transition-colors"
+          : isPopular
+            ? "border-primary/40 ring-2 ring-primary/20 shadow-lg"
+            : isEnterprise
+              ? "border-on-surface/10 bg-surface-container-low"
+              : "hover:border-outline-variant/30 transition-colors"
       }`}
     >
-      {isCurrent && (
+      {/* Top banner — Active > Popular > Enterprise */}
+      {isCurrent ? (
         <div className="bg-primary/10 px-4 py-1.5 text-center">
           <span className="text-[11px] font-semibold text-primary uppercase tracking-wider">
             Active Plan
           </span>
         </div>
-      )}
-      {isEnterprise && !isCurrent && (
+      ) : isPopular ? (
+        <div className="bg-primary px-4 py-1.5 text-center">
+          <span className="text-[11px] font-semibold text-white uppercase tracking-wider">
+            Most Popular
+          </span>
+        </div>
+      ) : isEnterprise ? (
         <div className="bg-on-surface/5 px-4 py-1.5 text-center">
           <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
             Custom Pricing
           </span>
         </div>
+      ) : (
+        <div className="py-1.5" />
       )}
+
       <div className="p-5 flex flex-col flex-1">
         {/* Plan name + description */}
         <div className="mb-4">
@@ -833,7 +895,7 @@ function PlanCard({
             {plan.name}
           </h3>
           {plan.description && (
-            <p className="text-[12px] text-on-surface-variant/70 mt-0.5">
+            <p className="text-[12px] text-on-surface-variant/70 mt-0.5 min-h-[32px]">
               {plan.description}
             </p>
           )}
@@ -858,15 +920,18 @@ function PlanCard({
               <Clock className="h-3 w-3" />
               Trial active — limited capacity
             </p>
-          ) : !isCurrent && plan.trialDays > 0 && (
+          ) : !isCurrent && plan.trialDays > 0 ? (
             <p className="text-[11px] text-success font-medium mt-1">
               {plan.trialDays}-day free trial
             </p>
-          )}
+          ) : null}
         </div>
 
-        {/* Limits */}
-        <div className="space-y-2.5 flex-1">
+        {/* ── Section A: Usage ── */}
+        <div className="space-y-2 mb-3">
+          <p className="text-[10px] font-semibold text-on-surface-variant/50 uppercase tracking-widest mb-2">
+            Usage
+          </p>
           <LimitRow
             label="Users"
             value={formatLimit(plan.maxUsers)}
@@ -889,19 +954,19 @@ function PlanCard({
           />
         </div>
 
-        {/* Features */}
-        {features.length > 0 && (
-          <div className="space-y-1.5 pt-3 mt-3 border-t border-outline-variant/10">
-            {features.map((f) => (
-              <div key={f} className="flex items-center gap-2">
-                <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-[12px] text-on-surface-variant">
-                  {f}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* ── Section B: Features with limits ── */}
+        <div className="border-t border-outline-variant/10 pt-3 space-y-2">
+          <p className="text-[10px] font-semibold text-on-surface-variant/50 uppercase tracking-widest mb-2">
+            Features
+          </p>
+          <FeatureLimitRow label="Templates"   value={fmtFeatureLimit(plan.maxMessageTemplates, "")} />
+          <FeatureLimitRow label="API Access"  value={fmtFeatureLimit(plan.maxApiCallsPerMonth, "/mo")} />
+          <FeatureLimitRow label="AI Credits"  value={fmtFeatureLimit(plan.aiCreditsPerMonth, "/mo")} />
+          <FeatureLimitRow label="Shopify"     value={fmtFeatureLimit(plan.maxShopifyStores, plan.maxShopifyStores === 1 ? " store" : " stores")} />
+          <FeatureLimitRow label="Automation"  value="Included" />
+        </div>
+
+        <div className="flex-1" />
 
         {/* Action Button */}
         {isEnterprise && !isCurrent ? (
@@ -914,7 +979,13 @@ function PlanCard({
         ) : (
           <Button
             className="w-full mt-4"
-            variant={isCurrent ? "secondary" : buttonLabel === "Upgrade" ? "primary" : "secondary"}
+            variant={
+              isCurrent
+                ? "secondary"
+                : isPopular || buttonLabel === "Upgrade" || buttonLabel === "Pay & Upgrade"
+                  ? "primary"
+                  : "secondary"
+            }
             size="sm"
             disabled={isCurrent || isLoading || disabled}
             onClick={onSelect}
@@ -923,7 +994,7 @@ function PlanCard({
               "Active Plan"
             ) : isLoading ? (
               "Processing..."
-            ) : buttonLabel === "Upgrade" ? (
+            ) : buttonLabel === "Upgrade" || buttonLabel === "Pay & Upgrade" ? (
               <>
                 <ArrowUpCircle className="h-3.5 w-3.5 mr-1.5" />
                 {buttonLabel}
@@ -954,7 +1025,7 @@ function UpgradeConfirmModal({
   onConfirm,
   onCancel,
 }: {
-  currentPlan: { name: string; priceInCents: number; billingCycle: string };
+  currentPlan: SubscriptionPlanSummary;
   newPlan: Plan;
   isUpgrade: boolean;
   isLoading: boolean;
@@ -1049,23 +1120,38 @@ function UpgradeConfirmModal({
               <tbody>
                 <CompareRow
                   label="Users"
-                  current={formatLimit(0)}
+                  current={formatLimit(currentPlan.maxUsers)}
                   next={formatLimit(newPlan.maxUsers)}
                 />
                 <CompareRow
                   label="Sessions"
-                  current={formatLimit(0)}
+                  current={formatLimit(currentPlan.maxWhatsappSessions)}
                   next={formatLimit(newPlan.maxWhatsappSessions)}
                 />
                 <CompareRow
                   label="Messages/mo"
-                  current={formatLimit(0)}
+                  current={formatLimit(currentPlan.maxMessagesPerMonth)}
                   next={formatLimit(newPlan.maxMessagesPerMonth)}
                 />
                 <CompareRow
                   label="Campaigns/mo"
-                  current={formatLimit(0)}
+                  current={formatLimit(currentPlan.maxCampaignsPerMonth)}
                   next={formatLimit(newPlan.maxCampaignsPerMonth)}
+                />
+                <CompareRow
+                  label="Templates"
+                  current={formatLimit(currentPlan.maxMessageTemplates)}
+                  next={formatLimit(newPlan.maxMessageTemplates)}
+                />
+                <CompareRow
+                  label="API Calls/mo"
+                  current={currentPlan.apiEnabled ? formatLimit(currentPlan.maxApiCallsPerMonth) : "—"}
+                  next={newPlan.apiEnabled ? formatLimit(newPlan.maxApiCallsPerMonth) : "—"}
+                />
+                <CompareRow
+                  label="AI Credits/mo"
+                  current={currentPlan.aiEnabled ? formatLimit(currentPlan.aiCreditsPerMonth) : "—"}
+                  next={newPlan.aiEnabled ? formatLimit(newPlan.aiCreditsPerMonth) : "—"}
                 />
               </tbody>
             </table>
@@ -1200,7 +1286,8 @@ function formatDate(iso: string): string {
   });
 }
 
-function formatLimit(value: number): string {
+function formatLimit(value: number | undefined | null): string {
+  if (value == null) return "—";
   if (value <= 0) return "Unlimited";
   if (value >= 1000) return `${(value / 1000).toFixed(0)}k`;
   return value.toLocaleString();

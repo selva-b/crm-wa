@@ -411,6 +411,8 @@ enum UsageMetricType {
   WHATSAPP_SESSIONS
   CAMPAIGN_EXECUTIONS
   API_CALLS
+  AI_CREDITS
+  MESSAGE_TEMPLATES
 }
 
 enum PlanType {
@@ -1662,6 +1664,20 @@ model Plan {
   campaignsEnabled  Boolean @default(false) @map("campaigns_enabled")
   automationEnabled Boolean @default(false) @map("automation_enabled")
   apiEnabled        Boolean @default(false) @map("api_enabled")
+
+  // ── API Limits ──
+  maxApiCallsPerMonth  Int     @default(0)     @map("max_api_calls_per_month")
+
+  // ── AI Credits ──
+  aiCreditsPerMonth    Int     @default(0)     @map("ai_credits_per_month")
+  aiEnabled            Boolean @default(false) @map("ai_enabled")
+
+  // ── Message Templates ──
+  maxMessageTemplates  Int     @default(10)    @map("max_message_templates")
+
+  // ── Shopify Integration ──
+  shopifyEnabled       Boolean @default(false) @map("shopify_enabled")
+  maxShopifyStores     Int     @default(0)     @map("max_shopify_stores")
 
   // ── Soft Limit Thresholds (percentage, e.g. 80 = 80%) ──
   softLimitPercent Int @default(80) @map("soft_limit_percent")

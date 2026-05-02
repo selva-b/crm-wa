@@ -46,6 +46,12 @@ const EMPTY_FORM = {
   campaignsEnabled: true,
   automationEnabled: false,
   apiEnabled: false,
+  maxApiCallsPerMonth: 1000,
+  aiCreditsPerMonth: 0,
+  aiEnabled: false,
+  maxMessageTemplates: 10,
+  shopifyEnabled: false,
+  maxShopifyStores: 0,
   softLimitPercent: 80,
   gracePeriodDays: 3,
   sortOrder: 99,
@@ -158,6 +164,34 @@ function PlanModal({
             </label>
             <input {...intField("maxCampaignsPerMonth")} />
           </div>
+          {/* Max API Calls */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Max API Calls/mo <span className="text-gray-400">(0 = unlimited)</span>
+            </label>
+            <input {...intField("maxApiCallsPerMonth")} />
+          </div>
+          {/* AI Credits */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              AI Credits/mo <span className="text-gray-400">(0 = unlimited)</span>
+            </label>
+            <input {...intField("aiCreditsPerMonth")} />
+          </div>
+          {/* Max Templates */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Max Templates <span className="text-gray-400">(0 = unlimited)</span>
+            </label>
+            <input {...intField("maxMessageTemplates")} />
+          </div>
+          {/* Max Shopify Stores */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Max Shopify Stores <span className="text-gray-400">(0 = unlimited)</span>
+            </label>
+            <input {...intField("maxShopifyStores")} />
+          </div>
           {/* Trial Days */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Trial Days</label>
@@ -185,6 +219,8 @@ function PlanModal({
                 ["campaignsEnabled", "Campaigns"],
                 ["automationEnabled", "Automation"],
                 ["apiEnabled", "API Access"],
+                ["aiEnabled", "AI Features"],
+                ["shopifyEnabled", "Shopify Integration"],
                 ["isActive", "Active"],
                 ["isDefault", "Default"],
               ] as [keyof PlanForm, string][]
@@ -334,6 +370,12 @@ export default function AdminPlansPage() {
                           {(plan as any).apiEnabled && (
                             <Badge variant="muted" className="text-xs">API</Badge>
                           )}
+                          {(plan as any).aiEnabled && (
+                            <Badge variant="muted" className="text-xs">AI</Badge>
+                          )}
+                          {(plan as any).shopifyEnabled && (
+                            <Badge variant="muted" className="text-xs">Shopify</Badge>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -396,6 +438,12 @@ export default function AdminPlansPage() {
                   campaignsEnabled: modal.editing.campaignsEnabled,
                   automationEnabled: modal.editing.automationEnabled,
                   apiEnabled: (modal.editing as any).apiEnabled ?? false,
+                  maxApiCallsPerMonth: (modal.editing as any).maxApiCallsPerMonth ?? 0,
+                  aiCreditsPerMonth: (modal.editing as any).aiCreditsPerMonth ?? 0,
+                  aiEnabled: (modal.editing as any).aiEnabled ?? false,
+                  maxMessageTemplates: (modal.editing as any).maxMessageTemplates ?? 10,
+                  shopifyEnabled: (modal.editing as any).shopifyEnabled ?? false,
+                  maxShopifyStores: (modal.editing as any).maxShopifyStores ?? 0,
                   softLimitPercent: modal.editing.softLimitPercent,
                   gracePeriodDays: modal.editing.gracePeriodDays,
                   sortOrder: modal.editing.sortOrder,

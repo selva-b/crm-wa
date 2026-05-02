@@ -3,6 +3,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from "axios";
+import { toast } from "sonner";
 import type { ApiResponse, ApiErrorResponse } from "@/lib/types/api";
 
 const API_BASE_URL =
@@ -10,15 +11,35 @@ const API_BASE_URL =
 
 export class ApiError extends Error {
   statusCode: number;
+  errorCode?: string;
   errors?: Record<string, string[]>;
+  details?: Record<string, unknown>;
 
-  constructor(statusCode: number, message: string, errors?: Record<string, string[]>) {
+  constructor(
+    statusCode: number,
+    message: string,
+    errors?: Record<string, string[]>,
+    errorCode?: string,
+    details?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = "ApiError";
     this.statusCode = statusCode;
     this.errors = errors;
+    this.errorCode = errorCode;
+    this.details = details;
   }
 }
+
+const METRIC_LABELS: Record<string, string> = {
+  MESSAGES_SENT: "messages",
+  CAMPAIGN_EXECUTIONS: "campaigns",
+  ACTIVE_USERS: "users",
+  WHATSAPP_SESSIONS: "WhatsApp sessions",
+  API_CALLS: "API calls",
+  AI_CREDITS: "AI credits",
+  MESSAGE_TEMPLATES: "message templates",
+};
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -122,9 +143,26 @@ apiClient.interceptors.response.use(
 
     // Transform error to ApiError
     if (error.response?.data) {
-      const { statusCode, message, errors } = error.response.data;
+      const { statusCode, message, errors, error: errorCode, details } = error.response.data;
       const msg = Array.isArray(message) ? message[0] : message;
-      return Promise.reject(new ApiError(statusCode, msg, errors));
+
+      // Global handler: show toast for usage limit errors
+      if (errorCode === "USAGE_LIMIT_EXCEEDED" && typeof window !== "undefined") {
+        const metricType = (details as any)?.metricType as string | undefined;
+        const metricLabel = metricType ? (METRIC_LABELS[metricType] ?? metricType.toLowerCase().replace("_", " ")) : "resource";
+        const current = (details as any)?.currentValue;
+        const limit = (details as any)?.limitValue;
+        const limitText = limit != null ? ` (${current}/${limit})` : "";
+        toast.error(`Plan limit reached: ${metricLabel}${limitText}. Upgrade your plan to continue.`, {
+          duration: 6000,
+          action: {
+            label: "Upgrade",
+            onClick: () => { window.location.href = "/settings/billing"; },
+          },
+        });
+      }
+
+      return Promise.reject(new ApiError(statusCode, msg, errors, errorCode, details as Record<string, unknown>));
     }
 
     return Promise.reject(

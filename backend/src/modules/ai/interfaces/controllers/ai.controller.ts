@@ -1,10 +1,13 @@
 import {
   Controller, Get, Post, Param, Query, Body,
-  ParseUUIDPipe, HttpCode, HttpStatus,
+  ParseUUIDPipe, HttpCode, HttpStatus, UseGuards, SetMetadata,
 } from '@nestjs/common';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
+import { UsageLimitGuard, USAGE_LIMIT_KEY } from '@/modules/billing/interfaces/guards/usage-limit.guard';
+import { UsageTrackingService } from '@/modules/billing/domain/services/usage-tracking.service';
+import { UsageMetricType } from '@prisma/client';
 import { GetSmartRepliesUseCase } from '../../application/use-cases/get-smart-replies.use-case';
 import { SummarizeConversationUseCase } from '../../application/use-cases/summarize-conversation.use-case';
 import { AnalyzeSentimentUseCase } from '../../application/use-cases/analyze-sentiment.use-case';
@@ -21,87 +24,122 @@ export class AiController {
     private readonly autoCategorize: AutoCategorizeUseCase,
     private readonly kbRagSearch: KbRagSearchUseCase,
     private readonly detectIntent: DetectIntentUseCase,
+    private readonly usageTracking: UsageTrackingService,
   ) {}
 
   @Get('smart-replies/:conversationId')
   @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   async smartReplies(
     @CurrentUser() user: JwtPayload,
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
   ) {
-    return this.getSmartReplies.execute(conversationId, user.orgId);
+    const result = await this.getSmartReplies.execute(conversationId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
   }
 
   @Post('summarize/:conversationId')
   @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   @HttpCode(HttpStatus.OK)
   async summarize(
     @CurrentUser() user: JwtPayload,
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
   ) {
-    return this.summarizeConversation.execute(conversationId, user.orgId);
+    const result = await this.summarizeConversation.execute(conversationId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
   }
 
   @Get('sentiment/:conversationId')
   @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   async sentiment(
     @CurrentUser() user: JwtPayload,
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
   ) {
-    return this.analyzeSentiment.execute(conversationId, user.orgId);
+    const result = await this.analyzeSentiment.execute(conversationId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
   }
 
   @Get('categorize/:conversationId')
   @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   async categorize(
     @CurrentUser() user: JwtPayload,
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
   ) {
-    return this.autoCategorize.execute(conversationId, user.orgId);
+    const result = await this.autoCategorize.execute(conversationId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
   }
 
   @Post('categorize/:conversationId/apply')
   @Permissions(PERMISSIONS.CONTACTS_UPDATE)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   @HttpCode(HttpStatus.OK)
   async applyCategorization(
     @CurrentUser() user: JwtPayload,
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
   ) {
-    return this.autoCategorize.applyToConversation(conversationId, user.orgId);
+    const result = await this.autoCategorize.applyToConversation(conversationId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
   }
 
   @Get('kb-search')
   @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   async kbSearch(
     @CurrentUser() user: JwtPayload,
     @Query('q') query: string,
   ) {
-    return this.kbRagSearch.execute(query || '', user.orgId);
+    const result = await this.kbRagSearch.execute(query || '', user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
   }
 
   @Get('kb-suggest/:conversationId')
   @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   async kbSuggest(
     @CurrentUser() user: JwtPayload,
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
   ) {
-    return this.kbRagSearch.suggestForConversation(conversationId, user.orgId);
+    const result = await this.kbRagSearch.suggestForConversation(conversationId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
   }
 
   @Get('intent/:conversationId')
   @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   async detectIntentEndpoint(
     @CurrentUser() user: JwtPayload,
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
   ) {
-    return this.detectIntent.execute(conversationId, user.orgId);
+    const result = await this.detectIntent.execute(conversationId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
   }
 
   /**
-   * Full AI analysis — combines all AI features in one call.
+   * Full AI analysis — combines all AI features in one call (costs 5 credits).
    */
   @Post('analyze/:conversationId')
   @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   @HttpCode(HttpStatus.OK)
   async fullAnalysis(
     @CurrentUser() user: JwtPayload,
@@ -115,6 +153,7 @@ export class AiController {
       this.summarizeConversation.execute(conversationId, user.orgId),
     ]);
 
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS, 5);
     return { sentiment, categorization, intent, kbSuggestions, summary };
   }
 }

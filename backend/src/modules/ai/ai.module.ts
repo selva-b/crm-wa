@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BillingModule } from '@/modules/billing/billing.module';
 import { AiProviderService } from './domain/services/ai-provider.service';
 import { GetSmartRepliesUseCase } from './application/use-cases/get-smart-replies.use-case';
 import { SummarizeConversationUseCase } from './application/use-cases/summarize-conversation.use-case';
@@ -9,6 +10,7 @@ import { DetectIntentUseCase } from './application/use-cases/detect-intent.use-c
 import { AiController } from './interfaces/controllers/ai.controller';
 
 @Module({
+  imports: [BillingModule],
   controllers: [AiController],
   providers: [
     AiProviderService,

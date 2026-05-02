@@ -5,6 +5,7 @@ import { TeamsModule } from '@/modules/teams/teams.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { ChannelsModule } from '@/modules/channels/channels.module';
 import { AiModule } from '@/modules/ai/ai.module';
+import { BillingModule } from '@/modules/billing/billing.module';
 import { EncryptionService } from '@/common/services';
 
 // Repositories
@@ -42,7 +43,7 @@ import { CannedResponsesController } from './interfaces/controllers/canned-respo
 import { TemplatesController } from './interfaces/controllers/templates.controller';
 
 @Module({
-  imports: [AuditModule, forwardRef(() => WhatsAppModule), forwardRef(() => TeamsModule), forwardRef(() => UsersModule), ChannelsModule, AiModule],
+  imports: [AuditModule, forwardRef(() => WhatsAppModule), forwardRef(() => TeamsModule), forwardRef(() => UsersModule), ChannelsModule, AiModule, BillingModule],
   controllers: [MessagesController, CannedResponsesController, TemplatesController],
   providers: [
     // Repositories

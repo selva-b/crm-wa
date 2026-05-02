@@ -33,6 +33,16 @@ export interface Plan {
   campaignsEnabled: boolean;
   automationEnabled: boolean;
   apiEnabled: boolean;
+  // API Limits
+  maxApiCallsPerMonth: number;
+  // AI Credits
+  aiCreditsPerMonth: number;
+  aiEnabled: boolean;
+  // Message Templates
+  maxMessageTemplates: number;
+  // Shopify
+  shopifyEnabled: boolean;
+  maxShopifyStores: number;
   // Trial limits (null = use plan limit)
   trialMaxUsers?: number | null;
   trialMaxWhatsappSessions?: number | null;
@@ -59,12 +69,19 @@ export function getPlanLimits(plan: Plan) {
   };
 }
 
-export function getPlanFeatures(plan: Plan): string[] {
-  const features: string[] = [];
-  if (plan.campaignsEnabled) features.push("Campaigns");
-  if (plan.automationEnabled) features.push("Automation");
-  if (plan.trialDays > 0) features.push(`${plan.trialDays}-day free trial`);
-  return features;
+export interface PlanFeature {
+  label: string;
+  enabled: boolean;
+}
+
+export function getPlanFeatures(plan: Plan): PlanFeature[] {
+  return [
+    { label: "Campaigns",            enabled: plan.campaignsEnabled },
+    { label: "Automation",           enabled: plan.automationEnabled },
+    { label: "API Access",           enabled: plan.apiEnabled },
+    { label: "AI Features",          enabled: plan.aiEnabled },
+    { label: "Shopify Integration",  enabled: plan.shopifyEnabled },
+  ];
 }
 
 // ─── Subscription ───
@@ -78,7 +95,17 @@ export interface SubscriptionPlanSummary {
   currency: string;
   campaignsEnabled: boolean;
   automationEnabled: boolean;
-  apiEnabled?: boolean;
+  apiEnabled: boolean;
+  maxUsers: number;
+  maxWhatsappSessions: number;
+  maxMessagesPerMonth: number;
+  maxCampaignsPerMonth: number;
+  maxApiCallsPerMonth: number;
+  aiCreditsPerMonth: number;
+  aiEnabled: boolean;
+  maxMessageTemplates: number;
+  shopifyEnabled: boolean;
+  maxShopifyStores: number;
 }
 
 export interface Subscription {
@@ -106,6 +133,9 @@ export interface UsageMetrics {
   campaignExecutions: UsageEntry;
   activeUsers: UsageEntry;
   whatsappSessions: UsageEntry;
+  apiCalls: UsageEntry;
+  aiCredits: UsageEntry;
+  messageTemplates: UsageEntry;
 }
 
 export interface SubscriptionWithUsage {

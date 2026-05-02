@@ -25,10 +25,11 @@ export class GetSubscriptionUseCase {
       subscription.currentPeriodStart,
     );
 
-    // Also get live counts for users and sessions
-    const [activeUsers, activeSessions] = await Promise.all([
+    // Also get live counts for users, sessions and templates
+    const [activeUsers, activeSessions, templateCount] = await Promise.all([
       this.usageRepo.getActiveUserCount(orgId),
       this.usageRepo.getActiveSessionCount(orgId),
+      this.usageRepo.getTemplateCount(orgId),
     ]);
 
     const plan = subscription.plan;
@@ -51,6 +52,21 @@ export class GetSubscriptionUseCase {
       whatsappSessions: {
         current: activeSessions,
         limit: plan.maxWhatsappSessions,
+        percentUsed: 0,
+      },
+      apiCalls: {
+        current: usageRecords.find(u => u.metricType === UsageMetricType.API_CALLS)?.currentValue ?? 0,
+        limit: (plan as any).maxApiCallsPerMonth ?? 0,
+        percentUsed: 0,
+      },
+      aiCredits: {
+        current: usageRecords.find(u => u.metricType === UsageMetricType.AI_CREDITS)?.currentValue ?? 0,
+        limit: (plan as any).aiCreditsPerMonth ?? 0,
+        percentUsed: 0,
+      },
+      messageTemplates: {
+        current: templateCount,
+        limit: (plan as any).maxMessageTemplates ?? 0,
         percentUsed: 0,
       },
     };
@@ -77,6 +93,16 @@ export class GetSubscriptionUseCase {
           campaignsEnabled: plan.campaignsEnabled,
           automationEnabled: plan.automationEnabled,
           apiEnabled: plan.apiEnabled,
+          maxUsers: plan.maxUsers,
+          maxWhatsappSessions: plan.maxWhatsappSessions,
+          maxMessagesPerMonth: plan.maxMessagesPerMonth,
+          maxCampaignsPerMonth: plan.maxCampaignsPerMonth,
+          maxApiCallsPerMonth: (plan as any).maxApiCallsPerMonth ?? 0,
+          aiCreditsPerMonth: (plan as any).aiCreditsPerMonth ?? 0,
+          aiEnabled: (plan as any).aiEnabled ?? false,
+          maxMessageTemplates: (plan as any).maxMessageTemplates ?? 0,
+          shopifyEnabled: (plan as any).shopifyEnabled ?? false,
+          maxShopifyStores: (plan as any).maxShopifyStores ?? 0,
         },
         currentPeriodStart: subscription.currentPeriodStart,
         currentPeriodEnd: subscription.currentPeriodEnd,

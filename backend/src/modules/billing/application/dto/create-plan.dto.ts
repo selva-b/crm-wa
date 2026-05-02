@@ -69,6 +69,31 @@ export class CreatePlanDto {
   @IsBoolean()
   automationEnabled: boolean;
 
+  @IsBoolean()
+  apiEnabled: boolean;
+
+  @IsInt()
+  @Min(0)
+  maxApiCallsPerMonth: number;
+
+  @IsInt()
+  @Min(0)
+  aiCreditsPerMonth: number;
+
+  @IsBoolean()
+  aiEnabled: boolean;
+
+  @IsInt()
+  @Min(0)
+  maxMessageTemplates: number;
+
+  @IsBoolean()
+  shopifyEnabled: boolean;
+
+  @IsInt()
+  @Min(0)
+  maxShopifyStores: number;
+
   @IsOptional()
   @IsInt()
   @Min(1)
