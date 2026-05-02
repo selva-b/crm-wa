@@ -1,12 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { AiProviderService } from '../../domain/services/ai-provider.service';
+import { OrgContextService } from '../../domain/services/org-context.service';
 
 @Injectable()
 export class GetSmartRepliesUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiProvider: AiProviderService,
+    private readonly orgContext: OrgContextService,
   ) {}
 
   async execute(conversationId: string, orgId: string): Promise<{ replies: string[] }> {
@@ -36,8 +38,10 @@ export class GetSmartRepliesUseCase {
       .map((m) => `${m.direction === 'INBOUND' ? 'Customer' : 'Agent'}: ${m.body || `[${m.type}]`}`)
       .join('\n');
 
+    const orgContextStr = await this.orgContext.getContext(orgId);
+    const BASE_SYSTEM_PROMPT = `You are a helpful customer support assistant. Based on the conversation below, suggest exactly 3 short reply options for the agent. Each reply should be professional, helpful, and contextually appropriate. Return ONLY a JSON array of 3 strings, no other text.`;
     const result = await this.aiProvider.complete({
-      systemPrompt: `You are a helpful CRM assistant. Based on the conversation below, suggest exactly 3 short reply options for the agent. Each reply should be professional, helpful, and contextually appropriate. Return ONLY a JSON array of 3 strings, no other text.`,
+      systemPrompt: orgContextStr ? `${orgContextStr}\n\n---\n\n${BASE_SYSTEM_PROMPT}` : BASE_SYSTEM_PROMPT,
       userPrompt: `Conversation:\n${conversationContext}\n\nSuggest 3 short professional replies for the agent:`,
       maxTokens: 300,
     });

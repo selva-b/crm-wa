@@ -14,6 +14,8 @@ import { AnalyzeSentimentUseCase } from '../../application/use-cases/analyze-sen
 import { AutoCategorizeUseCase } from '../../application/use-cases/auto-categorize.use-case';
 import { KbRagSearchUseCase } from '../../application/use-cases/kb-rag-search.use-case';
 import { DetectIntentUseCase } from '../../application/use-cases/detect-intent.use-case';
+import { SuggestRoutingUseCase } from '../../application/use-cases/suggest-routing.use-case';
+import { GenerateAiInsightsUseCase } from '../../application/use-cases/generate-ai-insights.use-case';
 
 @Controller('ai')
 export class AiController {
@@ -25,6 +27,8 @@ export class AiController {
     private readonly kbRagSearch: KbRagSearchUseCase,
     private readonly detectIntent: DetectIntentUseCase,
     private readonly usageTracking: UsageTrackingService,
+    private readonly suggestRouting: SuggestRoutingUseCase,
+    private readonly generateInsights: GenerateAiInsightsUseCase,
   ) {}
 
   @Get('smart-replies/:conversationId')
@@ -129,6 +133,32 @@ export class AiController {
     @Param('conversationId', ParseUUIDPipe) conversationId: string,
   ) {
     const result = await this.detectIntent.execute(conversationId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
+  }
+
+  @Get('routing/:conversationId')
+  @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
+  async routingSuggestion(
+    @CurrentUser() user: JwtPayload,
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+  ) {
+    const result = await this.suggestRouting.execute(conversationId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
+  }
+
+  @Get('insights')
+  @Permissions(PERMISSIONS.MESSAGES_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
+  async aiInsights(
+    @CurrentUser() user: JwtPayload,
+    @Query('period') period: '7d' | '30d',
+  ) {
+    const result = await this.generateInsights.execute(user.orgId, period ?? '7d');
     await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
     return result;
   }

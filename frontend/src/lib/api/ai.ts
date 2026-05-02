@@ -35,6 +35,32 @@ export interface FullAnalysis {
   summary: ConversationSummary;
 }
 
+export interface RoutingSuggestion {
+  suggestedTeam: string | null;
+  reason: string;
+  urgency: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  tags: string[];
+}
+
+export interface AiInsightsResult {
+  summary: string;
+  highlights: string[];
+  warnings: string[];
+  period: "7d" | "30d";
+  generatedAt: string;
+}
+
+export interface CampaignCopyResult {
+  variants: string[];
+}
+
+export interface DealScoreResult {
+  dealId: string;
+  score: number;
+  reason: string;
+  scoredAt: string;
+}
+
 export const aiApi = {
   getSmartReplies: (conversationId: string) =>
     apiClient.get<SmartRepliesResponse>(`/ai/smart-replies/${conversationId}`).then((r) => r.data),
@@ -62,4 +88,21 @@ export const aiApi = {
 
   fullAnalysis: (conversationId: string) =>
     apiClient.post<FullAnalysis>(`/ai/analyze/${conversationId}`).then((r) => r.data),
+
+  getRoutingSuggestion: (conversationId: string) =>
+    apiClient.get<RoutingSuggestion>(`/ai/routing/${conversationId}`).then((r) => r.data),
+
+  getInsights: (period: "7d" | "30d" = "7d") =>
+    apiClient.get<AiInsightsResult>(`/ai/insights`, { params: { period } }).then((r) => r.data),
+
+  generateCampaignCopy: (params: {
+    goal: string;
+    audienceDesc?: string;
+    tone?: string;
+    variants?: number;
+  }) =>
+    apiClient.post<CampaignCopyResult>(`/campaigns/generate-copy`, params).then((r) => r.data),
+
+  scoreDeal: (pipelineId: string, dealId: string) =>
+    apiClient.post<DealScoreResult>(`/pipelines/${pipelineId}/deals/${dealId}/score`).then((r) => r.data),
 };

@@ -2,8 +2,18 @@
 
 import { Zap, MoreVertical, Power, PowerOff, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
+import {
+  Table,
+  TableHeader,
+  TableHeaderRow,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { RuleStatusBadge } from "./rule-status-badge";
 import { TriggerTypeLabel } from "./trigger-type-label";
 import type { AutomationRule } from "@/lib/types/automation";
@@ -46,28 +56,42 @@ export function AutomationRulesTable({
   onPageChange,
   onCreateClick,
 }: AutomationRulesTableProps) {
+  const router = useRouter();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const currentPage = Math.floor(skip / take);
+  const currentPage = Math.floor(skip / take) + 1;
   const totalPages = Math.ceil(total / take);
 
   if (isLoading) {
     return (
-      <div className="space-y-0">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 px-4 py-3.5 border-b border-outline-variant/10"
-          >
-            <div className="flex-1 space-y-1.5">
-              <div className="h-3.5 w-40 rounded bg-surface-container animate-pulse" />
-              <div className="h-3 w-28 rounded bg-surface-container animate-pulse" />
-            </div>
-            <div className="h-5 w-16 rounded-full bg-surface-container animate-pulse" />
-            <div className="h-3.5 w-24 rounded bg-surface-container animate-pulse" />
-            <div className="h-3.5 w-16 rounded bg-surface-container animate-pulse" />
-          </div>
-        ))}
-      </div>
+      <Table>
+        <TableHeader>
+          <TableHeaderRow>
+            <TableHead>Rule Name</TableHead>
+            <TableHead>Trigger</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead align="center">Executions</TableHead>
+            <TableHead>Last Triggered</TableHead>
+            <TableHead align="right">Actions</TableHead>
+          </TableHeaderRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <TableRow key={i}>
+              <TableCell>
+                <div className="space-y-1.5">
+                  <div className="h-3.5 w-40 rounded bg-surface-container-high animate-pulse" />
+                  <div className="h-3 w-28 rounded bg-surface-container-high animate-pulse" />
+                </div>
+              </TableCell>
+              <TableCell><div className="h-5 w-24 rounded-full bg-surface-container-high animate-pulse" /></TableCell>
+              <TableCell><div className="h-5 w-16 rounded-full bg-surface-container-high animate-pulse" /></TableCell>
+              <TableCell align="center"><div className="h-3.5 w-8 rounded bg-surface-container-high animate-pulse mx-auto" /></TableCell>
+              <TableCell><div className="h-3.5 w-20 rounded bg-surface-container-high animate-pulse" /></TableCell>
+              <TableCell align="right"><div className="h-5 w-5 rounded bg-surface-container-high animate-pulse ml-auto" /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     );
   }
 
@@ -85,147 +109,131 @@ export function AutomationRulesTable({
 
   return (
     <div>
-      {/* Header */}
-      <div className="grid grid-cols-[1fr_80px_120px_80px_80px_80px_36px] gap-2 px-4 py-2.5 text-[11px] font-medium text-on-surface-variant uppercase tracking-wide border-b border-outline-variant/15">
-        <span>Rule</span>
-        <span>Status</span>
-        <span>Trigger</span>
-        <span>Actions</span>
-        <span>Runs</span>
-        <span>Created</span>
-        <span />
-      </div>
-
-      {/* Rows */}
-      {rules.map((rule) => (
-        <div
-          key={rule.id}
-          className="relative grid grid-cols-[1fr_80px_120px_80px_80px_80px_36px] gap-2 items-center px-4 py-3.5 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors"
-        >
-          {/* Name + Description */}
-          <div className="min-w-0">
-            <p className="text-[13px] font-medium text-on-surface truncate">
-              {rule.name}
-            </p>
-            {rule.description && (
-              <p className="text-[11px] text-on-surface-variant/60 truncate">
-                {rule.description}
-              </p>
-            )}
-          </div>
-
-          {/* Status */}
-          <div>
-            <RuleStatusBadge status={rule.status} />
-          </div>
-
-          {/* Trigger */}
-          <div>
-            <TriggerTypeLabel triggerType={rule.triggerType} />
-          </div>
-
-          {/* Actions count */}
-          <span className="text-[12px] text-on-surface-variant tabular-nums">
-            {rule.actions.length} action{rule.actions.length !== 1 ? "s" : ""}
-          </span>
-
-          {/* Execution count */}
-          <span className="text-[12px] text-on-surface-variant tabular-nums">
-            {rule.executionCount.toLocaleString()}
-          </span>
-
-          {/* Created */}
-          <span className="text-[11px] text-on-surface-variant/60">
-            {timeAgo(rule.createdAt)}
-          </span>
-
-          {/* Actions menu */}
-          <div
-            className="flex items-center justify-center relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() =>
-                setOpenMenu(openMenu === rule.id ? null : rule.id)
-              }
-              className="p-1 rounded-lg text-on-surface-variant/40 hover:text-on-surface hover:bg-surface-container transition-colors"
+      <Table>
+        <TableHeader>
+          <TableHeaderRow>
+            <TableHead>Rule Name</TableHead>
+            <TableHead>Trigger</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead align="center">Executions</TableHead>
+            <TableHead>Last Triggered</TableHead>
+            <TableHead align="right">Actions</TableHead>
+          </TableHeaderRow>
+        </TableHeader>
+        <TableBody>
+          {rules.map((rule) => (
+            <TableRow
+              key={rule.id}
+              onClick={() => router.push(`/automation/${rule.id}`)}
+              className="cursor-pointer"
             >
-              <MoreVertical className="h-4 w-4" />
-            </button>
+              {/* Name + Description */}
+              <TableCell>
+                <p className="text-[13px] font-medium text-on-surface truncate max-w-[280px]">
+                  {rule.name}
+                </p>
+                {rule.description && (
+                  <p className="text-[11px] text-on-surface-variant/60 truncate max-w-[280px]">
+                    {rule.description}
+                  </p>
+                )}
+              </TableCell>
 
-            {openMenu === rule.id && (
-              <>
+              {/* Trigger */}
+              <TableCell>
+                <TriggerTypeLabel triggerType={rule.triggerType} />
+              </TableCell>
+
+              {/* Status */}
+              <TableCell>
+                <RuleStatusBadge status={rule.status} />
+              </TableCell>
+
+              {/* Execution count */}
+              <TableCell align="center">
+                <span className="text-[12px] text-on-surface-variant tabular-nums">
+                  {rule.executionCount.toLocaleString()}
+                </span>
+              </TableCell>
+
+              {/* Last triggered */}
+              <TableCell>
+                <span className="text-[12px] text-on-surface-variant">
+                  {rule.lastTriggeredAt ? timeAgo(rule.lastTriggeredAt) : "—"}
+                </span>
+              </TableCell>
+
+              {/* Actions menu */}
+              <TableCell align="right">
                 <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setOpenMenu(null)}
-                />
-                <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-xl bg-surface-container-high shadow-lg border border-outline-variant/15 py-1">
-                  {rule.status === "INACTIVE" ? (
-                    <button
-                      onClick={() => {
-                        onEnable(rule.id);
-                        setOpenMenu(null);
-                      }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-on-surface hover:bg-surface-container transition-colors"
-                    >
-                      <Power className="h-3.5 w-3.5" />
-                      Enable
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        onDisable(rule.id);
-                        setOpenMenu(null);
-                      }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-on-surface hover:bg-surface-container transition-colors"
-                    >
-                      <PowerOff className="h-3.5 w-3.5" />
-                      Disable
-                    </button>
-                  )}
+                  className="relative inline-flex justify-end"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
-                    onClick={() => {
-                      onDelete(rule.id);
-                      setOpenMenu(null);
-                    }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-error hover:bg-error/10 transition-colors"
+                    onClick={() =>
+                      setOpenMenu(openMenu === rule.id ? null : rule.id)
+                    }
+                    className="p-1 rounded-lg text-on-surface-variant/40 hover:text-on-surface hover:bg-surface-container transition-colors"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Delete
+                    <MoreVertical className="h-4 w-4" />
                   </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      ))}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3">
-          <p className="text-[12px] text-on-surface-variant/60">
-            {skip + 1}–{Math.min(skip + take, total)} of {total}
-          </p>
-          <div className="flex gap-1.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 0}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages - 1}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+                  {openMenu === rule.id && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setOpenMenu(null)}
+                      />
+                      <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-xl bg-surface-container-high shadow-lg border border-outline-variant/15 py-1">
+                        {rule.status === "INACTIVE" ? (
+                          <button
+                            onClick={() => {
+                              onEnable(rule.id);
+                              setOpenMenu(null);
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-on-surface hover:bg-surface-container transition-colors"
+                          >
+                            <Power className="h-3.5 w-3.5" />
+                            Enable
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              onDisable(rule.id);
+                              setOpenMenu(null);
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-on-surface hover:bg-surface-container transition-colors"
+                          >
+                            <PowerOff className="h-3.5 w-3.5" />
+                            Disable
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            onDelete(rule.id);
+                            setOpenMenu(null);
+                          }}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-[13px] text-error hover:bg-error/10 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        total={total}
+        onPageChange={(p) => onPageChange(p - 1)}
+      />
     </div>
   );
 }

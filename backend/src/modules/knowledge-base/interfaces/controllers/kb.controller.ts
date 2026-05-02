@@ -6,10 +6,13 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuid } from 'uuid';
 import * as path from 'path';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Public } from '@/common/decorators/public.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
+import { EVENT_NAMES } from '@/common/constants';
+import { AiProviderService } from '@/modules/ai/domain/services/ai-provider.service';
 import { KbRepository } from '../../infrastructure/repositories/kb.repository';
 import { DocumentProcessorService } from '../../domain/services/document-processor.service';
 import { CreateCategoryDto, CreateArticleDto, UpdateArticleDto } from '../../application/dto';
@@ -30,6 +33,8 @@ export class KbController {
   constructor(
     private readonly repo: KbRepository,
     private readonly docProcessor: DocumentProcessorService,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly aiProvider: AiProviderService,
   ) {}
 
   // ─── Categories ───
@@ -58,7 +63,30 @@ export class KbController {
   @Post('articles')
   @Permissions(PERMISSIONS.SETTINGS_MANAGE)
   async createArticle(@CurrentUser('orgId') orgId: string, @CurrentUser('sub') userId: string, @Body() dto: CreateArticleDto) {
-    return this.repo.createArticle({ orgId, authorId: userId, ...dto });
+    const article = await this.repo.createArticle({ orgId, authorId: userId, ...dto });
+    if (article.isPublished) {
+      this.eventEmitter.emit(EVENT_NAMES.KB_ARTICLE_PUBLISHED, { orgId });
+    }
+
+    // Generate AI tag suggestions (non-blocking — don't fail if AI is down)
+    let suggestedTags: string[] = [];
+    try {
+      const content = `Title: ${article.title}\n\n${(article as any).body?.slice(0, 1000) ?? ''}`;
+      const result = await this.aiProvider.complete({
+        systemPrompt: 'You are a knowledge base tagger. Return ONLY a JSON array of 3-5 short tag strings (lowercase, no spaces, use hyphens). Example: ["billing","refunds","payment-policy"]',
+        userPrompt: `Suggest tags for this knowledge base article:\n\n${content}`,
+        maxTokens: 100,
+      });
+      const match = result.text.match(/\[[\s\S]*\]/);
+      if (match) {
+        const arr = JSON.parse(match[0]);
+        if (Array.isArray(arr)) suggestedTags = arr.filter((t) => typeof t === 'string').slice(0, 5);
+      }
+    } catch {
+      this.logger.warn('AI tag suggestion failed for article ' + article.id);
+    }
+
+    return { ...article, suggestedTags };
   }
 
   @Get('articles')
@@ -98,6 +126,10 @@ export class KbController {
     const article = await this.repo.findByIdAndOrg(id, orgId);
     if (!article) throw new NotFoundException('Article not found');
     await this.repo.updateArticle(id, orgId, dto as any);
+    // Rebuild memory if publish state changed or content updated
+    if (dto.isPublished !== undefined || dto.body !== undefined || dto.title !== undefined) {
+      this.eventEmitter.emit(EVENT_NAMES.KB_ARTICLE_PUBLISHED, { orgId });
+    }
     return this.repo.findByIdAndOrg(id, orgId);
   }
 
@@ -105,6 +137,7 @@ export class KbController {
   @Permissions(PERMISSIONS.SETTINGS_MANAGE)
   async deleteArticle(@CurrentUser('orgId') orgId: string, @Param('id', ParseUUIDPipe) id: string) {
     await this.repo.softDelete(id, orgId);
+    this.eventEmitter.emit(EVENT_NAMES.KB_ARTICLE_DELETED, { orgId });
     return { deleted: true };
   }
 

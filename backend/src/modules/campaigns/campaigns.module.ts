@@ -3,6 +3,7 @@ import { AuditModule } from '@/modules/audit/audit.module';
 import { WhatsAppModule } from '@/modules/whatsapp/whatsapp.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
 import { BillingModule } from '@/modules/billing/billing.module';
+import { AiModule } from '@/modules/ai/ai.module';
 
 // Repositories
 import { CampaignRepository } from './infrastructure/repositories/campaign.repository';
@@ -24,6 +25,7 @@ import { GetCampaignUseCase } from './application/use-cases/get-campaign.use-cas
 import { ListCampaignsUseCase } from './application/use-cases/list-campaigns.use-case';
 import { GetCampaignAnalyticsUseCase } from './application/use-cases/get-campaign-analytics.use-case';
 import { PreviewAudienceUseCase } from './application/use-cases/preview-audience.use-case';
+import { GenerateCampaignCopyUseCase } from './application/use-cases/generate-campaign-copy.use-case';
 
 // Controller
 import { CampaignController } from './interfaces/controllers/campaign.controller';
@@ -32,6 +34,7 @@ import { CampaignController } from './interfaces/controllers/campaign.controller
   imports: [
     AuditModule,
     BillingModule,
+    AiModule,
     forwardRef(() => WhatsAppModule),
     forwardRef(() => MessagesModule),
   ],
@@ -57,6 +60,7 @@ import { CampaignController } from './interfaces/controllers/campaign.controller
     ListCampaignsUseCase,
     GetCampaignAnalyticsUseCase,
     PreviewAudienceUseCase,
+    GenerateCampaignCopyUseCase,
   ],
   exports: [
     CampaignRepository,

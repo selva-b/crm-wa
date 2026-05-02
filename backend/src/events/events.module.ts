@@ -52,6 +52,9 @@ import { SequencesModule } from '@/modules/sequences/sequences.module';
 import { PurchaseIntentHandler } from './handlers/purchase-intent.handler';
 import { DealsModule } from '@/modules/deals/deals.module';
 import { AiModule } from '@/modules/ai/ai.module';
+// Org AI Memory events
+import { OrgMemoryEventsHandler } from './handlers/org-memory-events.handler';
+import { OrgModule } from '@/modules/org/org.module';
 
 @Module({
   imports: [
@@ -72,6 +75,7 @@ import { AiModule } from '@/modules/ai/ai.module';
     ChatbotModule,
     DealsModule,
     AiModule,
+    OrgModule,
   ],
   providers: [
     AuthEventsHandler,
@@ -111,6 +115,8 @@ import { AiModule } from '@/modules/ai/ai.module';
     ChatbotTriggerHandler,
     // Purchase intent detection
     PurchaseIntentHandler,
+    // Org AI Memory rebuild events
+    OrgMemoryEventsHandler,
   ],
 })
 export class EventsModule {}

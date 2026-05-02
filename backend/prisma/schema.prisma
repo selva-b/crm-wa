@@ -437,9 +437,12 @@ model Organization {
   id        String    @id @default(uuid()) @db.Uuid
   name      String    @db.VarChar(255)
   slug      String    @unique @db.VarChar(255)
-  timezone  String    @default("UTC") @db.VarChar(100)
-  orgType   OrgType   @default(CRM) @map("org_type")
-  branding  Json?     @db.JsonB
+  timezone    String    @default("UTC") @db.VarChar(100)
+  orgType     OrgType   @default(CRM) @map("org_type")
+  branding    Json?     @db.JsonB
+  industry    String?   @db.VarChar(100)
+  description String?   @db.VarChar(2000)
+  website     String?   @db.VarChar(500)
   trialUsedAt DateTime? @map("trial_used_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -501,6 +504,7 @@ model Organization {
   products                 Product[]
   productCategories        ProductCategory[]
   helpTickets              HelpTicket[]
+  aiMemory                 OrgAiMemory?
 
   @@index([slug])
   @@index([deletedAt])
@@ -2782,6 +2786,9 @@ model Deal {
   expectedClose DateTime?  @map("expected_close")
   closedAt      DateTime?  @map("closed_at")
   notes         String?    @db.Text
+  aiScore       Int?       @map("ai_score")
+  aiScoreReason String?    @map("ai_score_reason") @db.VarChar(500)
+  aiScoredAt    DateTime?  @map("ai_scored_at")
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
   deletedAt     DateTime?  @map("deleted_at")
@@ -3228,5 +3235,31 @@ model TicketReply {
 
   @@index([ticketId, createdAt])
   @@map("ticket_replies")
+}
+
+// ─────────────────────────────────────────────
+// ORG AI MEMORY — Living business context for AI
+// ─────────────────────────────────────────────
+
+model OrgAiMemory {
+  id               String    @id @default(uuid()) @db.Uuid
+  orgId            String    @unique @map("org_id") @db.Uuid
+  businessName     String?   @map("business_name") @db.VarChar(255)
+  industry         String?   @db.VarChar(100)
+  description      String?   @db.VarChar(2000)
+  website          String?   @db.VarChar(500)
+  productsJson     String?   @map("products_json") @db.Text
+  kbSummary        String?   @map("kb_summary") @db.Text
+  shopifyStore     String?   @map("shopify_store") @db.VarChar(255)
+  customContext    String?   @map("custom_context") @db.VarChar(2000)
+  documentText     String?   @map("document_text") @db.Text
+  documentName     String?   @map("document_name") @db.VarChar(255)
+  builtAt          DateTime? @map("built_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@map("org_ai_memories")
 }
 

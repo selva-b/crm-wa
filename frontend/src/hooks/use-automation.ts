@@ -8,6 +8,7 @@ import type {
   ListExecutionLogsParams,
   CreateAutomationRuleRequest,
   UpdateAutomationRuleRequest,
+  GeneratedAutomationRuleResponse,
 } from "@/lib/types/automation";
 
 // ─── Query Key Factory ───
@@ -107,5 +108,12 @@ export function useDisableAutomationRule() {
       toast.success("Automation rule disabled");
     },
     onError: (err: Error) => toast.error(err.message || "Failed to disable automation rule"),
+  });
+}
+
+export function useGenerateAutomationRule() {
+  return useMutation<GeneratedAutomationRuleResponse, Error, string>({
+    mutationFn: (prompt: string) => automationApi.generate(prompt),
+    onError: (err) => toast.error(err.message || "Failed to generate automation rule"),
   });
 }

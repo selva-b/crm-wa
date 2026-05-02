@@ -7,6 +7,9 @@ export interface OrgSettings {
   logo?: string;
   timezone: string;
   language: string;
+  industry?: string;
+  description?: string;
+  website?: string;
   brandColors?: {
     primary?: string;
     secondary?: string;
@@ -19,10 +22,24 @@ export interface UpdateOrgSettingsRequest {
   logo?: string;
   timezone?: string;
   language?: string;
+  industry?: string;
+  description?: string;
+  website?: string;
   brandColors?: {
     primary?: string;
     secondary?: string;
   };
+}
+
+// ─── AI Memory ───
+
+export interface OrgAiMemory {
+  context: string;
+  customContext: string | null;
+  shopifyStore: string | null;
+  documentName: string | null;
+  builtAt: string | null;
+  updatedAt: string;
 }
 
 // ─── WhatsApp Configuration ───

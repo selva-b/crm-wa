@@ -11,11 +11,15 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
-import { DealStatus } from '@prisma/client';
+import { DealStatus, UsageMetricType } from '@prisma/client';
+import { UsageLimitGuard, USAGE_LIMIT_KEY } from '@/modules/billing/interfaces/guards/usage-limit.guard';
+import { UsageTrackingService } from '@/modules/billing/domain/services/usage-tracking.service';
 import { PipelineRepository } from '../../infrastructure/repositories/pipeline.repository';
 import { DealRepository } from '../../infrastructure/repositories/deal.repository';
 import {
@@ -25,12 +29,15 @@ import {
   UpdateDealDto,
   MoveDealDto,
 } from '../../application/dto';
+import { ScoreDealUseCase } from '../../application/use-cases/score-deal.use-case';
 
 @Controller('pipelines')
 export class DealsController {
   constructor(
     private readonly pipelineRepo: PipelineRepository,
     private readonly dealRepo: DealRepository,
+    private readonly scoreDealUseCase: ScoreDealUseCase,
+    private readonly usageTracking: UsageTrackingService,
   ) {}
 
   // ───── Pipelines ─────
@@ -198,6 +205,22 @@ export class DealsController {
     if (!deal) throw new NotFoundException('Deal not found');
     await this.dealRepo.softDelete(dealId);
     return { success: true };
+  }
+
+  // ───── AI Scoring ─────
+
+  @Post(':pipelineId/deals/:dealId/score')
+  @Permissions(PERMISSIONS.CONTACTS_READ)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
+  @HttpCode(HttpStatus.OK)
+  async scoreDeal(
+    @CurrentUser() user: JwtPayload,
+    @Param('dealId', ParseUUIDPipe) dealId: string,
+  ) {
+    const result = await this.scoreDealUseCase.execute(dealId, user.orgId);
+    await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
+    return result;
   }
 
   // ───── Analytics ─────

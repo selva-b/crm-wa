@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -108,10 +108,18 @@ import {
   useUpdateSlaPolicy,
   useDeleteSlaPolicy,
 } from "@/hooks/use-sla";
+import {
+  useAiMemory,
+  useRebuildAiMemory,
+  useUpdateAiMemory,
+  useUploadAiMemoryDocument,
+  useDeleteAiMemoryDocument,
+} from "@/hooks/use-settings";
 import type { SlaPolicy } from "@/lib/types/sla";
 
 type SettingsTab =
   | "organization"
+  | "ai-memory"
   | "whatsapp"
   | "working-hours"
   | "features"
@@ -123,6 +131,7 @@ type SettingsTab =
 
 const TABS: { id: SettingsTab; label: string; icon: typeof Building2 }[] = [
   { id: "organization", label: "Organization", icon: Building2 },
+  { id: "ai-memory", label: "AI Memory", icon: Zap },
   { id: "whatsapp", label: "WhatsApp", icon: MessageSquare },
   { id: "working-hours", label: "Working Hours", icon: Clock },
   { id: "features", label: "Feature Flags", icon: ToggleLeft },
@@ -170,7 +179,7 @@ export default function SettingsPage() {
 
   const user = useAuthStore((s) => s.user);
   const searchParams = useSearchParams();
-  const VALID_TABS: SettingsTab[] = ["organization","whatsapp","working-hours","features","notifications","webhooks","developer-api","sla","shopify"];
+  const VALID_TABS: SettingsTab[] = ["organization","ai-memory","whatsapp","working-hours","features","notifications","webhooks","developer-api","sla","shopify"];
   const rawTab = searchParams.get("tab");
   const tabParam: SettingsTab | null = rawTab && VALID_TABS.includes(rawTab as SettingsTab) ? (rawTab as SettingsTab) : null;
   const [activeTab, setActiveTab] = useState<SettingsTab>(tabParam ?? "organization");
@@ -220,6 +229,7 @@ export default function SettingsPage() {
         {/* Content */}
         <div className="flex-1 min-w-0">
           {activeTab === "organization" && <OrganizationSection />}
+          {activeTab === "ai-memory" && <AiMemorySection />}
           {activeTab === "whatsapp" && <WhatsAppSection />}
           {activeTab === "working-hours" && <WorkingHoursSection />}
           {activeTab === "features" && (
@@ -248,17 +258,23 @@ function OrganizationSection() {
   const [name, setName] = useState("");
   const [timezone, setTimezone] = useState("UTC");
   const [language, setLanguage] = useState("en");
+  const [industry, setIndustry] = useState("");
+  const [description, setDescription] = useState("");
+  const [website, setWebsite] = useState("");
 
   useEffect(() => {
     if (data) {
       setName(data.name ?? "");
       setTimezone(data.timezone ?? "UTC");
       setLanguage(data.language ?? "en");
+      setIndustry(data.industry ?? "");
+      setDescription(data.description ?? "");
+      setWebsite(data.website ?? "");
     }
   }, [data]);
 
   const handleSave = () => {
-    const payload: UpdateOrgSettingsRequest = { name, timezone, language };
+    const payload: UpdateOrgSettingsRequest = { name, timezone, language, industry, description, website };
     updateMutation.mutate(payload);
   };
 
@@ -326,6 +342,53 @@ function OrganizationSection() {
           </select>
         </div>
 
+        {/* Business Profile */}
+        <div className="border-t border-outline-variant/20 pt-5 mt-2">
+          <p className="text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider mb-4">
+            Business Profile
+          </p>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-on-surface-variant">
+                Industry
+              </label>
+              <input
+                type="text"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                placeholder="e.g. E-commerce, Healthcare, Education"
+                className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-[14px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-on-surface-variant">
+                Business Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Briefly describe what your business does..."
+                maxLength={2000}
+                rows={3}
+                className="w-full rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 py-2.5 text-[14px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              />
+              <p className="text-[11px] text-on-surface-variant/60 text-right">{description.length}/2000</p>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-medium text-on-surface-variant">
+                Website
+              </label>
+              <input
+                type="text"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://yourwebsite.com"
+                className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-[14px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="pt-2">
           <Button
             onClick={handleSave}
@@ -341,6 +404,212 @@ function OrganizationSection() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// ─── AI Memory Section ──────────────────────────
+
+function AiMemorySection() {
+  const { data, isLoading } = useAiMemory();
+  const rebuildMutation = useRebuildAiMemory();
+  const updateMutation = useUpdateAiMemory();
+  const uploadDocMutation = useUploadAiMemoryDocument();
+  const deleteDocMutation = useDeleteAiMemoryDocument();
+  const [customContext, setCustomContext] = useState("");
+  const [customSaved, setCustomSaved] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (data) {
+      setCustomContext(data.customContext ?? "");
+    }
+  }, [data]);
+
+  const handleSaveCustom = () => {
+    updateMutation.mutate({ customContext }, {
+      onSuccess: () => {
+        setCustomSaved(true);
+        setTimeout(() => setCustomSaved(false), 2000);
+      },
+    });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadDocMutation.mutate(file);
+    e.target.value = "";
+  };
+
+  if (isLoading) return <SectionLoader />;
+
+  return (
+    <div className="space-y-4">
+      {/* Status Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Zap className="h-5 w-5" />
+            AI Memory
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-[13px] text-on-surface-variant">
+            AI Memory gives every AI response context about your business — products, knowledge base, and Shopify store. It auto-rebuilds when you update your profile.
+          </p>
+
+          {data ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="text-on-surface-variant">Last rebuilt</span>
+                <span className="text-on-surface font-medium">
+                  {data.builtAt
+                    ? new Date(data.builtAt).toLocaleString()
+                    : "Never"}
+                </span>
+              </div>
+              {data.shopifyStore && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-on-surface-variant">Shopify store</span>
+                  <span className="text-on-surface font-medium">{data.shopifyStore}</span>
+                </div>
+              )}
+              {data.context && (
+                <div className="space-y-1.5">
+                  <label className="text-[12px] font-medium text-on-surface-variant uppercase tracking-wider">
+                    Current Context
+                  </label>
+                  <pre className="w-full rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-2.5 text-[12px] text-on-surface/80 whitespace-pre-wrap font-mono overflow-auto max-h-64">
+                    {data.context}
+                  </pre>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-[13px] text-on-surface-variant/60">
+              No memory built yet. Save your Business Profile to generate the first memory.
+            </p>
+          )}
+
+          <div className="pt-1">
+            <Button
+              onClick={() => rebuildMutation.mutate()}
+              disabled={rebuildMutation.isPending}
+              size="sm"
+              variant="secondary"
+            >
+              <RotateCw className="h-4 w-4" />
+              {rebuildMutation.isPending ? "Rebuilding..." : "Rebuild Now"}
+            </Button>
+            {rebuildMutation.isSuccess && (
+              <span className="ml-3 text-[12px] text-primary">Rebuilt!</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Document Upload Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Upload Business Document</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-[13px] text-on-surface-variant">
+            Upload a PDF, TXT, or CSV file (e.g. product catalog, company profile, FAQ sheet). The text will be extracted and injected into every AI response.
+          </p>
+
+          {data?.documentName ? (
+            <div className="flex items-center gap-3 rounded-lg border border-outline-variant/30 bg-surface-container px-4 py-3">
+              <FileCode className="h-5 w-5 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-on-surface truncate">{data.documentName}</p>
+                <p className="text-[11px] text-on-surface-variant">Document indexed in AI memory</p>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => deleteDocMutation.mutate()}
+                disabled={deleteDocMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4 text-error" />
+              </Button>
+            </div>
+          ) : (
+            <div
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-outline-variant/30 py-8 cursor-pointer hover:border-primary/50 hover:bg-surface-container/50 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Activity className="h-8 w-8 text-on-surface-variant/40" />
+              <p className="text-[13px] text-on-surface-variant">Click to upload a document</p>
+              <p className="text-[11px] text-on-surface-variant/60">PDF, TXT, CSV, Markdown — max 20 MB</p>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.txt,.csv,.md,text/plain,text/csv,text/markdown,application/pdf"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+
+          {!data?.documentName && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadDocMutation.isPending}
+            >
+              <Plus className="h-4 w-4" />
+              {uploadDocMutation.isPending ? "Uploading..." : "Choose File"}
+            </Button>
+          )}
+
+          {uploadDocMutation.isError && (
+            <p className="text-[12px] text-error">
+              Upload failed. Make sure the file is a valid PDF, TXT, or CSV.
+            </p>
+          )}
+          {uploadDocMutation.isSuccess && (
+            <p className="text-[12px] text-primary">
+              Document uploaded — {(uploadDocMutation.data as any)?.extractedLength?.toLocaleString()} characters extracted.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Custom Instructions Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Custom Instructions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-[13px] text-on-surface-variant">
+            Add extra context that should be injected into every AI response — tone guidelines, specific rules, or business policies.
+          </p>
+          <textarea
+            value={customContext}
+            onChange={(e) => setCustomContext(e.target.value)}
+            placeholder="e.g. Always respond in a friendly tone. Never mention competitor products. Our support hours are 9am–6pm IST."
+            maxLength={2000}
+            rows={5}
+            className="w-full rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 py-2.5 text-[14px] text-on-surface focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+          />
+          <p className="text-[11px] text-on-surface-variant/60 text-right">{customContext.length}/2000</p>
+          <Button
+            onClick={handleSaveCustom}
+            disabled={updateMutation.isPending}
+            size="sm"
+          >
+            <Save className="h-4 w-4" />
+            {updateMutation.isPending ? "Saving..." : "Save Instructions"}
+          </Button>
+          {customSaved && (
+            <span className="ml-3 text-[12px] text-primary">Saved!</span>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

@@ -166,6 +166,30 @@ export interface UpdateAutomationRuleRequest {
   cooldownSeconds?: number;
 }
 
+// ─── AI Generation ───
+
+export interface GeneratedRuleAction {
+  actionType: AutomationActionType;
+  actionConfig: Record<string, unknown>;
+  orderIndex: number;
+  delaySeconds?: number;
+}
+
+export interface GeneratedRule {
+  name: string;
+  description: string;
+  triggerType: AutomationTriggerType;
+  triggerConfig: TriggerConfig;
+  actions: GeneratedRuleAction[];
+  cooldownSeconds?: number;
+  maxExecutionsPerContact?: number;
+}
+
+export interface GeneratedAutomationRuleResponse {
+  rule: GeneratedRule;
+  explanation: string;
+}
+
 // ─── Query Params ───
 
 export interface ListAutomationRulesParams {

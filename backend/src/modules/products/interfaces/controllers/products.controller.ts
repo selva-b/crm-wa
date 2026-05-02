@@ -11,9 +11,11 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
+import { EVENT_NAMES } from '@/common/constants';
 import { ProductRepository } from '../../infrastructure/repositories/product.repository';
 import {
   CreateProductDto,
@@ -25,7 +27,10 @@ import {
 
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly repo: ProductRepository) {}
+  constructor(
+    private readonly repo: ProductRepository,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   // ─── Product Categories ──────────────────────────────────────────────────
 
@@ -76,7 +81,9 @@ export class ProductsController {
   @Permissions(PERMISSIONS.CONTACTS_CREATE)
   @HttpCode(HttpStatus.CREATED)
   async create(@CurrentUser('orgId') orgId: string, @Body() dto: CreateProductDto) {
-    return this.repo.create({ orgId, ...dto });
+    const product = await this.repo.create({ orgId, ...dto });
+    this.eventEmitter.emit(EVENT_NAMES.PRODUCT_CREATED, { orgId });
+    return product;
   }
 
   @Get()
@@ -127,7 +134,9 @@ export class ProductsController {
   ) {
     const product = await this.repo.findByIdAndOrg(id, orgId);
     if (!product) throw new NotFoundException('Product not found');
-    return this.repo.update(id, dto as any);
+    const updated = await this.repo.update(id, dto as any);
+    this.eventEmitter.emit(EVENT_NAMES.PRODUCT_UPDATED, { orgId });
+    return updated;
   }
 
   @Delete(':id')
@@ -137,6 +146,7 @@ export class ProductsController {
     const product = await this.repo.findByIdAndOrg(id, orgId);
     if (!product) throw new NotFoundException('Product not found');
     await this.repo.softDelete(id);
+    this.eventEmitter.emit(EVENT_NAMES.PRODUCT_DELETED, { orgId });
     return { success: true };
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { AiProviderService } from '../../domain/services/ai-provider.service';
+import { OrgContextService } from '../../domain/services/org-context.service';
 
 export interface KbRagResult {
   answer: string;
@@ -15,6 +16,7 @@ export class KbRagSearchUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiProvider: AiProviderService,
+    private readonly orgContext: OrgContextService,
   ) {}
 
   /**
@@ -49,15 +51,17 @@ export class KbRagSearchUseCase {
       .join('\n\n---\n\n');
 
     // Step 3: Generate answer using AI with article context
-    const result = await this.aiProvider.complete({
-      systemPrompt: `You are a helpful support assistant for a CRM platform. Answer the user's question using ONLY the provided knowledge base articles. If the articles don't contain enough information, say so.
+    const orgContextStr = await this.orgContext.getContext(orgId);
+    const BASE_SYSTEM_PROMPT = `You are a helpful support assistant. Answer the user's question using ONLY the provided knowledge base articles. If the articles don't contain enough information, say so.
 
 Return ONLY valid JSON:
 {
   "answer": "Your helpful answer based on the articles",
   "relevantArticles": [1, 2],  // indices (1-based) of articles you used
   "confidence": 0.0-1.0  // how confident you are the answer is correct
-}`,
+}`;
+    const result = await this.aiProvider.complete({
+      systemPrompt: orgContextStr ? `${orgContextStr}\n\n---\n\n${BASE_SYSTEM_PROMPT}` : BASE_SYSTEM_PROMPT,
       userPrompt: `Knowledge Base Articles:\n${context}\n\n---\n\nUser Question: ${query}`,
       maxTokens: 800,
     });

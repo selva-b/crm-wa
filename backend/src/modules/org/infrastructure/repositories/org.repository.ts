@@ -7,6 +7,9 @@ export interface UpdateOrgSettingsInput {
   slug?: string;
   timezone?: string;
   branding?: Prisma.InputJsonValue;
+  industry?: string;
+  description?: string;
+  website?: string;
 }
 
 @Injectable()
@@ -47,6 +50,9 @@ export class OrgRepository {
         ...(data.slug !== undefined && { slug: data.slug }),
         ...(data.timezone !== undefined && { timezone: data.timezone }),
         ...(data.branding !== undefined && { branding: data.branding }),
+        ...(data.industry !== undefined && { industry: data.industry }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.website !== undefined && { website: data.website }),
       },
     });
   }

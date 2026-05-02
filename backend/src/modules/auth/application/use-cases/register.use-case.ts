@@ -17,6 +17,7 @@ import { QueueService } from '@/infrastructure/queue/queue.service';
 import { QUEUE_NAMES, EVENT_NAMES, SAFE_AUTH_MESSAGE } from '@/common/constants';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { SeedOrgPermissionsUseCase } from '@/modules/rbac/application/use-cases';
+import { RebuildOrgMemoryUseCase } from '@/modules/org/application/use-cases/rebuild-org-memory.use-case';
 
 export interface RegisterResult {
   message: string;
@@ -38,6 +39,7 @@ export class RegisterUseCase {
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
     private readonly seedOrgPermissionsUseCase: SeedOrgPermissionsUseCase,
+    private readonly rebuildOrgMemoryUseCase: RebuildOrgMemoryUseCase,
   ) {}
 
   async execute(
@@ -120,6 +122,13 @@ export class RegisterUseCase {
     this.seedOrgPermissionsUseCase.execute(user.orgId).catch((err) => {
       this.logger.error(
         `Failed to seed permissions for org ${user.orgId}: ${err.message}`,
+      );
+    });
+
+    // Initialize AI memory for the new org (non-blocking)
+    this.rebuildOrgMemoryUseCase.execute(user.orgId).catch((err) => {
+      this.logger.error(
+        `Failed to initialize AI memory for org ${user.orgId}: ${err.message}`,
       );
     });
 

@@ -236,15 +236,15 @@ function LeftPanel({
   const { data: availableProducts } = useProducts();
 
   return (
-    <div className="w-[220px] shrink-0 border-r border-black/[0.06] bg-white flex flex-col overflow-y-auto">
+    <div className="w-[220px] shrink-0 border-r border-outline-variant bg-surface-container-low flex flex-col overflow-y-auto">
       <div className="p-3 space-y-4">
         {/* Trigger */}
         <section className="space-y-2">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Trigger</p>
+          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Trigger</p>
           <select
             value={triggerType}
             onChange={(e) => setTriggerType(e.target.value)}
-            className="w-full px-2.5 py-1.5 rounded-lg border border-black/10 text-[12px] text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full px-2.5 py-1.5 rounded-lg border border-outline text-[12px] text-on-surface bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="KEYWORD">Keyword Match</option>
             <option value="FIRST_MESSAGE">First Message</option>
@@ -255,34 +255,34 @@ function LeftPanel({
               value={triggerValue}
               onChange={(e) => setTriggerValue(e.target.value)}
               placeholder="e.g. hello, hi, start"
-              className="w-full px-2.5 py-1.5 rounded-lg border border-black/10 text-[12px] text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="w-full px-2.5 py-1.5 rounded-lg border border-outline text-[12px] text-on-surface bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           )}
         </section>
 
         {/* AI Toggle */}
-        <section className="border-t border-black/[0.06] pt-3 space-y-2">
+        <section className="border-t border-outline-variant pt-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Bot className="h-3.5 w-3.5 text-primary" />
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">AI Mode</p>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">AI Mode</p>
             </div>
             <button
               onClick={() => setAiEnabled(!aiEnabled)}
-              className={`relative w-9 h-5 rounded-full transition-colors ${aiEnabled ? "bg-primary" : "bg-gray-200"}`}
+              className={`relative w-9 h-5 rounded-full transition-colors ${aiEnabled ? "bg-primary" : "bg-surface-container-highest"}`}
             >
               <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${aiEnabled ? "translate-x-4" : "translate-x-0.5"}`} />
             </button>
           </div>
           {aiEnabled && (
             <div className="space-y-1.5">
-              <label className="text-[11px] text-gray-500">System Prompt</label>
+              <label className="text-[11px] text-on-surface-variant">System Prompt</label>
               <textarea
                 value={aiSystemPrompt}
                 onChange={(e) => setAiSystemPrompt(e.target.value)}
                 rows={4}
                 placeholder="You are a helpful customer support agent for [Company]. Be concise and friendly."
-                className="w-full px-2.5 py-2 rounded-lg border border-black/10 bg-gray-50 text-[11px] text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full px-2.5 py-2 rounded-lg border border-outline bg-surface-container text-[11px] text-on-surface resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
           )}
@@ -290,9 +290,9 @@ function LeftPanel({
 
         {/* Product scope */}
         {aiEnabled && availableProducts && availableProducts.filter((p) => p.status === "ACTIVE").length > 0 && (
-          <section className="border-t border-black/[0.06] pt-3 space-y-2">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Product Scope</p>
-            <p className="text-[10px] text-gray-400">Leave empty for all products</p>
+          <section className="border-t border-outline-variant pt-3 space-y-2">
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Product Scope</p>
+            <p className="text-[10px] text-on-surface-variant">Leave empty for all products</p>
             {availableProducts.filter((p) => p.status === "ACTIVE").map((p) => (
               <label key={p.id} className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -304,7 +304,7 @@ function LeftPanel({
                   }}
                   className="rounded h-3.5 w-3.5"
                 />
-                <span className="text-[12px] text-gray-700">{p.name}</span>
+                <span className="text-[12px] text-on-surface">{p.name}</span>
               </label>
             ))}
           </section>
@@ -312,24 +312,24 @@ function LeftPanel({
 
         {/* Knowledge Base */}
         {aiEnabled && (
-          <section className="border-t border-black/[0.06] pt-3 space-y-2">
+          <section className="border-t border-outline-variant pt-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <BookOpen className="h-3.5 w-3.5 text-primary" />
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Product Docs</p>
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Product Docs</p>
               </div>
               <button
                 onClick={() => setUseKnowledgeBase(!useKnowledgeBase)}
-                className={`relative w-9 h-5 rounded-full transition-colors ${useKnowledgeBase ? "bg-primary" : "bg-gray-200"}`}
+                className={`relative w-9 h-5 rounded-full transition-colors ${useKnowledgeBase ? "bg-primary" : "bg-surface-container-highest"}`}
               >
                 <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${useKnowledgeBase ? "translate-x-4" : "translate-x-0.5"}`} />
               </button>
             </div>
             {useKnowledgeBase && (
               <div className="space-y-2">
-                <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-200 hover:border-primary/40 cursor-pointer transition-colors">
-                  <Upload className="h-3.5 w-3.5 text-gray-400" />
-                  <span className="text-[11px] text-gray-500">
+                <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-outline hover:border-primary/40 cursor-pointer transition-colors">
+                  <Upload className="h-3.5 w-3.5 text-on-surface-variant" />
+                  <span className="text-[11px] text-on-surface-variant">
                     {uploadDoc.isPending ? "Uploading..." : "Upload PDF / TXT"}
                   </span>
                   <input type="file" accept=".pdf,.txt,.csv,.md" className="hidden"
@@ -342,13 +342,13 @@ function LeftPanel({
                 {documents && documents.length > 0 && (
                   <div className="space-y-1">
                     {documents.map((doc) => (
-                      <div key={doc.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gray-50 text-[11px]">
-                        <FileText className="h-3 w-3 shrink-0 text-gray-400" />
-                        <span className="flex-1 truncate text-gray-700">{doc.title}</span>
+                      <div key={doc.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-surface-container text-[11px]">
+                        <FileText className="h-3 w-3 shrink-0 text-on-surface-variant" />
+                        <span className="flex-1 truncate text-on-surface">{doc.title}</span>
                         {doc.status === "READY"      && <CheckCircle2 className="h-3 w-3 text-green-500 shrink-0" />}
                         {doc.status === "PROCESSING" && <Loader2 className="h-3 w-3 text-yellow-500 shrink-0 animate-spin" />}
                         {doc.status === "FAILED"     && <AlertTriangle className="h-3 w-3 text-red-400 shrink-0" />}
-                        <button onClick={() => deleteDoc.mutate(doc.id)} className="p-0.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors shrink-0">
+                        <button onClick={() => deleteDoc.mutate(doc.id)} className="p-0.5 rounded hover:bg-red-50 text-on-surface-variant hover:text-red-400 transition-colors shrink-0">
                           <X className="h-3 w-3" />
                         </button>
                       </div>
@@ -362,9 +362,9 @@ function LeftPanel({
 
         {/* Node palette */}
         {!aiEnabled && (
-          <section className="border-t border-black/[0.06] pt-3 space-y-1.5">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Add Node</p>
-            <p className="text-[10px] text-gray-400 mb-2">Drag onto canvas or click to add</p>
+          <section className="border-t border-outline-variant pt-3 space-y-1.5">
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">Add Node</p>
+            <p className="text-[10px] text-on-surface-variant mb-2">Drag onto canvas or click to add</p>
             {NODE_TYPE_LIST.map(([type, meta]) => {
               const Icon = meta.icon;
               return (
@@ -373,12 +373,12 @@ function LeftPanel({
                   onClick={() => onAddNode(type)}
                   draggable
                   onDragStart={(e) => e.dataTransfer.setData("nodeType", type)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-left group cursor-grab active:cursor-grabbing"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-container transition-colors text-left group cursor-grab active:cursor-grabbing"
                 >
                   <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: meta.bg }}>
                     <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
                   </div>
-                  <span className="text-[12px] font-medium text-gray-700">{meta.label}</span>
+                  <span className="text-[12px] font-medium text-on-surface">{meta.label}</span>
                 </button>
               );
             })}
@@ -406,26 +406,26 @@ function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPane
   function field(label: string, children: React.ReactNode) {
     return (
       <div className="space-y-1.5">
-        <label className="text-[12px] font-medium text-gray-600">{label}</label>
+        <label className="text-[12px] font-medium text-on-surface-variant">{label}</label>
         {children}
       </div>
     );
   }
 
-  const inputCls = "w-full px-3 py-2 rounded-lg border border-black/10 text-[12px] text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20";
+  const inputCls = "w-full px-3 py-2 rounded-lg border border-outline text-[12px] text-on-surface bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary/20";
   const textareaCls = `${inputCls} resize-none`;
 
   return (
-    <div className="w-[270px] shrink-0 border-l border-black/[0.06] bg-white flex flex-col overflow-y-auto">
+    <div className="w-[270px] shrink-0 border-l border-outline-variant bg-surface-container-low flex flex-col overflow-y-auto">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-black/[0.06]" style={{ borderBottom: `2px solid ${meta.color}20` }}>
+      <div className="shrink-0 flex items-center justify-between px-4 py-3" style={{ borderBottom: `2px solid ${meta.color}20` }}>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ backgroundColor: meta.bg }}>
             <meta.icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
           </div>
-          <span className="text-[13px] font-semibold text-gray-800">{meta.label}</span>
+          <span className="text-[13px] font-semibold text-on-surface">{meta.label}</span>
         </div>
-        <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+        <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -441,7 +441,7 @@ function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPane
                 placeholder="Type your message here..."
                 className={textareaCls}
               />
-              <p className="text-[10px] text-gray-400">Use {"{{contact.name}}"} for personalization</p>
+              <p className="text-[10px] text-on-surface-variant">Use {"{{contact.name}}"} for personalization</p>
             </>
           ))
         )}
@@ -776,7 +776,7 @@ function ChatbotEditorInner() {
   if (!flow) {
     return (
       <div className="flex h-[calc(100vh-var(--header-height))] items-center justify-center">
-        <p className="text-gray-400 text-[14px]">Flow not found</p>
+        <p className="text-on-surface-variant text-[14px]">Flow not found</p>
       </div>
     );
   }
@@ -784,22 +784,22 @@ function ChatbotEditorInner() {
   const isSaving = saveNodes.isPending || updateFlow.isPending;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-var(--header-height))] bg-white">
+    <div className="flex flex-col h-[calc(100vh-var(--header-height))] bg-surface">
       {/* ── Top bar ── */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-black/[0.06] bg-white z-10">
+      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-outline-variant bg-surface-container-low z-10">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/chatbot")}
-            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <input
             value={flowName}
             onChange={(e) => setFlowName(e.target.value)}
-            className="text-[15px] font-semibold text-gray-800 bg-transparent border-none outline-none w-[220px] focus:ring-0"
+            className="text-[15px] font-semibold text-on-surface bg-transparent border-none outline-none w-[220px] focus:ring-0"
           />
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${flow.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${flow.isActive ? "bg-green-100 text-green-700" : "bg-surface-container-highest text-on-surface-variant"}`}>
             {flow.isActive ? "Active" : "Draft"}
           </span>
           {aiEnabled && (
@@ -852,8 +852,7 @@ function ChatbotEditorInner() {
         {/* Canvas */}
         <div
           ref={reactFlowWrapper}
-          className="flex-1 min-w-0"
-          style={{ background: "#f8f9fa" }}
+          className="flex-1 min-w-0 bg-surface-container-lowest"
           onDrop={onDrop}
           onDragOver={(e) => e.preventDefault()}
         >
@@ -867,15 +866,15 @@ function ChatbotEditorInner() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-[16px] font-semibold text-gray-800">AI Auto-Reply Mode</h3>
-                  <p className="text-[13px] text-gray-500 mt-1.5 leading-relaxed">
+                  <h3 className="text-[16px] font-semibold text-on-surface">AI Auto-Reply Mode</h3>
+                  <p className="text-[13px] text-on-surface-variant mt-1.5 leading-relaxed">
                     AI will reply to every incoming message automatically. No flow nodes needed.
                   </p>
                 </div>
-                <div className="bg-white rounded-xl border border-black/[0.08] p-4 text-left space-y-2.5">
+                <div className="bg-surface-container rounded-xl border border-outline-variant p-4 text-left space-y-2.5">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span className="text-[12px] text-gray-700">AI Auto-Reply is enabled</span>
+                    <span className="text-[12px] text-on-surface">AI Auto-Reply is enabled</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {aiSystemPrompt.trim() ? (
@@ -883,7 +882,7 @@ function ChatbotEditorInner() {
                     ) : (
                       <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
                     )}
-                    <span className="text-[12px] text-gray-700">
+                    <span className="text-[12px] text-on-surface">
                       {aiSystemPrompt.trim() ? "System prompt configured" : "No system prompt — set one in the left panel"}
                     </span>
                   </div>
@@ -909,21 +908,21 @@ function ChatbotEditorInner() {
               proOptions={{ hideAttribution: true }}
             >
               <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e7eb" />
-              <Controls className="[&>button]:border-black/10 [&>button]:bg-white [&>button]:text-gray-600 [&>button:hover]:bg-gray-50" />
+              <Controls className="[&>button]:border-outline-variant [&>button]:bg-surface-container [&>button]:text-on-surface [&>button:hover]:bg-surface-container-high" />
               <MiniMap
                 nodeColor={(n) => {
                   const d = n.data as FlowNodeData;
                   return d ? (NODE_META[d.nodeType]?.color ?? "#6b7280") : "#6b7280";
                 }}
-                className="!bg-white !border !border-black/[0.08] !rounded-xl"
+                className="!bg-surface-container !border !border-outline-variant !rounded-xl"
               />
 
               {/* Empty canvas hint */}
               {rfNodes.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center space-y-2">
-                    <p className="text-[15px] text-gray-400 font-medium">Drag nodes here or click from the left panel</p>
-                    <p className="text-[12px] text-gray-300">Connect nodes by dragging from the bottom handle to the top handle of another node</p>
+                    <p className="text-[15px] text-on-surface-variant font-medium">Drag nodes here or click from the left panel</p>
+                    <p className="text-[12px] text-on-surface-variant/60">Connect nodes by dragging from the bottom handle to the top handle of another node</p>
                   </div>
                 </div>
               )}

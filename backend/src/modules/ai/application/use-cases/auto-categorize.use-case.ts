@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { AiProviderService } from '../../domain/services/ai-provider.service';
+import { OrgContextService } from '../../domain/services/org-context.service';
 
 export interface CategorizationResult {
   suggestedLabels: string[];
@@ -16,6 +17,7 @@ export class AutoCategorizeUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiProvider: AiProviderService,
+    private readonly orgContext: OrgContextService,
   ) {}
 
   /**
@@ -46,14 +48,16 @@ export class AutoCategorizeUseCase {
       .map((m) => `${m.direction === 'INBOUND' ? 'Customer' : 'Agent'}: ${m.body || `[${m.type}]`}`)
       .join('\n');
 
-    const result = await this.aiProvider.complete({
-      systemPrompt: `You are a CRM categorization engine. Analyze the conversation and return ONLY valid JSON:
+    const orgContextStr = await this.orgContext.getContext(orgId);
+    const BASE_SYSTEM_PROMPT = `You are a CRM categorization engine. Analyze the conversation and return ONLY valid JSON:
 {
   "suggestedLabels": ["label1", "label2"],  // 1-3 labels. Prefer from existing: [${tagNames.join(', ')}]. Create new ones only if none fit.
   "intent": "string",  // One of: "purchase_inquiry", "support_request", "complaint", "feedback", "general_inquiry", "billing", "return_refund", "appointment", "follow_up", "spam"
   "priority": "LOW" | "MEDIUM" | "HIGH" | "URGENT",
   "language": "ISO 639-1 code"  // e.g. "en", "es", "ar", "hi", "ta"
-}`,
+}`;
+    const result = await this.aiProvider.complete({
+      systemPrompt: orgContextStr ? `${orgContextStr}\n\n---\n\n${BASE_SYSTEM_PROMPT}` : BASE_SYSTEM_PROMPT,
       userPrompt: `Conversation:\n${conversationText}`,
       maxTokens: 300,
     });
@@ -102,6 +106,26 @@ export class AutoCategorizeUseCase {
           data: { contactId: conversation.contactId, tagId: tag.id, orgId, addedById: conversation.assignedToId },
         });
       }
+    }
+
+    // Enrich contact metadata with detected language and latest intent
+    if (result.language || result.intent) {
+      const contact = await this.prisma.contact.findUnique({
+        where: { id: conversation.contactId },
+        select: { metadata: true },
+      });
+      const existingMeta = (contact?.metadata as Record<string, unknown>) ?? {};
+      await this.prisma.contact.update({
+        where: { id: conversation.contactId },
+        data: {
+          metadata: {
+            ...existingMeta,
+            ...(result.language ? { preferredLanguage: result.language } : {}),
+            ...(result.intent ? { lastAiIntent: result.intent } : {}),
+            ...(result.priority ? { lastAiPriority: result.priority } : {}),
+          },
+        },
+      });
     }
 
     return result;

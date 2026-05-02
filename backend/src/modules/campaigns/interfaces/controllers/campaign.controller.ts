@@ -39,6 +39,7 @@ import { ListCampaignsUseCase } from '../../application/use-cases/list-campaigns
 import { GetCampaignAnalyticsUseCase } from '../../application/use-cases/get-campaign-analytics.use-case';
 import { PreviewAudienceUseCase } from '../../application/use-cases/preview-audience.use-case';
 import { CampaignRecipientRepository } from '../../infrastructure/repositories/campaign-recipient.repository';
+import { GenerateCampaignCopyUseCase, GenerateCampaignCopyDto } from '../../application/use-cases/generate-campaign-copy.use-case';
 
 @Controller('campaigns')
 export class CampaignController {
@@ -55,6 +56,7 @@ export class CampaignController {
     private readonly getCampaignAnalyticsUseCase: GetCampaignAnalyticsUseCase,
     private readonly previewAudienceUseCase: PreviewAudienceUseCase,
     private readonly recipientRepo: CampaignRecipientRepository,
+    private readonly generateCampaignCopyUseCase: GenerateCampaignCopyUseCase,
   ) {}
 
   @Post()
@@ -250,6 +252,20 @@ export class CampaignController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.getCampaignAnalyticsUseCase.execute(id, user.orgId);
+  }
+
+  @Post('generate-copy')
+  @Roles('ADMIN', 'MANAGER')
+  @Permissions(PERMISSIONS.CAMPAIGNS_CREATE)
+  @UseGuards(FeatureFlagGuard, UsageLimitGuard)
+  @SetMetadata(FEATURE_FLAG_KEY, 'campaigns')
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
+  @HttpCode(HttpStatus.OK)
+  async generateCopy(
+    @Body() dto: GenerateCampaignCopyDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.generateCampaignCopyUseCase.execute(user.orgId, dto);
   }
 
   @Post('preview-audience')

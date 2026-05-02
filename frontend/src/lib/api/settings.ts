@@ -2,6 +2,7 @@ import apiClient from "./client";
 import type {
   OrgSettings,
   UpdateOrgSettingsRequest,
+  OrgAiMemory,
   WhatsAppConfig,
   UpdateWhatsAppConfigRequest,
   WorkingHoursConfig,
@@ -32,6 +33,9 @@ export const settingsApi = {
         name: d.name,
         timezone: d.timezone ?? "UTC",
         language: d.branding?.language ?? "en",
+        industry: d.industry ?? "",
+        description: d.description ?? "",
+        website: d.website ?? "",
         brandColors: d.branding?.brandColors,
         updatedAt: d.updatedAt,
       } as OrgSettings;
@@ -42,6 +46,9 @@ export const settingsApi = {
       .patch<OrgSettings>("/org/settings", {
         name: data.name,
         timezone: data.timezone,
+        industry: data.industry,
+        description: data.description,
+        website: data.website,
         branding: {
           ...(data.language ? { language: data.language } : {}),
           ...(data.brandColors ? { brandColors: data.brandColors } : {}),
@@ -55,6 +62,9 @@ export const settingsApi = {
           name: d.name,
           timezone: d.timezone ?? "UTC",
           language: d.branding?.language ?? "en",
+          industry: d.industry ?? "",
+          description: d.description ?? "",
+          website: d.website ?? "",
           brandColors: d.branding?.brandColors,
           updatedAt: d.updatedAt,
         } as OrgSettings;
@@ -161,4 +171,30 @@ export const settingsApi = {
         { params },
       )
       .then((r) => r.data),
+
+  // ─── AI Memory ───
+
+  getAiMemory: () =>
+    apiClient.get<OrgAiMemory | null>("/org/ai-memory").then((r) => r.data),
+
+  rebuildAiMemory: () =>
+    apiClient.post("/org/ai-memory/rebuild").then((r) => r.data),
+
+  updateAiMemory: (data: { customContext?: string }) =>
+    apiClient.patch("/org/ai-memory", data).then((r) => r.data),
+
+  uploadAiMemoryDocument: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return apiClient
+      .post<{ success: boolean; documentName: string; extractedLength: number }>(
+        "/org/ai-memory/document",
+        form,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      )
+      .then((r) => r.data);
+  },
+
+  deleteAiMemoryDocument: () =>
+    apiClient.delete("/org/ai-memory/document").then((r) => r.data),
 };

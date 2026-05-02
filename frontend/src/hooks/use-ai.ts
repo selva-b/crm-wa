@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { aiApi } from "@/lib/api/ai";
+import type { RoutingSuggestion, AiInsightsResult, CampaignCopyResult, DealScoreResult } from "@/lib/api/ai";
 
 export function useSmartReplies(conversationId: string | null) {
   return useQuery({
@@ -83,5 +84,46 @@ export function useFullAnalysis() {
   return useMutation({
     mutationFn: (conversationId: string) => aiApi.fullAnalysis(conversationId),
     onError: (err: Error) => toast.error(err.message || "Failed to run full analysis"),
+  });
+}
+
+export function useRoutingSuggestion(conversationId: string | null) {
+  return useQuery<RoutingSuggestion>({
+    queryKey: ["ai", "routing", conversationId],
+    queryFn: () => aiApi.getRoutingSuggestion(conversationId!),
+    enabled: !!conversationId,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useAiInsights(period: "7d" | "30d" = "7d") {
+  return useQuery<AiInsightsResult>({
+    queryKey: ["ai", "insights", period],
+    queryFn: () => aiApi.getInsights(period),
+    staleTime: 5 * 60_000, // 5 min — insights don't change every second
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useGenerateCampaignCopy() {
+  return useMutation<
+    CampaignCopyResult,
+    Error,
+    { goal: string; audienceDesc?: string; tone?: string; variants?: number }
+  >({
+    mutationFn: (params) => aiApi.generateCampaignCopy(params),
+    onError: (err) => toast.error(err.message || "Failed to generate campaign copy"),
+  });
+}
+
+export function useScoreDeal() {
+  const qc = useQueryClient();
+  return useMutation<DealScoreResult, Error, { pipelineId: string; dealId: string }>({
+    mutationFn: ({ pipelineId, dealId }) => aiApi.scoreDeal(pipelineId, dealId),
+    onSuccess: (_data, { dealId }) => {
+      qc.invalidateQueries({ queryKey: ["deals", dealId] });
+    },
+    onError: (err) => toast.error(err.message || "Failed to score deal"),
   });
 }

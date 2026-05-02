@@ -7,6 +7,7 @@ import type {
   UpdateAutomationRuleRequest,
   ListAutomationRulesParams,
   ListExecutionLogsParams,
+  GeneratedAutomationRuleResponse,
 } from "@/lib/types/automation";
 
 export const automationApi = {
@@ -52,5 +53,12 @@ export const automationApi = {
   listLogs: (params?: ListExecutionLogsParams) =>
     apiClient
       .get<ExecutionLogListResponse>("/automation/logs", { params })
+      .then((r) => r.data),
+
+  // ─── AI Generation ───
+
+  generate: (prompt: string) =>
+    apiClient
+      .post<GeneratedAutomationRuleResponse>("/automation/rules/generate", { prompt })
       .then((r) => r.data),
 };

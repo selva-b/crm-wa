@@ -278,6 +278,18 @@ export const EVENT_NAMES = {
   // Product events
   CONTACT_PRODUCT_ASSIGNED: 'product.contact_assigned',
   CONTACT_PRODUCT_REMOVED: 'product.contact_removed',
+  PRODUCT_CREATED: 'product.created',
+  PRODUCT_UPDATED: 'product.updated',
+  PRODUCT_DELETED: 'product.deleted',
+
+  // Knowledge Base events
+  KB_ARTICLE_PUBLISHED: 'kb.article.published',
+  KB_ARTICLE_DELETED: 'kb.article.deleted',
+
+  // Shopify events
+  SHOPIFY_ORDER_CREATED: 'shopify.order_created',
+  SHOPIFY_ORDER_FULFILLED: 'shopify.order_fulfilled',
+  SHOPIFY_CART_ABANDONED: 'shopify.cart_abandoned',
 
   // SLA Tracking events (EPIC 15)
   SLA_POLICY_CREATED: 'sla.policy_created',
