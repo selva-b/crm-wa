@@ -1,14 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { AiProviderService } from '@/modules/ai/domain/services/ai-provider.service';
-import { QueueService } from '@/infrastructure/queue/queue.service';
 import { ChatbotRepository } from '../../infrastructure/repositories/chatbot.repository';
 import { KbRepository } from '@/modules/knowledge-base/infrastructure/repositories/kb.repository';
 import { DocumentProcessorService } from '@/modules/knowledge-base/domain/services/document-processor.service';
-import { EncryptionService } from '@/common/services';
-import { MessageEncryptionService } from '@/modules/messages/domain/services/message-encryption.service';
-import { QUEUE_NAMES } from '@/common/constants';
-import { MessageDirection, MessageStatus, MessageType, ChatbotSessionStatus } from '@prisma/client';
+import { OutboundMessageService } from '@/modules/messages/application/services/outbound-message.service';
+import { EVENT_NAMES } from '@/common/constants';
+import { ChatbotSessionStatus } from '@prisma/client';
 
 interface FlowNode {
   id: string;
@@ -27,8 +26,8 @@ export class ExecuteChatbotFlowUseCase {
     private readonly kbRepo: KbRepository,
     private readonly docProcessor: DocumentProcessorService,
     private readonly aiProvider: AiProviderService,
-    private readonly queueService: QueueService,
-    private readonly enc: MessageEncryptionService,
+    private readonly outboundMessage: OutboundMessageService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -185,7 +184,13 @@ IMPORTANT RULES:
     }
 
     // Send the AI reply as a WhatsApp message
-    await this.sendReply(orgId, conversationId, contactPhone, sessionId, replyText);
+    const { messageId } = await this.sendReply(orgId, conversationId, contactPhone, sessionId, replyText);
+
+    this.eventEmitter.emit(EVENT_NAMES.CHATBOT_AI_REPLY_SENT, {
+      orgId,
+      conversationId,
+      messageId,
+    });
 
     this.logger.log(`AI chatbot replied in conversation ${conversationId}: "${replyText.slice(0, 50)}..."`);
     return { replied: true, text: replyText };
@@ -262,7 +267,12 @@ IMPORTANT RULES:
       case 'SEND_MESSAGE': {
         const message = node.data.message as string;
         if (message) {
-          await this.sendReply(orgId, conversationId, contactPhone, waSessionId, message);
+          const { messageId } = await this.sendReply(orgId, conversationId, contactPhone, waSessionId, message);
+          this.eventEmitter.emit(EVENT_NAMES.CHATBOT_FLOW_TRIGGERED, {
+            orgId,
+            conversationId,
+            messageId,
+          });
         }
         // Auto-advance to next node
         await this.advanceToNext(node, allNodes, sessionId, payload);
@@ -394,7 +404,7 @@ IMPORTANT RULES:
   }
 
   /**
-   * Send a reply message via the WhatsApp queue.
+   * Send a reply message via OutboundMessageService (single canonical send path).
    */
   private async sendReply(
     orgId: string,
@@ -402,37 +412,14 @@ IMPORTANT RULES:
     contactPhone: string,
     sessionId: string,
     text: string,
-  ) {
-    const message = await this.prisma.message.create({
-      data: {
-        orgId,
-        conversationId,
-        sessionId,
-        direction: MessageDirection.OUTBOUND,
-        type: MessageType.TEXT,
-        body: text,
-        contactPhone,
-        status: MessageStatus.QUEUED,
-        metadata: { source: 'chatbot' } as any,
-      },
-    });
-
-    await this.queueService.publish(QUEUE_NAMES.SEND_WHATSAPP_MESSAGE, {
-      messageId: message.id,
-      sessionId,
+  ): Promise<{ messageId: string }> {
+    return this.outboundMessage.send({
       orgId,
+      sessionId,
+      conversationId,
       contactPhone,
-      type: 'TEXT',
       body: text,
-    });
-
-    // Update conversation
-    await this.prisma.conversation.updateMany({
-      where: { id: conversationId, orgId },
-      data: {
-        lastMessageAt: new Date(),
-        lastMessageBody: this.enc.encryptIfPresent(text.slice(0, 500)),
-      },
+      metadata: { source: 'chatbot' },
     });
   }
 }

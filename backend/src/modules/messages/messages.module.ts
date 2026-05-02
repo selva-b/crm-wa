@@ -36,6 +36,7 @@ import { AssignConversationUseCase } from './application/use-cases/assign-conver
 import { SyncTemplatesUseCase } from './application/use-cases/sync-templates.use-case';
 import { SendTemplateMessageUseCase } from './application/use-cases/send-template-message.use-case';
 import { GenerateTemplateUseCase } from './application/use-cases/generate-template.use-case';
+import { OutboundMessageService } from './application/services/outbound-message.service';
 
 // Controllers
 import { MessagesController } from './interfaces/controllers/messages.controller';
@@ -73,6 +74,7 @@ import { TemplatesController } from './interfaces/controllers/templates.controll
     SyncTemplatesUseCase,
     SendTemplateMessageUseCase,
     GenerateTemplateUseCase,
+    OutboundMessageService,
   ],
   exports: [
     MessageRepository,
@@ -81,6 +83,7 @@ import { TemplatesController } from './interfaces/controllers/templates.controll
     DeadLetterRepository,
     RateLimiterService,
     MessageEncryptionService,
+    OutboundMessageService,
   ],
 })
 export class MessagesModule {}

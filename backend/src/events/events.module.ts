@@ -42,8 +42,9 @@ import { LeadScoringEventsHandler } from './handlers/lead-scoring-events.handler
 import { LeadScoringModule } from '@/modules/lead-scoring/lead-scoring.module';
 // Developer API webhook events
 import { DeveloperWebhookHandler } from './handlers/developer-webhook.handler';
-// Chatbot trigger events
-import { ChatbotTriggerHandler } from './handlers/chatbot-trigger.handler';
+// Message pipeline (chatbot-first → automation)
+import { MessagePipelineHandler } from './handlers/message-pipeline.handler';
+import { MessagePipelineService } from '@/modules/messages/application/services/message-pipeline.service';
 import { ChatbotModule } from '@/modules/chatbot/chatbot.module';
 // Drip Sequence events
 import { SequenceEventsHandler } from './handlers/sequence-events.handler';
@@ -111,8 +112,9 @@ import { OrgModule } from '@/modules/org/org.module';
     SequenceEventsHandler,
     // Developer API webhook events
     DeveloperWebhookHandler,
-    // Chatbot trigger events
-    ChatbotTriggerHandler,
+    // Message pipeline (chatbot-first → automation, prevents race condition)
+    MessagePipelineService,
+    MessagePipelineHandler,
     // Purchase intent detection
     PurchaseIntentHandler,
     // Org AI Memory rebuild events
