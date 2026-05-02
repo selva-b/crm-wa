@@ -242,6 +242,8 @@ export class BillingController {
           [UsageMetricType.WHATSAPP_SESSIONS]: plan.maxWhatsappSessions,
           [UsageMetricType.CAMPAIGN_EXECUTIONS]: plan.maxCampaignsPerMonth,
           [UsageMetricType.API_CALLS]: plan.maxMessagesPerMonth,
+          [UsageMetricType.AI_CREDITS]: plan.aiCreditsPerMonth,
+          [UsageMetricType.MESSAGE_TEMPLATES]: plan.maxMessageTemplates,
         },
       );
 

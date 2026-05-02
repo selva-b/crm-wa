@@ -652,7 +652,7 @@ export function InboxView({
             isUpdatingStatus={changeLeadStatus.isPending}
             conversationAssignedToId={selectedRawConv?.assignedToId ?? null}
             orgUsers={usersData?.users ?? []}
-            canAssign={user?.role === "ADMIN" || user?.role === "MANAGER"}
+            canAssign={userRole === "ADMIN" || userRole === "MANAGER"}
             isAssigning={assignConversation.isPending}
             onAssign={(assignedToId) => {
               if (selectedId) {

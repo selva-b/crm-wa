@@ -1082,3 +1082,17 @@ export interface SlaEscalationTriggeredEvent {
   escalationLevel: number;
   notifyUserIds: string[];
 }
+
+// ─────────────────────────────────────────────
+// Chat Widget Events
+// ─────────────────────────────────────────────
+
+export interface WidgetMessageReceivedAutomationEvent {
+  orgId: string;
+  sessionId: string;
+  messageId: string;
+  visitorId: string;
+  visitorName?: string;
+  visitorPhone?: string;
+  body: string;
+}

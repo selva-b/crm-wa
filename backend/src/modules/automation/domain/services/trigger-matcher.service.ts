@@ -40,6 +40,9 @@ export class TriggerMatcherService {
         // All abandoned carts match unless a minimum cart value is configured
         return this.matchAbandonedCart(input.triggerConfig, input.eventPayload);
 
+      case AutomationTriggerType.WIDGET_MESSAGE_RECEIVED:
+        return this.matchWidgetMessage(input.triggerConfig, input.eventPayload);
+
       default:
         this.logger.warn(`Unknown trigger type: ${input.triggerType}`);
         return false;
@@ -105,6 +108,17 @@ export class TriggerMatcherService {
       if (totalPrice < minOrderValue) return false;
     }
     return true;
+  }
+
+  private matchWidgetMessage(
+    config: Record<string, unknown>,
+    payload: Record<string, unknown>,
+  ): boolean {
+    const keyword = config.messageKeyword as string | undefined;
+    if (!keyword) return true; // No filter — match all widget messages
+    const body = payload.body as string | undefined;
+    if (!body) return false;
+    return body.toLowerCase().includes(keyword.toLowerCase());
   }
 
   private matchAbandonedCart(

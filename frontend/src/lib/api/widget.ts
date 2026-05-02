@@ -3,6 +3,7 @@ import apiClient from "./client";
 export interface WidgetConfig {
   id?: string;
   orgId?: string;
+  orgSlug?: string;
   enabled: boolean;
   position: string;
   primaryColor: string;
@@ -11,6 +12,9 @@ export interface WidgetConfig {
   companyName: string | null;
   avatarUrl: string | null;
   whatsappNumber: string | null;
+  preChatFormEnabled: boolean;
+  aiAssistantEnabled: boolean;
+  aiSystemPrompt?: string | null;
 }
 
 export async function getWidgetConfig(): Promise<WidgetConfig> {

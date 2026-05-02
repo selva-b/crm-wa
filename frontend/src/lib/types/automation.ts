@@ -9,7 +9,8 @@ export type AutomationTriggerType =
   | "LEAD_AD_RECEIVED"
   | "SHOPIFY_ORDER_CREATED"
   | "SHOPIFY_ORDER_FULFILLED"
-  | "SHOPIFY_CART_ABANDONED";
+  | "SHOPIFY_CART_ABANDONED"
+  | "WIDGET_MESSAGE_RECEIVED";
 
 export type AutomationConditionOperator =
   | "EQUALS"

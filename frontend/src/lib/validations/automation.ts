@@ -44,6 +44,7 @@ export const createAutomationRuleSchema = z.object({
     "SHOPIFY_ORDER_CREATED",
     "SHOPIFY_ORDER_FULFILLED",
     "SHOPIFY_CART_ABANDONED",
+    "WIDGET_MESSAGE_RECEIVED",
   ]),
   triggerConfig: triggerConfigSchema,
   conditions: z.array(conditionSchema).optional(),

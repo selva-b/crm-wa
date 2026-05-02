@@ -20,6 +20,7 @@ import {
   AutomationRuleDeletedEvent,
   FollowUpCancelledEvent,
   FollowUpExecutedEvent,
+  WidgetMessageReceivedAutomationEvent,
 } from '../event-bus';
 
 @Injectable()
@@ -170,6 +171,43 @@ export class AutomationEventsHandler {
     } catch (error) {
       this.logger.error(
         `Error evaluating LEAD_STATUS_CHANGED trigger: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+    }
+  }
+
+  @OnEvent(EVENT_NAMES.WIDGET_MESSAGE_RECEIVED)
+  async handleWidgetMessageReceived(
+    payload: WidgetMessageReceivedAutomationEvent,
+  ): Promise<void> {
+    this.logger.debug(
+      `Evaluating automation triggers for widget message: ${payload.messageId}`,
+    );
+    try {
+      await this.evaluateTrigger.execute({
+        orgId: payload.orgId,
+        triggerType: AutomationTriggerType.WIDGET_MESSAGE_RECEIVED,
+        eventPayload: {
+          messageId: payload.messageId,
+          sessionId: payload.sessionId,
+          visitorId: payload.visitorId,
+          visitorName: payload.visitorName,
+          visitorPhone: payload.visitorPhone,
+          body: payload.body,
+        },
+        context: {
+          widget: {
+            sessionId: payload.sessionId,
+            visitorId: payload.visitorId,
+            visitorName: payload.visitorName,
+            visitorPhone: payload.visitorPhone,
+            body: payload.body,
+          },
+        },
+        contactId: undefined,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error evaluating WIDGET_MESSAGE_RECEIVED trigger: ${error instanceof Error ? error.message : 'Unknown'}`,
       );
     }
   }

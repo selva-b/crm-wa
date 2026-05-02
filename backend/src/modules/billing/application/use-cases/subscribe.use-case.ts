@@ -154,6 +154,8 @@ export class SubscribeUseCase {
         ? plan.trialMaxCampaignsPerMonth : plan.maxCampaignsPerMonth,
       [UsageMetricType.API_CALLS]: isTrial && plan.trialMaxMessagesPerMonth != null
         ? plan.trialMaxMessagesPerMonth : plan.maxMessagesPerMonth,
+      [UsageMetricType.AI_CREDITS]: plan.aiCreditsPerMonth,
+      [UsageMetricType.MESSAGE_TEMPLATES]: plan.maxMessageTemplates,
     };
 
     await this.usageRepo.resetUsageForOrg(

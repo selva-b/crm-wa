@@ -277,6 +277,9 @@ enum AuditAction {
   // Notification actions (EPIC 11)
   NOTIFICATION_PREFERENCE_UPDATED
 
+  // Chat Widget actions (Phase 4)
+  WIDGET_CONFIG_UPDATED
+
   // Settings & Configuration actions (EPIC 12)
   SETTING_UPDATED
   SETTING_DELETED
@@ -341,6 +344,7 @@ enum AutomationTriggerType {
   SHOPIFY_ORDER_CREATED
   SHOPIFY_ORDER_FULFILLED
   SHOPIFY_CART_ABANDONED
+  WIDGET_MESSAGE_RECEIVED
 }
 
 enum AutomationConditionOperator {
@@ -486,6 +490,8 @@ model Organization {
   leadScoringRules         LeadScoringRule[]
   campaignSequences        CampaignSequence[]
   widgetConfig             WidgetConfig?
+  widgetSessions           WidgetSession[]
+  widgetMessages           WidgetMessage[]
   kbCategories             KbCategory[]
   kbArticles               KbArticle[]
   customFieldDefinitions   CustomFieldDefinition[]
@@ -2896,22 +2902,62 @@ model UserTwoFactor {
 // ─────────────────────────────────────────────
 
 model WidgetConfig {
-  id              String   @id @default(uuid()) @db.Uuid
-  orgId           String   @unique @map("org_id") @db.Uuid
-  enabled         Boolean  @default(false)
-  position        String   @default("bottom-right") @db.VarChar(20) // bottom-right, bottom-left
-  primaryColor    String   @default("#6366f1") @map("primary_color") @db.VarChar(20)
-  welcomeMessage  String   @default("Hi! How can we help you?") @map("welcome_message") @db.VarChar(500)
-  placeholder     String   @default("Type a message...") @db.VarChar(255)
-  companyName     String?  @map("company_name") @db.VarChar(255)
-  avatarUrl       String?  @map("avatar_url") @db.VarChar(2048)
-  whatsappNumber  String?  @map("whatsapp_number") @db.VarChar(20) // pre-filled WhatsApp click-to-chat number
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id                  String   @id @default(uuid()) @db.Uuid
+  orgId               String   @unique @map("org_id") @db.Uuid
+  enabled             Boolean  @default(false)
+  position            String   @default("bottom-right") @db.VarChar(20) // bottom-right, bottom-left, bottom-center
+  primaryColor        String   @default("#6366f1") @map("primary_color") @db.VarChar(20)
+  welcomeMessage      String   @default("Hi! How can we help you?") @map("welcome_message") @db.VarChar(500)
+  placeholder         String   @default("Type a message...") @db.VarChar(255)
+  companyName         String?  @map("company_name") @db.VarChar(255)
+  avatarUrl           String?  @map("avatar_url") @db.VarChar(2048)
+  whatsappNumber      String?  @map("whatsapp_number") @db.VarChar(20) // pre-filled WhatsApp click-to-chat number
+  preChatFormEnabled  Boolean  @default(false) @map("pre_chat_form_enabled")
+  aiAssistantEnabled  Boolean  @default(false) @map("ai_assistant_enabled")
+  aiSystemPrompt      String?  @map("ai_system_prompt") @db.VarChar(2000)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
   organization Organization @relation(fields: [orgId], references: [id])
 
   @@map("widget_configs")
+}
+
+model WidgetSession {
+  id            String   @id @default(uuid()) @db.Uuid
+  orgId         String   @map("org_id") @db.Uuid
+  visitorId     String   @map("visitor_id") @db.VarChar(64)
+  visitorName   String?  @map("visitor_name") @db.VarChar(255)
+  visitorPhone  String?  @map("visitor_phone") @db.VarChar(20)
+  visitorEmail  String?  @map("visitor_email") @db.VarChar(320)
+  pageUrl       String?  @map("page_url") @db.VarChar(2048)
+  userAgent     String?  @map("user_agent") @db.VarChar(512)
+  status        String   @default("open") @db.VarChar(20) // open | closed
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  organization Organization   @relation(fields: [orgId], references: [id])
+  messages     WidgetMessage[]
+
+  @@unique([orgId, visitorId], name: "unique_visitor_per_org")
+  @@index([orgId])
+  @@map("widget_sessions")
+}
+
+model WidgetMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @map("session_id") @db.Uuid
+  orgId     String   @map("org_id") @db.Uuid
+  sender    String   @db.VarChar(10) // "visitor" | "agent"
+  body      String   @db.VarChar(4096)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  session      WidgetSession @relation(fields: [sessionId], references: [id])
+  organization Organization  @relation(fields: [orgId], references: [id])
+
+  @@index([sessionId])
+  @@index([orgId])
+  @@map("widget_messages")
 }
 
 // ─────────────────────────────────────────────

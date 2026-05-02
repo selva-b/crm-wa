@@ -239,7 +239,7 @@ export default function TemplatesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowAiModal(true)}>
+          <Button variant="secondary" onClick={() => setShowAiModal(true)}>
             <Sparkles className="h-4 w-4 mr-1" /> Generate with AI
           </Button>
           <Button onClick={() => { resetForm(); setShowForm(true); }}>

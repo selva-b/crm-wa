@@ -267,6 +267,10 @@ export const EVENT_NAMES = {
   DEVELOPER_MESSAGE_SENT: 'developer.message_sent',
   DEVELOPER_WEBHOOK_TRIGGERED: 'developer.webhook_triggered',
 
+  // Chat Widget events (Phase 4)
+  WIDGET_CONFIG_UPDATED: 'widget.config_updated',
+  WIDGET_MESSAGE_RECEIVED: 'widget.message_received',
+
   // Deal events
   DEAL_AUTO_CREATED: 'deals.auto_created',
   PURCHASE_INTENT_DETECTED: 'ai.purchase_intent_detected',

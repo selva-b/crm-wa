@@ -595,7 +595,7 @@ function ChatbotEditorInner() {
     setAiEnabled(flow.aiEnabled ?? false);
     setAiSystemPrompt(flow.aiSystemPrompt ?? "");
     setUseKnowledgeBase(flow.useKnowledgeBase ?? false);
-    setSelectedProductIds((flow as Record<string, unknown>).productIds as string[] ?? []);
+    setSelectedProductIds((flow as unknown as Record<string, unknown>).productIds as string[] ?? []);
 
     // Convert backend nodes → ReactFlow nodes + edges
     const nodes: Node[] = flow.nodes.map((n) => ({

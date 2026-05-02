@@ -29,6 +29,7 @@ import {
   BookOpen,
   Package,
   LifeBuoy,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NavItem } from "./nav-item";
@@ -116,6 +117,7 @@ const navGroups: NavGroup[] = [
       { href: "/settings/products", icon: <Package className="h-5 w-5" />, label: "Products", roles: ["ADMIN"] },
       { href: "/settings/billing", icon: <CreditCard className="h-5 w-5" />, label: "Billing", roles: ["ADMIN"] },
       { href: "/settings/whatsapp", icon: <Wifi className="h-5 w-5" />, label: "WhatsApp", roles: ["EMPLOYEE", "MANAGER"] },
+      { href: "/settings/chat-widget", icon: <Globe className="h-5 w-5" />, label: "Chat Widget", roles: ["ADMIN"] },
     ],
   },
   {

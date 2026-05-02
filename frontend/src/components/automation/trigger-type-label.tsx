@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   Megaphone,
+  Globe,
   HelpCircle,
 } from "lucide-react";
 import type { AutomationTriggerType } from "@/lib/types/automation";
@@ -26,6 +27,7 @@ const TRIGGER_CONFIG: Record<
   SHOPIFY_ORDER_CREATED:   { label: "Shopify Order Created",    icon: ShoppingBag },
   SHOPIFY_ORDER_FULFILLED: { label: "Shopify Order Fulfilled",  icon: ShoppingBag },
   SHOPIFY_CART_ABANDONED:  { label: "Shopify Cart Abandoned",   icon: ShoppingCart },
+  WIDGET_MESSAGE_RECEIVED: { label: "Widget Message",            icon: Globe },
 };
 
 interface TriggerTypeLabelProps {

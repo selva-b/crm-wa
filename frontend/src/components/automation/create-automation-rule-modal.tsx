@@ -32,6 +32,7 @@ const TRIGGER_TYPES: { value: AutomationTriggerType; label: string; group?: stri
   { value: "SHOPIFY_ORDER_CREATED",   label: "Shopify — Order Created",   group: "shopify" },
   { value: "SHOPIFY_ORDER_FULFILLED", label: "Shopify — Order Fulfilled",  group: "shopify" },
   { value: "SHOPIFY_CART_ABANDONED",  label: "Shopify — Cart Abandoned",   group: "shopify" },
+  { value: "WIDGET_MESSAGE_RECEIVED", label: "Widget Message Received" },
 ];
 
 const ACTION_TYPES: { value: AutomationActionType; label: string }[] = [
@@ -359,6 +360,22 @@ export function CreateAutomationRuleModal({
               <p className="text-[12px] text-on-surface-variant/60">
                 Triggers when any new contact is created.
               </p>
+            )}
+
+            {triggerType === "WIDGET_MESSAGE_RECEIVED" && (
+              <div className="space-y-2">
+                <div>
+                  <Label htmlFor="triggerConfig.messageKeyword">Keyword Filter (optional)</Label>
+                  <Input
+                    id="triggerConfig.messageKeyword"
+                    placeholder="e.g. pricing — leave empty to match all widget messages"
+                    {...register("triggerConfig.messageKeyword")}
+                  />
+                </div>
+                <p className="text-[12px] text-on-surface-variant/60">
+                  Triggers when a visitor sends a message via your chat widget.
+                </p>
+              </div>
             )}
 
             {isShopifyTrigger && (

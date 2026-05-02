@@ -229,6 +229,8 @@ export class BillingCycleWorker {
       [UsageMetricType.WHATSAPP_SESSIONS]: plan.maxWhatsappSessions,
       [UsageMetricType.CAMPAIGN_EXECUTIONS]: plan.maxCampaignsPerMonth,
       [UsageMetricType.API_CALLS]: plan.maxMessagesPerMonth,
+      [UsageMetricType.AI_CREDITS]: plan.aiCreditsPerMonth,
+      [UsageMetricType.MESSAGE_TEMPLATES]: plan.maxMessageTemplates,
     };
 
     await this.usageRepo.resetUsageForOrg(
@@ -409,6 +411,8 @@ export class BillingCycleWorker {
       [UsageMetricType.WHATSAPP_SESSIONS]: newPlan.maxWhatsappSessions,
       [UsageMetricType.CAMPAIGN_EXECUTIONS]: newPlan.maxCampaignsPerMonth,
       [UsageMetricType.API_CALLS]: newPlan.maxMessagesPerMonth,
+      [UsageMetricType.AI_CREDITS]: newPlan.aiCreditsPerMonth,
+      [UsageMetricType.MESSAGE_TEMPLATES]: newPlan.maxMessageTemplates,
     };
 
     await this.usageRepo.resetUsageForOrg(
