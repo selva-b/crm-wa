@@ -147,6 +147,10 @@ export class ChatbotRepository {
         const keywords = (trigger.value || '').toLowerCase().split(',').map((k) => k.trim());
         return keywords.includes(triggerValue.toLowerCase());
       }
+      if (triggerType === 'BUTTON_REPLY' && triggerValue) {
+        const buttonIds = (trigger.value || '').split(',').map((k) => k.trim().toLowerCase());
+        return buttonIds.includes(triggerValue.toLowerCase());
+      }
       return true;
     });
   }

@@ -5,6 +5,8 @@ import type {
   UpdateFlowRequest,
   SaveNodesRequest,
   ChatbotFlowAnalytics,
+  SimulateFlowRequest,
+  SimulateFlowResponse,
 } from "@/lib/types/chatbot";
 
 export const chatbotApi = {
@@ -34,4 +36,9 @@ export const chatbotApi = {
 
   getAnalytics: (flowId: string) =>
     apiClient.get<ChatbotFlowAnalytics>(`/chatbot/flows/${flowId}/analytics`).then((r) => r.data),
+
+  simulateFlow: (flowId: string, data: SimulateFlowRequest) =>
+    apiClient
+      .post<SimulateFlowResponse>(`/chatbot/flows/${flowId}/simulate`, data)
+      .then((r) => r.data),
 };

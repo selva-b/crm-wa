@@ -42,7 +42,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
+  FlaskConical,
   ChevronDown,
+  ChevronRight,
+  Plus,
+  SendHorizonal,
+  LayoutTemplate,
 } from "lucide-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import {
@@ -51,11 +56,11 @@ import {
   useUpdateChatbotFlow,
   useActivateChatbotFlow,
   useDeactivateChatbotFlow,
+  useSimulateChatbotFlow,
 } from "@/hooks/use-chatbot";
 import { useKbDocuments, useUploadDocument, useDeleteDocument } from "@/hooks/use-knowledge-base";
 import { useProducts } from "@/hooks/use-products";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import type { ChatbotNodeType } from "@/lib/types/chatbot";
@@ -63,31 +68,48 @@ import type { ChatbotNodeType } from "@/lib/types/chatbot";
 // ─── Node type metadata ───────────────────────────────────────────────────────
 
 const NODE_META: Record<ChatbotNodeType, { label: string; icon: React.ElementType; color: string; bg: string }> = {
-  SEND_MESSAGE: { label: "Send Message", icon: MessageSquare, color: "#6366f1", bg: "#6366f115" },
-  ASK_QUESTION: { label: "Ask Question", icon: HelpCircle, color: "#3b82f6", bg: "#3b82f615" },
-  CONDITION:    { label: "Condition",    icon: GitBranch,   color: "#f59e0b", bg: "#f59e0b15" },
-  DELAY:        { label: "Delay",        icon: Clock,       color: "#8b5cf6", bg: "#8b5cf615" },
-  ASSIGN_AGENT: { label: "Assign Agent", icon: UserPlus,    color: "#22c55e", bg: "#22c55e15" },
-  SET_TAG:      { label: "Set Tag",      icon: Tag,         color: "#ec4899", bg: "#ec489915" },
-  API_CALL:     { label: "API Call",     icon: Globe,       color: "#06b6d4", bg: "#06b6d415" },
-  AI_REPLY:     { label: "AI Reply",     icon: Sparkles,    color: "#f97316", bg: "#f9731615" },
+  SEND_MESSAGE:   { label: "Send Message",   icon: MessageSquare, color: "#6366f1", bg: "#6366f115" },
+  ASK_QUESTION:   { label: "Ask Question",   icon: HelpCircle,    color: "#3b82f6", bg: "#3b82f615" },
+  CONDITION:      { label: "Condition",      icon: GitBranch,     color: "#f59e0b", bg: "#f59e0b15" },
+  DELAY:          { label: "Delay",          icon: Clock,         color: "#8b5cf6", bg: "#8b5cf615" },
+  ASSIGN_AGENT:   { label: "Assign Agent",   icon: UserPlus,      color: "#22c55e", bg: "#22c55e15" },
+  SET_TAG:        { label: "Set Tag",        icon: Tag,           color: "#ec4899", bg: "#ec489915" },
+  API_CALL:       { label: "API Call",       icon: Globe,         color: "#06b6d4", bg: "#06b6d415" },
+  AI_REPLY:       { label: "AI Reply",       icon: Sparkles,      color: "#f97316", bg: "#f9731615" },
+  INTENT_DETECT:  { label: "Intent Detect",  icon: GitBranch,     color: "#a855f7", bg: "#a855f715" },
+  CAROUSEL:       { label: "Carousel",       icon: LayoutTemplate, color: "#14b8a6", bg: "#14b8a615" },
 };
 
-const NODE_TYPE_LIST = Object.entries(NODE_META) as [ChatbotNodeType, typeof NODE_META[ChatbotNodeType]][];
+const NODE_TYPE_LIST = Object.entries(NODE_META) as [ChatbotNodeType, (typeof NODE_META)[ChatbotNodeType]][];
 
-// ─── Default data per type ───────────────────────────────────────────────────
+// ─── Validation ───────────────────────────────────────────────────────────────
+
+function validateNode(type: ChatbotNodeType, data: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+  if (type === "SEND_MESSAGE" && !String(data.message || "").trim()) errors.push("Message is empty");
+  if (type === "ASK_QUESTION" && !String(data.question || "").trim()) errors.push("Question is empty");
+  if (type === "ASK_QUESTION" && !String(data.variableName || "").trim()) errors.push("Variable name is empty");
+  if (type === "CONDITION" && !String(data.field || "").trim()) errors.push("Condition field is empty");
+  if (type === "SET_TAG" && !String(data.tagName || "").trim()) errors.push("Tag name is empty");
+  if (type === "API_CALL" && !String(data.url || "").trim()) errors.push("URL is empty");
+  return errors;
+}
+
+// ─── Default data per type ────────────────────────────────────────────────────
 
 function defaultData(type: ChatbotNodeType): Record<string, unknown> {
   switch (type) {
-    case "SEND_MESSAGE":  return { message: "" };
-    case "ASK_QUESTION":  return { question: "", variableName: "" };
-    case "CONDITION":     return { field: "", operator: "equals", value: "" };
-    case "DELAY":         return { seconds: 5 };
-    case "ASSIGN_AGENT":  return { strategy: "round_robin" };
-    case "SET_TAG":       return { tagName: "" };
-    case "API_CALL":      return { url: "", method: "GET", headers: {} };
-    case "AI_REPLY":      return { systemPrompt: "You are a helpful customer support agent. Be concise and friendly.", maxTokens: 500 };
-    default:              return {};
+    case "SEND_MESSAGE":    return { message: "" };
+    case "ASK_QUESTION":    return { question: "", variableName: "" };
+    case "CONDITION":       return { field: "", operator: "equals", value: "" };
+    case "DELAY":           return { seconds: 5 };
+    case "ASSIGN_AGENT":    return { strategy: "round_robin" };
+    case "SET_TAG":         return { tagName: "" };
+    case "API_CALL":        return { url: "", method: "GET", headers: "{}", body: "", responseVar: "" };
+    case "AI_REPLY":        return { systemPrompt: "You are a helpful customer support agent. Be concise and friendly.", maxTokens: 500 };
+    case "INTENT_DETECT":   return { intents: ["order_status", "pricing", "support", "other"], description: "" };
+    case "CAROUSEL":        return { headerText: "Please select an option:", items: [{ title: "Option 1", description: "" }, { title: "Option 2", description: "" }] };
+    default:                return {};
   }
 }
 
@@ -95,19 +117,21 @@ function defaultData(type: ChatbotNodeType): Record<string, unknown> {
 
 function nodePreview(type: ChatbotNodeType, data: Record<string, unknown>): string {
   switch (type) {
-    case "SEND_MESSAGE":  return String(data.message || "").slice(0, 60) || "No message set";
-    case "ASK_QUESTION":  return String(data.question || "").slice(0, 60) || "No question set";
-    case "CONDITION":     return data.field ? `If ${data.field} ${data.operator} "${data.value}"` : "Not configured";
-    case "DELAY":         return `Wait ${data.seconds ?? 5}s`;
-    case "ASSIGN_AGENT":  return `Strategy: ${data.strategy ?? "round_robin"}`;
-    case "SET_TAG":       return String(data.tagName || "") || "No tag set";
-    case "API_CALL":      return String(data.url || "").slice(0, 50) || "No URL set";
-    case "AI_REPLY":      return String(data.systemPrompt || "").slice(0, 60) || "AI reply";
-    default:              return "";
+    case "SEND_MESSAGE":   return String(data.message || "").slice(0, 60) || "No message set";
+    case "ASK_QUESTION":   return String(data.question || "").slice(0, 60) || "No question set";
+    case "CONDITION":      return data.field ? `If ${data.field} ${data.operator} "${data.value}"` : "Not configured";
+    case "DELAY":          return `Wait ${data.seconds ?? 5}s`;
+    case "ASSIGN_AGENT":   return `Strategy: ${data.strategy ?? "round_robin"}`;
+    case "SET_TAG":        return String(data.tagName || "") || "No tag set";
+    case "API_CALL":       return String(data.url || "").slice(0, 50) || "No URL set";
+    case "AI_REPLY":       return String(data.systemPrompt || "").slice(0, 60) || "AI reply";
+    case "INTENT_DETECT":  return Array.isArray(data.intents) ? (data.intents as string[]).join(", ").slice(0, 60) : "No intents set";
+    case "CAROUSEL":       return String(data.headerText || "").slice(0, 60) || "Carousel options";
+    default:               return "";
   }
 }
 
-// ─── Custom Node Component ────────────────────────────────────────────────────
+// ─── Custom Node Component ─────────────────────────────────────────────────────
 
 interface FlowNodeData {
   nodeType: ChatbotNodeType;
@@ -124,11 +148,13 @@ function FlowNode({ id, data, selected }: NodeProps) {
   if (!meta) return null;
   const Icon = meta.icon;
   const preview = nodePreview(d.nodeType, d.nodeData);
+  const errors = validateNode(d.nodeType, d.nodeData);
+  const hasError = errors.length > 0;
 
   return (
     <div
       onClick={() => d.onSelect(id)}
-      className="relative cursor-pointer"
+      className="relative cursor-pointer group"
       style={{ minWidth: 200 }}
     >
       <Handle
@@ -141,7 +167,7 @@ function FlowNode({ id, data, selected }: NodeProps) {
       <div
         className="rounded-xl border-2 transition-all shadow-sm"
         style={{
-          borderColor: selected ? meta.color : "rgba(0,0,0,0.08)",
+          borderColor: selected ? meta.color : hasError ? "#ef444430" : "rgba(0,0,0,0.08)",
           backgroundColor: "#ffffff",
           boxShadow: selected ? `0 0 0 3px ${meta.color}30` : "0 1px 4px rgba(0,0,0,0.06)",
         }}
@@ -160,9 +186,10 @@ function FlowNode({ id, data, selected }: NodeProps) {
           <span className="text-[12px] font-semibold flex-1" style={{ color: meta.color }}>
             {meta.label}
           </span>
+          {hasError && <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
           <button
             onMouseDown={(e) => { e.stopPropagation(); d.onDelete(id); }}
-            className="p-0.5 rounded hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+            className="p-0.5 rounded hover:bg-red-50 transition-colors"
             style={{ color: "#ef4444" }}
           >
             <Trash2 className="h-3 w-3" />
@@ -171,9 +198,10 @@ function FlowNode({ id, data, selected }: NodeProps) {
 
         {/* Preview */}
         <div className="px-3 py-2">
-          <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">
-            {preview}
-          </p>
+          <p className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">{preview}</p>
+          {hasError && (
+            <p className="text-[10px] text-amber-500 mt-1">{errors[0]}</p>
+          )}
         </div>
       </div>
 
@@ -184,17 +212,14 @@ function FlowNode({ id, data, selected }: NodeProps) {
         style={{ borderColor: meta.color }}
       />
 
-      {/* Condition node has two outputs */}
       {d.nodeType === "CONDITION" && (
-        <>
-          <Handle
-            type="source"
-            position={Position.Right}
-            id="false"
-            className="!w-3 !h-3 !border-2 !bg-white"
-            style={{ borderColor: "#ef4444", top: "60%" }}
-          />
-        </>
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="false"
+          className="!w-3 !h-3 !border-2 !bg-white"
+          style={{ borderColor: "#ef4444", top: "60%" }}
+        />
       )}
     </div>
   );
@@ -373,7 +398,7 @@ function LeftPanel({
                   onClick={() => onAddNode(type)}
                   draggable
                   onDragStart={(e) => e.dataTransfer.setData("nodeType", type)}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-container transition-colors text-left group cursor-grab active:cursor-grabbing"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface-container transition-colors text-left cursor-grab active:cursor-grabbing"
                 >
                   <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: meta.bg }}>
                     <Icon className="h-3.5 w-3.5" style={{ color: meta.color }} />
@@ -402,6 +427,12 @@ interface RightPanelProps {
 
 function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPanelProps) {
   const meta = NODE_META[nodeType];
+  const [headersText, setHeadersText] = useState(
+    typeof nodeData.headers === "object"
+      ? JSON.stringify(nodeData.headers, null, 2)
+      : String(nodeData.headers ?? "{}")
+  );
+  const [headersError, setHeadersError] = useState("");
 
   function field(label: string, children: React.ReactNode) {
     return (
@@ -415,8 +446,10 @@ function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPane
   const inputCls = "w-full px-3 py-2 rounded-lg border border-outline text-[12px] text-on-surface bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary/20";
   const textareaCls = `${inputCls} resize-none`;
 
+  const errors = validateNode(nodeType, nodeData);
+
   return (
-    <div className="w-[270px] shrink-0 border-l border-outline-variant bg-surface-container-low flex flex-col overflow-y-auto">
+    <div className="w-[280px] shrink-0 border-l border-outline-variant bg-surface-container-low flex flex-col overflow-y-auto">
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3" style={{ borderBottom: `2px solid ${meta.color}20` }}>
         <div className="flex items-center gap-2">
@@ -430,6 +463,18 @@ function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPane
         </button>
       </div>
 
+      {/* Validation errors */}
+      {errors.length > 0 && (
+        <div className="mx-4 mt-3 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 space-y-0.5">
+          {errors.map((e, i) => (
+            <p key={i} className="text-[11px] text-amber-700 flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              {e}
+            </p>
+          ))}
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {nodeType === "SEND_MESSAGE" && (
           field("Message", (
@@ -441,7 +486,7 @@ function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPane
                 placeholder="Type your message here..."
                 className={textareaCls}
               />
-              <p className="text-[10px] text-on-surface-variant">Use {"{{contact.name}}"} for personalization</p>
+              <p className="text-[10px] text-on-surface-variant">Use {"{{contact.name}}"} or {"{{variable_name}}"} for personalization</p>
             </>
           ))
         )}
@@ -465,13 +510,14 @@ function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPane
                 className={inputCls}
               />
             ))}
+            <p className="text-[10px] text-on-surface-variant">Access in later nodes as {"{{customer_name}}"}</p>
           </>
         )}
 
         {nodeType === "CONDITION" && (
           <>
             {field("Variable", (
-              <input value={String(nodeData.field ?? "")} onChange={(e) => onUpdate(nodeId, { field: e.target.value })} placeholder="e.g. last_reply" className={inputCls} />
+              <input value={String(nodeData.field ?? "")} onChange={(e) => onUpdate(nodeId, { field: e.target.value })} placeholder="e.g. customer_name" className={inputCls} />
             ))}
             {field("Operator", (
               <select value={String(nodeData.operator ?? "equals")} onChange={(e) => onUpdate(nodeId, { operator: e.target.value })} className={inputCls}>
@@ -526,11 +572,50 @@ function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPane
               <select value={String(nodeData.method ?? "GET")} onChange={(e) => onUpdate(nodeId, { method: e.target.value })} className={inputCls}>
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="PATCH">PATCH</option>
+                <option value="DELETE">DELETE</option>
               </select>
             ))}
-            {field("Save response as", (
-              <input value={String(nodeData.saveAs ?? "")} onChange={(e) => onUpdate(nodeId, { saveAs: e.target.value })} placeholder="e.g. api_result (optional)" className={inputCls} />
+            {field("Headers (JSON)", (
+              <>
+                <textarea
+                  value={headersText}
+                  rows={3}
+                  onChange={(e) => {
+                    setHeadersText(e.target.value);
+                    try {
+                      const parsed = JSON.parse(e.target.value);
+                      onUpdate(nodeId, { headers: parsed });
+                      setHeadersError("");
+                    } catch {
+                      setHeadersError("Invalid JSON");
+                    }
+                  }}
+                  placeholder={'{\n  "Authorization": "Bearer token"\n}'}
+                  className={`${textareaCls} font-mono text-[11px]`}
+                />
+                {headersError && <p className="text-[11px] text-error">{headersError}</p>}
+              </>
             ))}
+            {field("Request Body (JSON or plain)", (
+              <textarea
+                value={String(nodeData.body ?? "")}
+                rows={3}
+                onChange={(e) => onUpdate(nodeId, { body: e.target.value })}
+                placeholder={"{\n  \"phone\": \"{{contact.phone}}\"\n}"}
+                className={`${textareaCls} font-mono text-[11px]`}
+              />
+            ))}
+            {field("Save response as variable", (
+              <input
+                value={String(nodeData.responseVar ?? "")}
+                onChange={(e) => onUpdate(nodeId, { responseVar: e.target.value })}
+                placeholder="e.g. api_result (optional)"
+                className={inputCls}
+              />
+            ))}
+            <p className="text-[10px] text-on-surface-variant">Use {"{{variable_name}}"} in URL, body, and headers. Response stored in variable.</p>
           </>
         )}
 
@@ -540,16 +625,270 @@ function RightPanel({ nodeId, nodeType, nodeData, onUpdate, onClose }: RightPane
               <textarea
                 value={String(nodeData.systemPrompt ?? "")}
                 onChange={(e) => onUpdate(nodeId, { systemPrompt: e.target.value })}
-                rows={5}
-                placeholder="You are a helpful support agent..."
+                rows={6}
+                placeholder="You are a helpful support agent for [Company]. Be concise, friendly, and professional."
                 className={textareaCls}
               />
             ))}
             {field("Max Tokens", (
-              <input type="number" value={String(nodeData.maxTokens ?? 500)} onChange={(e) => onUpdate(nodeId, { maxTokens: parseInt(e.target.value) || 500 })} className={inputCls} />
+              <input
+                type="number"
+                value={String(nodeData.maxTokens ?? 500)}
+                onChange={(e) => onUpdate(nodeId, { maxTokens: parseInt(e.target.value) || 500 })}
+                min={50}
+                max={4000}
+                className={inputCls}
+              />
+            ))}
+            <div className="rounded-lg bg-orange-50 border border-orange-100 p-3 text-[11px] text-orange-700 space-y-1">
+              <p className="font-medium">AI will generate a reply using:</p>
+              <p>• The system prompt above</p>
+              <p>• Last 20 messages as context</p>
+              <p>• Session variables for personalization</p>
+            </div>
+          </>
+        )}
+
+        {nodeType === "INTENT_DETECT" && (
+          <>
+            {field("Intents (one per line)", (
+              <>
+                <textarea
+                  value={Array.isArray(nodeData.intents) ? (nodeData.intents as string[]).join("\n") : ""}
+                  onChange={(e) => onUpdate(nodeId, { intents: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })}
+                  rows={5}
+                  placeholder={"order_status\npricing\nsupport\nother"}
+                  className={textareaCls}
+                />
+                <p className="text-[10px] text-on-surface-variant">AI will classify the customer message into one of these intents. Connect each intent to a different next node using the edge label.</p>
+              </>
+            ))}
+            <div className="rounded-lg bg-purple-50 border border-purple-100 p-3 text-[11px] text-purple-700 space-y-1">
+              <p className="font-medium">How to wire intent branches:</p>
+              <p>• Connect output edges and set the label to the intent name</p>
+              <p>• Add a "default" edge for unmatched intents</p>
+            </div>
+          </>
+        )}
+
+        {nodeType === "CAROUSEL" && (
+          <>
+            {field("Header Text", (
+              <input
+                value={String(nodeData.headerText ?? "")}
+                onChange={(e) => onUpdate(nodeId, { headerText: e.target.value })}
+                placeholder="Please select an option:"
+                className={inputCls}
+              />
+            ))}
+            {field("Items", (
+              <div className="space-y-2">
+                {(nodeData.items as { title: string; description?: string }[] ?? []).map((item, i) => (
+                  <div key={i} className="rounded-lg border border-outline-variant/20 p-2 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-semibold text-on-surface-variant w-4">{i + 1}.</span>
+                      <input
+                        value={item.title}
+                        onChange={(e) => {
+                          const items = [...(nodeData.items as { title: string; description?: string }[])];
+                          items[i] = { ...items[i], title: e.target.value };
+                          onUpdate(nodeId, { items });
+                        }}
+                        placeholder="Option title"
+                        className={`${inputCls} text-[11px]`}
+                      />
+                      <button
+                        onClick={() => {
+                          const items = (nodeData.items as { title: string; description?: string }[]).filter((_, j) => j !== i);
+                          onUpdate(nodeId, { items });
+                        }}
+                        className="p-0.5 text-on-surface-variant/40 hover:text-error transition-colors shrink-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                    <input
+                      value={item.description ?? ""}
+                      onChange={(e) => {
+                        const items = [...(nodeData.items as { title: string; description?: string }[])];
+                        items[i] = { ...items[i], description: e.target.value };
+                        onUpdate(nodeId, { items });
+                      }}
+                      placeholder="Optional description"
+                      className={`${inputCls} text-[11px] ml-5`}
+                    />
+                  </div>
+                ))}
+                <button
+                  onClick={() => {
+                    const items = [...(nodeData.items as { title: string; description?: string }[] ?? []), { title: "", description: "" }];
+                    onUpdate(nodeId, { items });
+                  }}
+                  className="flex items-center gap-1.5 text-[11px] text-primary hover:underline"
+                >
+                  <Plus className="h-3 w-3" />
+                  Add item
+                </button>
+              </div>
             ))}
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Test Mode Panel ──────────────────────────────────────────────────────────
+
+interface TestPanelProps {
+  flowId: string;
+  onClose: () => void;
+  nodeCount: number;
+  validationErrors: { nodeId: string; errors: string[] }[];
+}
+
+function TestPanel({ flowId, onClose, nodeCount, validationErrors }: TestPanelProps) {
+  const [testMessage, setTestMessage] = useState("");
+  const [log, setLog] = useState<{ role: "user" | "bot" | "system"; text: string; nodeType?: string }[]>([]);
+  const simulate = useSimulateChatbotFlow();
+
+  function runSimulation() {
+    const msg = testMessage.trim();
+    if (!msg) return;
+    setLog((prev) => [...prev, { role: "user", text: msg }]);
+    setTestMessage("");
+
+    simulate.mutate(
+      { flowId, messageBody: msg },
+      {
+        onSuccess: (result) => {
+          if (result.replies.length === 0) {
+            setLog((prev) => [...prev, { role: "system", text: "No replies generated. Check your flow has connected nodes." }]);
+          } else {
+            result.replies.forEach((r) => {
+              setLog((prev) => [...prev, { role: "bot", text: r.message, nodeType: r.nodeType }]);
+            });
+          }
+          if (result.truncated) {
+            setLog((prev) => [...prev, { role: "system", text: "⚠️ Simulation truncated at 20 steps to prevent loops." }]);
+          }
+        },
+      }
+    );
+  }
+
+  return (
+    <div className="w-[280px] shrink-0 border-l border-outline-variant bg-surface-container-low flex flex-col">
+      {/* Header */}
+      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
+        <div className="flex items-center gap-2">
+          <FlaskConical className="h-4 w-4 text-primary" />
+          <span className="text-[13px] font-semibold text-on-surface">Test Mode</span>
+        </div>
+        <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Flow summary */}
+      <div className="px-4 py-3 border-b border-outline-variant/10 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-on-surface-variant">Nodes</span>
+          <span className="text-[11px] font-medium text-on-surface">{nodeCount}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-on-surface-variant">Validation</span>
+          {validationErrors.length === 0 ? (
+            <span className="flex items-center gap-1 text-[11px] text-green-600">
+              <CheckCircle2 className="h-3 w-3" />
+              All good
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[11px] text-amber-600">
+              <AlertTriangle className="h-3 w-3" />
+              {validationErrors.length} issue{validationErrors.length > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Validation issues list */}
+      {validationErrors.length > 0 && (
+        <div className="px-4 py-3 border-b border-outline-variant/10 space-y-1.5">
+          <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Issues</p>
+          {validationErrors.map(({ nodeId, errors }) =>
+            errors.map((err, i) => (
+              <div key={`${nodeId}-${i}`} className="flex items-start gap-1.5 text-[11px] text-amber-700">
+                <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+                <span>{err}</span>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Chat log */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+        {log.length === 0 && (
+          <div className="text-center py-8 space-y-2">
+            <FlaskConical className="h-8 w-8 text-on-surface-variant/30 mx-auto" />
+            <p className="text-[12px] text-on-surface-variant/50">
+              Send a test message to simulate the flow. The server will walk through your nodes and return the bot replies.
+            </p>
+          </div>
+        )}
+        {log.map((m, i) => (
+          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div className={`max-w-[90%] px-3 py-2 rounded-xl text-[12px] space-y-0.5 ${
+              m.role === "user"
+                ? "bg-primary text-white"
+                : m.role === "system"
+                ? "bg-amber-50 border border-amber-100 text-amber-700"
+                : "bg-surface-container text-on-surface"
+            }`}>
+              {m.nodeType && m.role === "bot" && (
+                <p className="text-[9px] font-semibold uppercase tracking-wide opacity-50">{m.nodeType.replace("_", " ")}</p>
+              )}
+              {m.text}
+            </div>
+          </div>
+        ))}
+        {simulate.isPending && (
+          <div className="flex justify-start">
+            <div className="bg-surface-container px-3 py-2 rounded-xl">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-on-surface-variant" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="shrink-0 px-4 py-3 border-t border-outline-variant/20">
+        {log.length > 0 && (
+          <button
+            onClick={() => setLog([])}
+            className="w-full text-[11px] text-on-surface-variant/50 hover:text-on-surface-variant mb-2 text-center"
+          >
+            Clear chat
+          </button>
+        )}
+        <div className="flex gap-2">
+          <input
+            value={testMessage}
+            onChange={(e) => setTestMessage(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) runSimulation(); }}
+            placeholder="Type a test message…"
+            className="flex-1 px-3 py-2 rounded-lg border border-outline text-[12px] text-on-surface bg-surface-container focus:outline-none focus:ring-2 focus:ring-primary/20"
+            disabled={simulate.isPending}
+          />
+          <button
+            onClick={runSimulation}
+            disabled={!testMessage.trim() || simulate.isPending}
+            className="p-2 rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-40 transition-colors"
+          >
+            <SendHorizonal className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -574,6 +913,7 @@ function ChatbotEditorInner() {
   const [rfNodes, setRfNodes, onNodesChange] = useNodesState<Node>([]);
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [showTestPanel, setShowTestPanel] = useState(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   // Flow meta state
@@ -597,7 +937,6 @@ function ChatbotEditorInner() {
     setUseKnowledgeBase(flow.useKnowledgeBase ?? false);
     setSelectedProductIds((flow as unknown as Record<string, unknown>).productIds as string[] ?? []);
 
-    // Convert backend nodes → ReactFlow nodes + edges
     const nodes: Node[] = flow.nodes.map((n) => ({
       id: n.id,
       type: "chatbotNode",
@@ -633,9 +972,9 @@ function ChatbotEditorInner() {
     setInitialized(true);
   }, [flow, initialized, setRfNodes, setRfEdges]);
 
-  // Keep callbacks fresh in node data after nodes change
   const handleSelectNode = useCallback((id: string) => {
     setSelectedNodeId((prev) => (prev === id ? null : id));
+    setShowTestPanel(false);
   }, []);
 
   const handleDeleteNode = useCallback((id: string) => {
@@ -644,7 +983,6 @@ function ChatbotEditorInner() {
     setSelectedNodeId((prev) => (prev === id ? null : prev));
   }, [setRfNodes, setRfEdges]);
 
-  // Re-inject callbacks into node data so they're always fresh
   useEffect(() => {
     setRfNodes((nds) =>
       nds.map((n) => ({
@@ -733,8 +1071,56 @@ function ChatbotEditorInner() {
     );
   }, [setRfNodes]);
 
+  // Auto-layout: simple top-to-bottom dagre-like manual layout
+  const handleAutoLayout = useCallback(() => {
+    if (rfNodes.length === 0) return;
+    // Build adjacency from edges
+    const childrenOf = new Map<string, string[]>();
+    const parentCount = new Map<string, number>();
+    rfNodes.forEach((n) => { childrenOf.set(n.id, []); parentCount.set(n.id, 0); });
+    rfEdges.forEach((e) => {
+      childrenOf.get(e.source)?.push(e.target);
+      parentCount.set(e.target, (parentCount.get(e.target) ?? 0) + 1);
+    });
+
+    // BFS layering
+    const roots = rfNodes.filter((n) => (parentCount.get(n.id) ?? 0) === 0).map((n) => n.id);
+    const layerOf = new Map<string, number>();
+    const queue = roots.map((id) => ({ id, layer: 0 }));
+    while (queue.length > 0) {
+      const { id, layer } = queue.shift()!;
+      if (layerOf.has(id)) continue;
+      layerOf.set(id, layer);
+      (childrenOf.get(id) ?? []).forEach((child) => queue.push({ id: child, layer: layer + 1 }));
+    }
+
+    const layerNodes = new Map<number, string[]>();
+    rfNodes.forEach((n) => {
+      const l = layerOf.get(n.id) ?? 0;
+      if (!layerNodes.has(l)) layerNodes.set(l, []);
+      layerNodes.get(l)!.push(n.id);
+    });
+
+    const GAP_X = 250;
+    const GAP_Y = 160;
+    const newPositions = new Map<string, { x: number; y: number }>();
+
+    layerNodes.forEach((ids, layer) => {
+      const totalWidth = (ids.length - 1) * GAP_X;
+      ids.forEach((id, i) => {
+        newPositions.set(id, { x: i * GAP_X - totalWidth / 2 + 400, y: layer * GAP_Y + 80 });
+      });
+    });
+
+    setRfNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        position: newPositions.get(n.id) ?? n.position,
+      }))
+    );
+  }, [rfNodes, rfEdges, setRfNodes]);
+
   const handleSave = () => {
-    // Convert ReactFlow nodes + edges back to backend format
     const backendNodes = rfNodes.map((n) => {
       const d = n.data as FlowNodeData;
       const outEdges = rfEdges.filter((e) => e.source === n.id);
@@ -762,6 +1148,14 @@ function ChatbotEditorInner() {
 
     saveNodes.mutate({ flowId, nodes: backendNodes });
   };
+
+  // Compute validation errors for all nodes
+  const validationErrors = rfNodes
+    .map((n) => {
+      const d = n.data as FlowNodeData;
+      return { nodeId: n.id, errors: validateNode(d.nodeType, d.nodeData) };
+    })
+    .filter((v) => v.errors.length > 0);
 
   const selectedRfNode = rfNodes.find((n) => n.id === selectedNodeId);
 
@@ -808,9 +1202,38 @@ function ChatbotEditorInner() {
               AI Mode
             </span>
           )}
+          {validationErrors.length > 0 && !aiEnabled && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-600">
+              <AlertTriangle className="h-3 w-3" />
+              {validationErrors.length} issue{validationErrors.length > 1 ? "s" : ""}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
+          {!aiEnabled && rfNodes.length > 1 && (
+            <button
+              onClick={handleAutoLayout}
+              title="Auto-layout nodes"
+              className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"
+            >
+              <LayoutTemplate className="h-4 w-4" />
+            </button>
+          )}
+          {!aiEnabled && (
+            <button
+              onClick={() => {
+                setShowTestPanel((v) => !v);
+                setSelectedNodeId(null);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                showTestPanel ? "bg-primary/10 text-primary" : "hover:bg-surface-container text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              <FlaskConical className="h-3.5 w-3.5" />
+              Test
+            </button>
+          )}
           {flow.isActive ? (
             <Button variant="secondary" size="sm" onClick={() => deactivateFlow.mutate(flowId)} disabled={isSaving}>
               <Pause className="h-3.5 w-3.5 mr-1.5" />
@@ -857,7 +1280,6 @@ function ChatbotEditorInner() {
           onDragOver={(e) => e.preventDefault()}
         >
           {aiEnabled ? (
-            /* AI mode — no canvas needed */
             <div className="flex items-center justify-center h-full">
               <div className="max-w-sm text-center space-y-4">
                 <div className="flex justify-center">
@@ -917,7 +1339,6 @@ function ChatbotEditorInner() {
                 className="!bg-surface-container !border !border-outline-variant !rounded-xl"
               />
 
-              {/* Empty canvas hint */}
               {rfNodes.length === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-center space-y-2">
@@ -941,12 +1362,22 @@ function ChatbotEditorInner() {
             onClose={() => setSelectedNodeId(null)}
           />
         )}
+
+        {/* Test panel */}
+        {showTestPanel && !aiEnabled && (
+          <TestPanel
+            flowId={flowId}
+            onClose={() => setShowTestPanel(false)}
+            nodeCount={rfNodes.length}
+            validationErrors={validationErrors}
+          />
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Page export (wrapped in ReactFlowProvider) ───────────────────────────────
+// ─── Page export ──────────────────────────────────────────────────────────────
 
 export default function ChatbotEditorPage() {
   return (

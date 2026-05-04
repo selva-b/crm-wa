@@ -16,11 +16,17 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
 import { ChatbotRepository } from '../../infrastructure/repositories/chatbot.repository';
-import { CreateFlowDto, UpdateFlowDto, SaveNodesDto } from '../../application/dto';
+import { ExecuteChatbotFlowUseCase } from '../../application/use-cases/execute-chatbot-flow.use-case';
+import { SimulateChatbotFlowUseCase } from '../../application/use-cases/simulate-chatbot-flow.use-case';
+import { CreateFlowDto, UpdateFlowDto, SaveNodesDto, SimulateFlowDto } from '../../application/dto';
 
 @Controller('chatbot')
 export class ChatbotController {
-  constructor(private readonly chatbotRepo: ChatbotRepository) {}
+  constructor(
+    private readonly chatbotRepo: ChatbotRepository,
+    private readonly executeChatbotFlow: ExecuteChatbotFlowUseCase,
+    private readonly simulateChatbotFlow: SimulateChatbotFlowUseCase,
+  ) {}
 
   @Post('flows')
   @Roles('ADMIN', 'MANAGER')
@@ -128,5 +134,18 @@ export class ChatbotController {
     @Param('flowId', ParseUUIDPipe) flowId: string,
   ) {
     return this.chatbotRepo.getFlowAnalytics(flowId, user.orgId);
+  }
+
+  @Post('flows/:flowId/simulate')
+  @Roles('ADMIN', 'MANAGER')
+  @HttpCode(HttpStatus.OK)
+  async simulateFlow(
+    @CurrentUser() user: JwtPayload,
+    @Param('flowId', ParseUUIDPipe) flowId: string,
+    @Body() dto: SimulateFlowDto,
+  ) {
+    const flow = await this.chatbotRepo.findFlowById(flowId, user.orgId);
+    if (!flow) throw new NotFoundException('Flow not found');
+    return this.simulateChatbotFlow.execute(flow, dto.messageBody);
   }
 }

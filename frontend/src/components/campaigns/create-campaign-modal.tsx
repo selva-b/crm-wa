@@ -97,7 +97,7 @@ export function CreateCampaignModal({
     };
 
     createCampaign.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (campaign) => {
         reset();
         setScheduleMode("immediate");
         setProductId("");
@@ -105,6 +105,7 @@ export function CreateCampaignModal({
         setTemplateSearch("");
         setShowTemplatePicker(false);
         onClose();
+        router.push(`/campaigns/${campaign.id}`);
       },
     });
   }

@@ -70,3 +70,13 @@ export class SaveNodesDto {
   @IsArray()
   nodes: { id?: string; type: string; data: Record<string, unknown>; position: Record<string, unknown>; nextNodes: unknown[] }[];
 }
+
+export class SimulateFlowDto {
+  @IsString()
+  @IsNotEmpty()
+  messageBody: string;
+
+  @IsOptional()
+  @IsString()
+  contactPhone?: string;
+}

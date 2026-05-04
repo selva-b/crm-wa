@@ -16,6 +16,8 @@ interface FlowNode {
   nextNodes: { condition?: string; nodeId: string }[];
 }
 
+const MAX_NODE_DEPTH = 20;
+
 @Injectable()
 export class ExecuteChatbotFlowUseCase {
   private readonly logger = new Logger(ExecuteChatbotFlowUseCase.name);
@@ -44,10 +46,10 @@ export class ExecuteChatbotFlowUseCase {
     messageBody: string;
     messageType: string;
   }) {
-    const { orgId, conversationId, contactId, contactPhone, sessionId, messageBody } = payload;
+    const { orgId, conversationId, contactId, contactPhone, sessionId, messageBody, messageType } = payload;
 
     // 1. Check for existing active chatbot session
-    let session = await this.chatbotRepo.findActiveSession(orgId, conversationId);
+    const session = await this.chatbotRepo.findActiveSession(orgId, conversationId);
 
     if (session) {
       // Resume existing session
@@ -55,8 +57,11 @@ export class ExecuteChatbotFlowUseCase {
     }
 
     // 2. Find matching flow by trigger
-    // Try KEYWORD first, then FIRST_MESSAGE
+    // Try KEYWORD first, then BUTTON_REPLY (for interactive messages), then FIRST_MESSAGE
     let flow = await this.chatbotRepo.findActiveFlowByTrigger(orgId, 'KEYWORD', messageBody);
+    if (!flow && messageType === 'button_reply') {
+      flow = await this.chatbotRepo.findActiveFlowByTrigger(orgId, 'BUTTON_REPLY', messageBody);
+    }
     if (!flow) {
       flow = await this.chatbotRepo.findActiveFlowByTrigger(orgId, 'FIRST_MESSAGE');
     }
@@ -89,7 +94,7 @@ export class ExecuteChatbotFlowUseCase {
     });
 
     // Execute the start node
-    await this.executeNode(startNode, nodes, newSession.id, payload);
+    await this.executeNode(startNode, nodes, newSession.id, payload, 0);
   }
 
   /**
@@ -231,7 +236,7 @@ IMPORTANT RULES:
         const nextNode = nodes.find((n) => n.id === nextNodeRef.nodeId);
         if (nextNode) {
           await this.chatbotRepo.updateSession(session.id, { currentNodeId: nextNode.id });
-          await this.executeNode(nextNode, nodes, session.id, payload);
+          await this.executeNode(nextNode, nodes, session.id, payload, 0);
           return;
         }
       }
@@ -247,27 +252,45 @@ IMPORTANT RULES:
       const nextNode = nodes.find((n) => n.id === nextNodeRef.nodeId);
       if (nextNode) {
         await this.chatbotRepo.updateSession(session.id, { currentNodeId: nextNode.id });
-        await this.executeNode(nextNode, nodes, session.id, payload);
+        await this.executeNode(nextNode, nodes, session.id, payload, 0);
       }
     }
   }
 
   /**
    * Execute a single node and advance to the next.
+   * depth guards against infinite loops in misconfigured flows.
    */
   private async executeNode(
     node: FlowNode,
     allNodes: FlowNode[],
     sessionId: string,
-    payload: { orgId: string; conversationId: string; contactPhone: string; sessionId: string },
+    payload: { orgId: string; conversationId: string; contactPhone: string; sessionId: string; contactId?: string; messageBody?: string },
+    depth: number,
   ) {
+    if (depth >= MAX_NODE_DEPTH) {
+      this.logger.warn(`Max node depth (${MAX_NODE_DEPTH}) reached for session ${sessionId} at node ${node.id}. Completing session.`);
+      await this.chatbotRepo.updateSession(sessionId, {
+        status: ChatbotSessionStatus.COMPLETED,
+        completedAt: new Date(),
+      });
+      return;
+    }
+
     const { orgId, conversationId, contactPhone, sessionId: waSessionId } = payload;
+
+    // Fetch current session variables for interpolation
+    const sessionData = await this.prisma.chatbotSession.findUnique({
+      where: { id: sessionId },
+      select: { variables: true },
+    });
+    const variables = (sessionData?.variables as Record<string, unknown>) || {};
 
     switch (node.type) {
       case 'SEND_MESSAGE': {
         const message = node.data.message as string;
         if (message) {
-          const { messageId } = await this.sendReply(orgId, conversationId, contactPhone, waSessionId, message);
+          const { messageId } = await this.sendReply(orgId, conversationId, contactPhone, waSessionId, this.interpolate(message, variables));
           this.eventEmitter.emit(EVENT_NAMES.CHATBOT_FLOW_TRIGGERED, {
             orgId,
             conversationId,
@@ -275,7 +298,7 @@ IMPORTANT RULES:
           });
         }
         // Auto-advance to next node
-        await this.advanceToNext(node, allNodes, sessionId, payload);
+        await this.advanceToNext(node, allNodes, sessionId, payload, depth + 1);
         break;
       }
 
@@ -305,14 +328,14 @@ IMPORTANT RULES:
         if (result.text?.trim()) {
           await this.sendReply(orgId, conversationId, contactPhone, waSessionId, result.text.trim());
         }
-        await this.advanceToNext(node, allNodes, sessionId, payload);
+        await this.advanceToNext(node, allNodes, sessionId, payload, depth + 1);
         break;
       }
 
       case 'ASK_QUESTION': {
         const question = node.data.question as string;
         if (question) {
-          await this.sendReply(orgId, conversationId, contactPhone, waSessionId, question);
+          await this.sendReply(orgId, conversationId, contactPhone, waSessionId, this.interpolate(question, variables));
         }
         // Wait for customer response — don't advance
         await this.chatbotRepo.updateSession(sessionId, { currentNodeId: node.id });
@@ -329,11 +352,6 @@ IMPORTANT RULES:
       }
 
       case 'CONDITION': {
-        const session = await this.prisma.chatbotSession.findUnique({
-          where: { id: sessionId },
-          select: { variables: true },
-        });
-        const variables = (session?.variables as Record<string, any>) || {};
         const field = node.data.field as string;
         const operator = node.data.operator as string;
         const value = node.data.value as string;
@@ -356,21 +374,132 @@ IMPORTANT RULES:
           const nextNode = allNodes.find((n) => n.id === matchingNext.nodeId);
           if (nextNode) {
             await this.chatbotRepo.updateSession(sessionId, { currentNodeId: nextNode.id });
-            await this.executeNode(nextNode, allNodes, sessionId, payload);
+            await this.executeNode(nextNode, allNodes, sessionId, payload, depth + 1);
           }
         }
         break;
       }
 
       case 'DELAY': {
-        // For simplicity, skip delay and advance
-        await this.advanceToNext(node, allNodes, sessionId, payload);
+        // TODO: implement proper async delay via pg-boss scheduled job
+        this.logger.warn(`DELAY node in session ${sessionId}: delay of ${node.data.seconds ?? 5}s is not implemented — advancing immediately.`);
+        await this.advanceToNext(node, allNodes, sessionId, payload, depth + 1);
+        break;
+      }
+
+      case 'SET_TAG': {
+        // Tag the contact — fire event and advance
+        const tagName = node.data.tagName as string;
+        if (tagName) {
+          this.eventEmitter.emit(EVENT_NAMES.CHATBOT_FLOW_TRIGGERED, {
+            orgId,
+            conversationId,
+            action: 'SET_TAG',
+            tagName,
+            contactId: payload.contactId,
+          });
+        }
+        await this.advanceToNext(node, allNodes, sessionId, payload, depth + 1);
+        break;
+      }
+
+      case 'API_CALL': {
+        const url = node.data.url as string;
+        const method = ((node.data.method as string) || 'GET').toUpperCase();
+        const responseVar = (node.data.responseVar as string) || '';
+
+        if (url) {
+          try {
+            let headers: Record<string, string> = {};
+            if (node.data.headers) {
+              headers = typeof node.data.headers === 'string'
+                ? JSON.parse(node.data.headers)
+                : (node.data.headers as Record<string, string>);
+            }
+
+            const fetchOptions: RequestInit = { method, headers };
+            if (['POST', 'PUT', 'PATCH'].includes(method) && node.data.body) {
+              fetchOptions.body = String(node.data.body);
+              headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+            }
+
+            const res = await fetch(url, fetchOptions);
+            const text = await res.text();
+
+            if (responseVar) {
+              let parsed: unknown = text;
+              try { parsed = JSON.parse(text); } catch { /* use raw text */ }
+              const updatedVars = { ...variables, [responseVar]: parsed };
+              await this.chatbotRepo.updateSession(sessionId, { variables: updatedVars });
+            }
+          } catch (err) {
+            this.logger.warn(`API_CALL node failed for url "${url}": ${err.message}`);
+          }
+        }
+        await this.advanceToNext(node, allNodes, sessionId, payload, depth + 1);
+        break;
+      }
+
+      case 'INTENT_DETECT': {
+        // Use AI to classify intent from customer message, then route to matching branch
+        const intents = (node.data.intents as string[]) || [];
+        const defaultNextRef = node.nextNodes.find((nn) => nn.condition === 'default') || node.nextNodes[0];
+
+        if (intents.length === 0 || !payload.messageBody) {
+          if (defaultNextRef) {
+            const nextNode = allNodes.find((n) => n.id === defaultNextRef.nodeId);
+            if (nextNode) {
+              await this.chatbotRepo.updateSession(sessionId, { currentNodeId: nextNode.id });
+              await this.executeNode(nextNode, allNodes, sessionId, payload, depth + 1);
+            }
+          }
+          break;
+        }
+
+        const intentListStr = intents.map((intent, i) => `${i + 1}. ${intent}`).join('\n');
+        const result = await this.aiProvider.complete({
+          systemPrompt: 'You classify customer messages into predefined intents. Reply with ONLY the intent name, nothing else.',
+          userPrompt: `Customer message: "${payload.messageBody}"\n\nPossible intents:\n${intentListStr}\n\nWhich intent best matches? Reply with only the intent name.`,
+          maxTokens: 50,
+        });
+
+        const detectedIntent = result.text?.trim().toLowerCase() || '';
+        // Find the branch matching detected intent
+        const matchingBranch =
+          node.nextNodes.find((nn) => nn.condition && detectedIntent.includes(nn.condition.toLowerCase())) ||
+          defaultNextRef;
+
+        if (matchingBranch) {
+          const nextNode = allNodes.find((n) => n.id === matchingBranch.nodeId);
+          if (nextNode) {
+            await this.chatbotRepo.updateSession(sessionId, { currentNodeId: nextNode.id });
+            await this.executeNode(nextNode, allNodes, sessionId, payload, depth + 1);
+          }
+        }
+        break;
+      }
+
+      case 'CAROUSEL': {
+        // Send an interactive list/button message
+        const items = (node.data.items as { title: string; description?: string; buttonId?: string }[]) || [];
+        if (items.length > 0) {
+          // Format as a numbered list for now (full interactive buttons require WA Cloud API)
+          const listText = items
+            .map((item, i) => `${i + 1}. *${this.interpolate(item.title, variables)}*${item.description ? `\n   ${this.interpolate(item.description, variables)}` : ''}`)
+            .join('\n\n');
+          const headerText = node.data.headerText as string;
+          const message = headerText
+            ? `${this.interpolate(headerText, variables)}\n\n${listText}`
+            : listText;
+          await this.sendReply(orgId, conversationId, contactPhone, waSessionId, message);
+        }
+        await this.advanceToNext(node, allNodes, sessionId, payload, depth + 1);
         break;
       }
 
       default: {
         // Unknown node type, try to advance
-        await this.advanceToNext(node, allNodes, sessionId, payload);
+        await this.advanceToNext(node, allNodes, sessionId, payload, depth + 1);
       }
     }
   }
@@ -380,6 +509,7 @@ IMPORTANT RULES:
     allNodes: FlowNode[],
     sessionId: string,
     payload: { orgId: string; conversationId: string; contactPhone: string; sessionId: string },
+    depth: number,
   ) {
     const nextRef = currentNode.nextNodes[0];
     if (!nextRef) {
@@ -400,7 +530,14 @@ IMPORTANT RULES:
     }
 
     await this.chatbotRepo.updateSession(sessionId, { currentNodeId: nextNode.id });
-    await this.executeNode(nextNode, allNodes, sessionId, payload);
+    await this.executeNode(nextNode, allNodes, sessionId, payload, depth);
+  }
+
+  /**
+   * Replace {{variableName}} placeholders with session variable values.
+   */
+  private interpolate(text: string, variables: Record<string, unknown>): string {
+    return text.replace(/\{\{(\w+)\}\}/g, (_, key) => String(variables[key] ?? ''));
   }
 
   /**

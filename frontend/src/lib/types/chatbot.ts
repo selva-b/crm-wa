@@ -6,7 +6,9 @@ export type ChatbotNodeType =
   | "ASSIGN_AGENT"
   | "SET_TAG"
   | "API_CALL"
-  | "AI_REPLY";
+  | "AI_REPLY"
+  | "INTENT_DETECT"
+  | "CAROUSEL";
 
 export type ChatbotTriggerType = "KEYWORD" | "FIRST_MESSAGE" | "BUTTON_REPLY";
 
@@ -77,4 +79,22 @@ export interface SaveNodesRequest {
     position: { x: number; y: number };
     nextNodes: { condition?: string; nodeId: string }[];
   }[];
+}
+
+export interface SimulateFlowRequest {
+  messageBody: string;
+  contactPhone?: string;
+}
+
+export interface SimulateFlowReply {
+  nodeId: string;
+  nodeType: string;
+  message: string;
+}
+
+export interface SimulateFlowResponse {
+  replies: SimulateFlowReply[];
+  stepsExecuted: number;
+  variables: Record<string, unknown>;
+  truncated: boolean;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { X, Plus, Trash2, Sparkles, ChevronDown } from "lucide-react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -174,6 +175,7 @@ export function CreateAutomationRuleModal({
   open,
   onClose,
 }: CreateAutomationRuleModalProps) {
+  const router = useRouter();
   const createRule = useCreateAutomationRule();
   const generateRule = useGenerateAutomationRule();
   const [productId, setProductId] = useState("");
@@ -212,10 +214,12 @@ export function CreateAutomationRuleModal({
 
   function onSubmit(data: CreateAutomationRuleFormData) {
     createRule.mutate({ ...data, productId: productId || undefined }, {
-      onSuccess: () => {
+      onSuccess: (created) => {
         reset();
         setProductId("");
         onClose();
+        // Navigate to the rule builder for further editing
+        router.push(`/automation/${created.id}`);
       },
     });
   }

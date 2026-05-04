@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { chatbotApi } from "@/lib/api/chatbot";
-import type { CreateFlowRequest, UpdateFlowRequest, SaveNodesRequest } from "@/lib/types/chatbot";
+import type { CreateFlowRequest, UpdateFlowRequest, SaveNodesRequest, SimulateFlowRequest } from "@/lib/types/chatbot";
 
 export const chatbotKeys = {
   all: ["chatbot"] as const,
@@ -81,5 +82,13 @@ export function useDeleteChatbotFlow() {
   return useMutation({
     mutationFn: (flowId: string) => chatbotApi.deleteFlow(flowId),
     onSuccess: () => qc.invalidateQueries({ queryKey: chatbotKeys.all }),
+  });
+}
+
+export function useSimulateChatbotFlow() {
+  return useMutation({
+    mutationFn: ({ flowId, ...data }: SimulateFlowRequest & { flowId: string }) =>
+      chatbotApi.simulateFlow(flowId, data),
+    onError: (err: Error) => toast.error(err.message || "Simulation failed"),
   });
 }
