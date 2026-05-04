@@ -98,6 +98,21 @@ export function LoginForm() {
           />
         </div>
 
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="rememberMe"
+            className="w-4 h-4 rounded border-outline accent-primary cursor-pointer"
+            {...register("rememberMe")}
+          />
+          <label
+            htmlFor="rememberMe"
+            className="text-[13px] text-on-surface-variant cursor-pointer select-none"
+          >
+            Remember me
+          </label>
+        </div>
+
         <Button
           type="submit"
           loading={login.isPending}

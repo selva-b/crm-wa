@@ -109,7 +109,7 @@ export class AuthController {
       this.getUa(req),
     );
     // Set refresh token as httpOnly cookie — never exposed to JavaScript
-    this.setRefreshCookie(res, result.refreshToken);
+    this.setRefreshCookie(res, result.refreshToken, dto.rememberMe ?? false);
     // Strip refreshToken from JSON body
     const { refreshToken: _, ...jsonBody } = result;
     return jsonBody;
@@ -273,14 +273,17 @@ export class AuthController {
       : 'refresh_token';
   }
 
-  private setRefreshCookie(res: Response, token: string): void {
+  private setRefreshCookie(res: Response, token: string, rememberMe = false): void {
     const isProd = process.env.NODE_ENV === 'production';
+    const maxAge = rememberMe
+      ? 30 * 24 * 60 * 60 * 1000  // 30 days
+      : 1  * 24 * 60 * 60 * 1000; // 1 day
     res.cookie(this.REFRESH_COOKIE, token, {
       httpOnly: true,
       secure: isProd,
       sameSite: 'lax',
       path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge,
     });
   }
 

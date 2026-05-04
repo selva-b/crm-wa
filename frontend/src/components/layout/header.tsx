@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Sparkles, CreditCard } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { SearchInput } from "@/components/ui/search-input";
 import { Avatar } from "@/components/ui/avatar";
@@ -10,6 +11,17 @@ import { CommandPalette } from "./command-palette";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUIStore } from "@/stores/ui-store";
 import { useLogout } from "@/hooks/use-auth";
+import { useSubscription } from "@/hooks/use-billing";
+import type { SubscriptionStatus } from "@/lib/types/billing";
+
+const statusBadgeStyles: Record<SubscriptionStatus, string> = {
+  ACTIVE:       "bg-success-container text-success",
+  TRIAL:        "bg-primary/15 text-primary",
+  GRACE_PERIOD: "bg-warning-container text-warning",
+  PAST_DUE:     "bg-warning-container text-warning",
+  EXPIRED:      "bg-error-container text-error",
+  CANCELLED:    "bg-surface-container-high text-on-surface-variant",
+};
 
 export function Header() {
   const user = useAuthStore((s) => s.user);
@@ -23,6 +35,19 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const logout = useLogout();
+
+  const { data: billingData } = useSubscription();
+  const aiCredits = billingData?.usage?.aiCredits;
+  const subscription = billingData?.subscription;
+
+  const aiPillColor =
+    !aiCredits
+      ? null
+      : aiCredits.percentUsed >= 100
+      ? "bg-error-container text-error border-error/20"
+      : aiCredits.percentUsed >= 80
+      ? "bg-warning-container text-warning border-warning/20"
+      : "bg-success-container text-success border-success/20";
 
   // Global ⌘K shortcut
   useEffect(() => {
@@ -79,6 +104,24 @@ export function Header() {
         <div className="flex items-center gap-3 shrink-0">
           <NotificationCenter />
 
+          {/* AI Credits Pill */}
+          {aiPillColor && aiCredits && (
+            <Link
+              href="/settings/billing"
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-medium transition-opacity hover:opacity-80",
+                aiPillColor,
+              )}
+              title={`${aiCredits.current} of ${aiCredits.limit} AI credits used`}
+            >
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                {aiCredits.current} / {aiCredits.limit}
+                <span className="ml-1 hidden sm:inline">AI credits</span>
+              </span>
+            </Link>
+          )}
+
           {/* Avatar + Dropdown Menu */}
           <div className="relative" ref={menuRef}>
             <button
@@ -100,6 +143,25 @@ export function Header() {
                   </p>
                 </div>
 
+                {/* Subscription plan */}
+                {subscription && (
+                  <div className="px-4 py-2.5 border-b border-outline-variant/10">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[12px] text-on-surface-variant/70 truncate">
+                        {subscription.plan.name}
+                      </span>
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                          statusBadgeStyles[subscription.status],
+                        )}
+                      >
+                        {subscription.status === "GRACE_PERIOD" ? "Grace" : subscription.status}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Menu items */}
                 <div className="py-1">
                   <a
@@ -110,6 +172,14 @@ export function Header() {
                     <User className="h-4 w-4 text-on-surface-variant/60" />
                     My Profile
                   </a>
+                  <Link
+                    href="/settings/billing"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-on-surface hover:bg-surface-container transition-colors"
+                  >
+                    <CreditCard className="h-4 w-4 text-on-surface-variant/60" />
+                    Billing &amp; Plan
+                  </Link>
                   <button
                     onClick={() => {
                       setMenuOpen(false);
