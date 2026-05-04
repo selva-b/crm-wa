@@ -54,9 +54,15 @@ const features = [
   { icon: "forum", title: "Shared Inbox", desc: "Your whole team in one WhatsApp inbox. Assign, reply, and resolve.", href: "/features/shared-inbox" },
   { icon: "campaign", title: "Bulk Campaigns", desc: "Broadcast to thousands. Track delivery in real-time.", href: "/features/campaigns" },
   { icon: "bolt", title: "Automation", desc: "Auto-replies and workflow rules. Work while you sleep.", href: "/features/automation" },
-  { icon: "bar_chart", title: "Analytics", desc: "Delivery rates, CSAT scores, team performance.", href: "/features/analytics" },
-  { icon: "group", title: "Contacts CRM", desc: "Tag, segment, and manage all your leads.", href: "/features/contacts" },
+  { icon: "bar_chart", title: "Analytics", desc: "Delivery rates, CSAT scores, team performance — one dashboard.", href: "/features/analytics" },
+  { icon: "group", title: "Contacts CRM", desc: "Tag, segment, and manage all your leads and customers.", href: "/features/contacts" },
   { icon: "smart_toy", title: "Chatbot Builder", desc: "Build no-code WhatsApp chatbots in minutes.", href: "/features/chatbot" },
+  { icon: "trending_up", title: "Deals Pipeline", desc: "Track every deal through stages. See your revenue forecast at a glance.", href: "/features/deals" },
+  { icon: "low_priority", title: "Sequences", desc: "Automated drip campaigns on WhatsApp. Set it, forget it, close more.", href: "/features/sequences" },
+  { icon: "star_rate", title: "CSAT Surveys", desc: "Auto-send satisfaction surveys after every resolved conversation.", href: "/features/csat" },
+  { icon: "query_stats", title: "Lead Scoring", desc: "Automatically score and qualify leads based on engagement and profile data.", href: "/features/lead-scoring" },
+  { icon: "devices", title: "Multi-Channel", desc: "Instagram, Facebook Messenger, and Email — alongside WhatsApp.", href: "/features/multi-channel" },
+  { icon: "code", title: "Developer API", desc: "Full REST API and webhook system. Build custom integrations in minutes.", href: "/features/developer-api" },
 ];
 
 // App base URL — register page
@@ -104,11 +110,7 @@ const partnerLogos = [
   { name: "Meta Business", abbr: "META" },
   { name: "Razorpay", abbr: "RZRPAY" },
   { name: "Shopify", abbr: "SHOPIFY" },
-  { name: "HubSpot", abbr: "HUBSPOT" },
-  { name: "Zoho CRM", abbr: "ZOHO" },
   { name: "Stripe", abbr: "STRIPE" },
-  { name: "Zapier", abbr: "ZAPIER" },
-  { name: "Slack", abbr: "SLACK" },
 ];
 
 // ─── SVG Divider ─────────────────────────────────────────────────────────────
@@ -454,7 +456,7 @@ function HeroSection() {
 
 // ─── Marquee ──────────────────────────────────────────────────────────────────
 function MarqueeTicker() {
-  const items = ["SHARED INBOX", "CAMPAIGNS", "AUTOMATION", "ANALYTICS", "CONTACTS CRM", "CHATBOT BUILDER", "API ACCESS", "SEQUENCES", "CSAT SURVEYS", "LEAD SCORING"];
+  const items = ["SHARED INBOX", "CAMPAIGNS", "AUTOMATION", "ANALYTICS", "CONTACTS CRM", "CHATBOT BUILDER", "DEALS PIPELINE", "SEQUENCES", "CSAT SURVEYS", "LEAD SCORING", "MULTI-CHANNEL", "DEVELOPER API", "KNOWLEDGE BASE", "SLA TRACKING", "LEAD ADS", "CUSTOM FIELDS"];
   const text = items.map(i => `${i}  ·  `).join("") + items.map(i => `${i}  ·  `).join("");
   return (
     <div style={{ width: "100%", background: "#0e0e0e", overflow: "hidden", padding: "13px 0", borderTop: "1px solid rgba(85,67,54,0.1)", borderBottom: "1px solid rgba(85,67,54,0.1)" }}>
@@ -479,7 +481,7 @@ function PartnersSection() {
           textTransform: "uppercase", color: "rgba(163,140,124,0.5)", marginBottom: 0,
           opacity: inView ? 1 : 0, transition: "all 0.7s ease",
         }}>
-          Integrates with your favourite tools
+          Works with the tools you already use
         </p>
       </div>
       {/* Scrolling logo strip */}
@@ -705,7 +707,7 @@ function FeaturesSection() {
         {/* Grid */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: mobile ? "1fr" : tablet ? "repeat(2,1fr)" : "repeat(2,1fr)",
+          gridTemplateColumns: mobile ? "1fr" : tablet ? "repeat(2,1fr)" : "repeat(3,1fr)",
           gap: mobile ? 16 : 20,
         }}>
           {features.map((f, i) => (
@@ -942,6 +944,24 @@ const featureReveals = [
     watermark: "ANALYTICS",
     href: "/features/analytics",
   },
+  {
+    id: "deals",
+    tag: "Deals Pipeline",
+    title: "TRACK EVERY\nDEAL. ALWAYS.",
+    desc: "Full CRM pipeline for WhatsApp-driven sales. Move deals through stages, set values, assign owners, and forecast revenue — without leaving the platform.",
+    img: "/screens/10-deals-pipeline.png",
+    watermark: "DEALS",
+    href: "/features/deals",
+  },
+  {
+    id: "sequences",
+    tag: "Sequences",
+    title: "DRIP ON\nAUTOPILOT.",
+    desc: "Build multi-step WhatsApp drip sequences. Enrol contacts automatically, space messages by days or hours, and stop the moment they reply.",
+    img: "/screens/11-sequences-drip.png",
+    watermark: "DRIP",
+    href: "/features/sequences",
+  },
 ];
 
 // Single pinned feature panel — each gets its own 200vh scroll budget
@@ -1144,10 +1164,10 @@ function StatsSection() {
   const { ref, inView } = useInView(0.15);
   const { mobile, tablet } = useBreakpoint();
 
-  const c1 = useCounter(500, 1600, inView);
+  const c1 = useCounter(1200, 1600, inView);
   const c2 = useCounter(94, 1400, inView);
   const c3 = useCounter(48, 1200, inView);
-  const c4 = useCounter(1247, 1800, inView);
+  const c4 = useCounter(48500, 1800, inView);
 
   const metrics = [
     { label: "Active Businesses", display: `${c1}+`, micro: "↑ Growing fast" },
@@ -1405,7 +1425,7 @@ function CtaSection() {
 function Footer() {
   const { mobile, tablet } = useBreakpoint();
   const cols = [
-    { title: "Product", links: [["Features", "#features"], ["Use Cases", "/use-cases"], ["Pricing", "#pricing"], ["Security", "/security"]] },
+    { title: "Product", links: [["Shared Inbox", "/features/shared-inbox"], ["Bulk Campaigns", "/features/campaigns"], ["Automation", "/features/automation"], ["Deals Pipeline", "/features/deals"], ["Sequences", "/features/sequences"], ["Developer API", "/features/developer-api"], ["Pricing", "#pricing"]] },
     { title: "Resources", links: [["Documentation", "mailto:hello@wazelo.in"], ["API Reference", "mailto:hello@wazelo.in"], ["Community", "mailto:hello@wazelo.in"], ["Support", "mailto:support@wazelo.in"]] },
     { title: "Company", links: [["About Us", "/about"], ["Careers", "mailto:hello@wazelo.in"], ["Press", "mailto:hello@wazelo.in"], ["Contact", "/contact"]] },
   ];

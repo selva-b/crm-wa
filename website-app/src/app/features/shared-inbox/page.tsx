@@ -30,8 +30,8 @@ const data: FeatureDetailData = {
   relatedFeatures: [
     { label: "Bulk Campaigns", href: "/features/campaigns", icon: "campaign" },
     { label: "Automation", href: "/features/automation", icon: "bolt" },
-    { label: "Analytics", href: "/features/analytics", icon: "bar_chart" },
-    { label: "Contacts CRM", href: "/features/contacts", icon: "group" },
+    { label: "CSAT Surveys", href: "/features/csat", icon: "star_rate" },
+    { label: "Multi-Channel", href: "/features/multi-channel", icon: "devices" },
   ],
 };
 

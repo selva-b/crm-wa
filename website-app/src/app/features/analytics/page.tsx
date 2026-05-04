@@ -29,8 +29,8 @@ const data: FeatureDetailData = {
   relatedFeatures: [
     { label: "Shared Inbox", href: "/features/shared-inbox", icon: "forum" },
     { label: "Bulk Campaigns", href: "/features/campaigns", icon: "campaign" },
-    { label: "Contacts CRM", href: "/features/contacts", icon: "group" },
-    { label: "Automation", href: "/features/automation", icon: "bolt" },
+    { label: "CSAT Surveys", href: "/features/csat", icon: "star_rate" },
+    { label: "Developer API", href: "/features/developer-api", icon: "code" },
   ],
 };
 

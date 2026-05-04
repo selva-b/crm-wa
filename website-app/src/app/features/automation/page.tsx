@@ -27,8 +27,8 @@ const data: FeatureDetailData = {
   relatedFeatures: [
     { label: "Shared Inbox", href: "/features/shared-inbox", icon: "forum" },
     { label: "Chatbot Builder", href: "/features/chatbot", icon: "smart_toy" },
-    { label: "Bulk Campaigns", href: "/features/campaigns", icon: "campaign" },
-    { label: "Analytics", href: "/features/analytics", icon: "bar_chart" },
+    { label: "Sequences", href: "/features/sequences", icon: "low_priority" },
+    { label: "Lead Scoring", href: "/features/lead-scoring", icon: "query_stats" },
   ],
 };
 

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useBreakpoint } from "@/lib/wazelo";
 
 const cols = [
-  { title: "Product", links: [["Shared Inbox", "/features/shared-inbox"], ["Campaigns", "/features/campaigns"], ["Automation", "/features/automation"], ["Chatbot Builder", "/features/chatbot"], ["Contacts CRM", "/features/contacts"], ["Analytics", "/features/analytics"]] },
+  { title: "Product", links: [["Shared Inbox", "/features/shared-inbox"], ["Bulk Campaigns", "/features/campaigns"], ["Automation", "/features/automation"], ["Chatbot Builder", "/features/chatbot"], ["Contacts CRM", "/features/contacts"], ["Analytics", "/features/analytics"], ["Deals Pipeline", "/features/deals"], ["Sequences", "/features/sequences"]] },
   { title: "Resources", links: [["Documentation", "/docs"], ["API Reference", "/api-reference"], ["Use Cases", "/use-cases"], ["Case Study", "/case-study/propedge-realty"], ["Security", "/security"]] },
   { title: "Company", links: [["About Us", "/about"], ["Contact", "/contact"], ["Privacy Policy", "/privacy"], ["Terms of Service", "/terms"]] },
 ];
@@ -29,7 +29,7 @@ export default function Footer() {
               </span>
             </div>
             <p style={{ fontSize: 13, color: "rgba(219,194,176,0.45)", lineHeight: 1.75, maxWidth: 280, fontFamily: "'Inter', sans-serif" }}>
-              The complete WhatsApp CRM for growing Indian businesses. Shared inbox, campaigns, automation, and analytics — in one place.
+              Shared inbox, campaigns, automation, deals pipeline, multi-channel messaging, and more — all in one platform.
             </p>
           </div>
           {cols.map(col => (
