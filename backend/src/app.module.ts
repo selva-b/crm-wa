@@ -64,6 +64,7 @@ import { ShopifyModule } from './modules/shopify/shopify.module';
 // Guards & Interceptors
 import { JwtAuthGuard } from './modules/auth/interfaces/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { CsrfGuard } from './common/guards/csrf.guard';
 import { OrgScopeInterceptor } from './common/interceptors/org-scope.interceptor';
 import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
@@ -168,6 +169,11 @@ import { EventsModule } from './events/events.module';
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
+    },
+    // Global CSRF guard — requires x-requested-with header on state-changing endpoints
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
     },
     // Global rate limit guard
     {

@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { CustomValidationPipe } from './common/pipes/validation.pipe';
@@ -24,6 +25,9 @@ async function bootstrap() {
     'http://localhost:3000',
   );
 
+  // Cookie parser — required for httpOnly refresh token cookie
+  app.use(cookieParser());
+
   // Security — relax CSP/CORP for uploaded media served cross-origin to frontend
   app.use(
     helmet({
@@ -42,7 +46,7 @@ async function bootstrap() {
     origin: frontendUrl,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-trace-id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-trace-id', 'x-requested-with'],
     exposedHeaders: ['x-trace-id'],
   });
 

@@ -43,7 +43,7 @@ export class SimulateChatbotFlowUseCase {
 
     while (currentNode && steps < MAX_STEPS) {
       steps++;
-      const cn = currentNode;
+      const cn: SimNode = currentNode;
 
       if (cn.type === 'SEND_MESSAGE') {
         const message = String(cn.data.message || '');
@@ -78,7 +78,7 @@ export class SimulateChatbotFlowUseCase {
         });
 
         const branch =
-          cn.nextNodes.find((nn) => {
+          cn.nextNodes.find((nn: SimNode['nextNodes'][number]) => {
             if (matched && (!nn.condition || nn.condition === 'true')) return true;
             if (!matched && nn.condition === 'false') return true;
             return false;

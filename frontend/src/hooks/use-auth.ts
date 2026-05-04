@@ -60,13 +60,9 @@ export function useResetPassword() {
 export function useLogout() {
   const router = useRouter();
   const clearAuth = useAuthStore((s) => s.clearAuth);
-  const refreshToken = useAuthStore((s) => s.refreshToken);
 
   return useMutation({
-    mutationFn: async () => {
-      if (!refreshToken) return { message: "Logged out" };
-      return authApi.logout({ refreshToken });
-    },
+    mutationFn: () => authApi.logout(),
     onSettled: () => {
       clearAuth();
       router.push("/auth/login");

@@ -14,6 +14,8 @@ export class SuperAdminLoginUseCase {
   async execute(dto: SuperAdminLoginDto) {
     const superAdmin = await this.superAdminRepo.findByEmail(dto.email);
     if (!superAdmin) {
+      // Constant-time defense: hash anyway to prevent timing attacks
+      await compare(dto.password, '$2b$12$invalidhashplaceholderfortiming000000000000000000000000');
       throw new UnauthorizedException('Invalid credentials');
     }
 

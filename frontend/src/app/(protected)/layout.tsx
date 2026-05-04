@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { authApi } from "@/lib/api/auth";
@@ -11,24 +11,61 @@ import { useSubscription } from "@/hooks/use-billing";
 // Pages exempt from subscription gate
 const SUBSCRIPTION_EXEMPT = ["/onboarding", "/settings/billing"];
 
+function hasSessionCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((c) => c.trim().startsWith("hasSession=1"));
+}
+
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const { data: subscriptionData, isLoading: subLoading } = useSubscription();
   const expiresAt = useAuthStore((s) => s.expiresAt);
-  const refreshToken = useAuthStore((s) => s.refreshToken);
   const setTokens = useAuthStore((s) => s.setTokens);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Redirect unauthenticated users
+  // Tracks whether the initial session-check attempt has completed
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  // On mount: if no in-memory access token, attempt silent refresh via httpOnly cookie
   useEffect(() => {
-    if (isHydrated && !isAuthenticated) {
+    if (accessToken) {
+      // Already authenticated (navigating between protected pages)
+      setSessionChecked(true);
+      return;
+    }
+
+    if (!hasSessionCookie()) {
+      // No session cookie — definitely not logged in
+      setSessionChecked(true);
+      return;
+    }
+
+    // hasSession cookie present but no in-memory token (page refresh) — try silent refresh
+    authApi
+      .refreshToken()
+      .then((data) => {
+        setTokens(data as never);
+        setSessionChecked(true);
+      })
+      .catch(() => {
+        clearAuth();
+        setSessionChecked(true);
+      });
+  // Run once on mount only
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Redirect unauthenticated users after session check completes
+  useEffect(() => {
+    if (!sessionChecked) return;
+    if (!isAuthenticated) {
       router.push("/auth/login");
     }
-  }, [isHydrated, isAuthenticated, router]);
+  }, [sessionChecked, isAuthenticated, router]);
 
   // Subscription gate: redirect to onboarding if no active/trial subscription
   useEffect(() => {
@@ -36,7 +73,11 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     const exempt = SUBSCRIPTION_EXEMPT.some((p) => pathname.startsWith(p));
     if (exempt) return;
     const status = subscriptionData?.subscription?.status;
-    const hasActive = status === "ACTIVE" || status === "TRIAL" || status === "GRACE_PERIOD" || status === "PAST_DUE";
+    const hasActive =
+      status === "ACTIVE" ||
+      status === "TRIAL" ||
+      status === "GRACE_PERIOD" ||
+      status === "PAST_DUE";
     if (!hasActive) {
       router.push("/onboarding");
     }
@@ -44,14 +85,14 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
   // Proactive token refresh: check every 60s, refresh if <2min remaining
   useEffect(() => {
-    if (!isAuthenticated || !refreshToken) return;
+    if (!isAuthenticated) return;
 
     const checkAndRefresh = async () => {
       if (!expiresAt) return;
       const timeLeft = expiresAt - Date.now();
       if (timeLeft < 2 * 60 * 1000) {
         try {
-          const data = await authApi.refreshToken({ refreshToken });
+          const data = await authApi.refreshToken();
           setTokens(data as never);
         } catch {
           clearAuth();
@@ -64,9 +105,10 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isAuthenticated, refreshToken, expiresAt, setTokens, clearAuth, router]);
+  }, [isAuthenticated, expiresAt, setTokens, clearAuth, router]);
 
-  if (!isHydrated) {
+  // Show spinner while session check is in progress (prevents flash of login redirect)
+  if (!sessionChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface">
         <Spinner size="lg" className="text-primary" />

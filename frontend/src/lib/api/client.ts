@@ -43,7 +43,13 @@ const METRIC_LABELS: Record<string, string> = {
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    // CSRF protection: custom header that browsers cannot set cross-origin without preflight
+    "x-requested-with": "XMLHttpRequest",
+  },
+  // Send httpOnly refresh token cookie on every request
+  withCredentials: true,
   timeout: 15000,
 });
 
@@ -88,22 +94,12 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // If 401 and not already retried, attempt token refresh
+    // If 401 and not already retried, attempt silent token refresh via httpOnly cookie
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       typeof window !== "undefined"
     ) {
-      const { useAuthStore } = require("@/stores/auth-store");
-      const { refreshToken } = useAuthStore.getState();
-
-      if (!refreshToken) {
-        useAuthStore.getState().clearAuth();
-        return Promise.reject(
-          new ApiError(401, "Session expired. Please log in again."),
-        );
-      }
-
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           refreshQueue.push({ resolve, reject });
@@ -117,13 +113,19 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
+        // No body needed — refresh token is sent automatically via httpOnly cookie
+        const res = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          {},
+          {
+            withCredentials: true,
+            headers: { "x-requested-with": "XMLHttpRequest" },
+          },
+        );
         const data = res.data.data || res.data;
+        const { useAuthStore } = require("@/stores/auth-store");
         useAuthStore.getState().setTokens({
           accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
           expiresIn: data.expiresIn,
         });
 
@@ -132,6 +134,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        const { useAuthStore } = require("@/stores/auth-store");
         useAuthStore.getState().clearAuth();
         return Promise.reject(
           new ApiError(401, "Session expired. Please log in again."),
