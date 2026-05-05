@@ -183,3 +183,36 @@ body {
 .amber-glow-strong {
   box-shadow: 0 0 60px 10px rgba(217, 119, 6, 0.12);
 }
+
+/* ── AI section scrollable pills (hide scrollbar) ───────────────────────────── */
+.ai-tabs-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.ai-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── AI progress bar animation ──────────────────────────────────────────────── */
+@keyframes aiProgress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+.ai-progress-bar {
+  animation: aiProgress 5s linear forwards;
+}
+
+/* ── Cursor blink ───────────────────────────────────────────────────────────── */
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.ai-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 13px;
+  background: #ffb77d;
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: cursorBlink 1s ease-in-out infinite;
+}

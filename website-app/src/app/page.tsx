@@ -32,6 +32,24 @@ function useInView(threshold = 0.15) {
   return { ref, inView };
 }
 
+// ─── Typing effect hook ──────────────────────────────────────────────────────
+function useTypingEffect(text: string, speed = 18, active = false) {
+  const [displayText, setDisplayText] = useState("");
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    if (!active) { setDisplayText(""); setDone(false); return; }
+    let i = 0;
+    setDisplayText(""); setDone(false);
+    const timer = setInterval(() => {
+      i++;
+      setDisplayText(text.slice(0, i));
+      if (i >= text.length) { setDone(true); clearInterval(timer); }
+    }, speed);
+    return () => clearInterval(timer);
+  }, [text, speed, active]);
+  return { displayText, done };
+}
+
 // ─── Counter animation hook ──────────────────────────────────────────────────
 function useCounter(target: number, duration = 1800, active = false) {
   const [count, setCount] = useState(0);
@@ -105,6 +123,20 @@ const plans = [
   },
 ];
 
+
+// ─── AI Features data ────────────────────────────────────────────────────────
+type AiOutputType = "replies" | "sentiment" | "summary" | "categorization" | "intent" | "kbrag" | "routing" | "insights";
+type AiFeature = { id: string; icon: string; label: string; tagline: string; outputType: AiOutputType; };
+const AI_FEATURES: AiFeature[] = [
+  { id: "smart-replies",       icon: "auto_fix_high",  label: "Smart Replies",        tagline: "3 contextual reply suggestions from conversation history",  outputType: "replies" },
+  { id: "conversation-summary",icon: "summarize",      label: "Conversation Summary", tagline: "Key topics, timeline, and predicted CSAT in one pass",       outputType: "summary" },
+  { id: "sentiment-analysis",  icon: "mood",           label: "Sentiment Analysis",   tagline: "Real-time POSITIVE / NEGATIVE / URGENT detection",           outputType: "sentiment" },
+  { id: "auto-categorization", icon: "category",       label: "Auto-Categorization",  tagline: "Intent, priority, and language detection automatically",     outputType: "categorization" },
+  { id: "intent-detection",    icon: "travel_explore", label: "Intent Detection",     tagline: "Entities, sub-intents, and routing hints extracted",         outputType: "intent" },
+  { id: "kb-rag",              icon: "library_books",  label: "Knowledge Base RAG",   tagline: "Searches KB and generates cited answers for agents",         outputType: "kbrag" },
+  { id: "routing-suggestions", icon: "account_tree",   label: "Routing Suggestions",  tagline: "Routes conversations to the right team based on context",    outputType: "routing" },
+  { id: "ai-insights",         icon: "insights",       label: "AI Insights",          tagline: "Trend summaries, highlights, and warnings over 7d / 30d",   outputType: "insights" },
+];
 
 const partnerLogos = [
   { name: "Meta Business", abbr: "META" },
@@ -347,7 +379,7 @@ function Navbar() {
 function HeroSection() {
   const [started, setStarted] = useState(false);
   const [scrollY, setScrollY] = useState(0);
-  const { mobile, tablet } = useBreakpoint();
+  const { mobile } = useBreakpoint();
 
   useEffect(() => { const t = setTimeout(() => setStarted(true), 80); return () => clearTimeout(t); }, []);
   useEffect(() => {
@@ -1159,6 +1191,441 @@ function FeatureScrollSection() {
   );
 }
 
+// ─── AI Features Section (real product UI) ───────────────────────────────────
+
+// ─── AI Inbox Mockup ─────────────────────────────────────────────────────────
+// Renders a faithful pixel-for-pixel recreation of the actual product inbox
+// showing all three AI components exactly as they appear in the real app:
+//   1. ConversationSummaryPanel (top, on-demand)
+//   2. AiInsightPanel (below messages, always-on)
+//   3. AiReplySuggestions (chip bar above input)
+
+type InboxTab = "summary" | "insights" | "replies";
+
+function InboxMockup({ activeTab, inView }: { activeTab: InboxTab; inView: boolean }) {
+  const [summaryVisible, setSummaryVisible] = useState(false);
+  const [insightExpanded, setInsightExpanded] = useState(true);
+  const [kbOpen, setKbOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+
+  // Reset state when tab switches
+  useEffect(() => {
+    setSummaryVisible(false);
+    setInsightExpanded(true);
+    setKbOpen(false);
+    setTyped("");
+  }, [activeTab]);
+
+  // Animate summary open for summary tab
+  useEffect(() => {
+    if (activeTab !== "summary" || !inView) return;
+    const t = setTimeout(() => setSummaryVisible(true), 600);
+    return () => clearTimeout(t);
+  }, [activeTab, inView]);
+
+  // Animate KB open for insights tab
+  useEffect(() => {
+    if (activeTab !== "insights" || !inView) return;
+    const t = setTimeout(() => setKbOpen(true), 1200);
+    return () => clearTimeout(t);
+  }, [activeTab, inView]);
+
+  // Animate typing for replies tab
+  const replyText = "Hi Priya! Your refund for order #WZ-29831 has been approved and will be credited within 5–7 business days.";
+  useEffect(() => {
+    if (activeTab !== "replies" || !inView) return;
+    let i = 0;
+    setTyped("");
+    const t = setInterval(() => {
+      i++;
+      setTyped(replyText.slice(0, i));
+      if (i >= replyText.length) clearInterval(t);
+    }, 22);
+    return () => clearInterval(t);
+  }, [activeTab, inView]);
+
+  const messages = [
+    { from: "contact", text: "Hi, I placed order #WZ-29831 last week and haven't received it yet. I need help.", time: "10:42 AM" },
+    { from: "agent",   text: "Hi Priya! Let me look into this for you right away. Can you confirm the delivery address?", time: "10:44 AM" },
+    { from: "contact", text: "Yes, it's 14 MG Road, Bengaluru. I've been waiting 8 days now.", time: "10:45 AM" },
+    { from: "agent",   text: "I can see the shipment got delayed at our Bengaluru warehouse. I've escalated this.", time: "10:47 AM" },
+    { from: "contact", text: "This is really frustrating. I'd like a refund please.", time: "10:49 AM" },
+  ];
+
+  // Color vars matching the real product's design tokens
+  const primary    = "#6366f1";   // Indigo primary
+  const surface    = "#1e1e2e";   // Surface
+  const surfaceHigh= "#262637";
+  const outline    = "rgba(255,255,255,0.08)";
+  const textPrimary= "#e2e8f0";
+  const textMuted  = "rgba(148,163,184,0.7)";
+  const success    = "#22c55e";
+  const warning    = "#f59e0b";
+  const error      = "#ef4444";
+  const info       = "#3b82f6";
+
+  return (
+    <div style={{
+      background: surface, borderRadius: 12, overflow: "hidden",
+      border: `1px solid ${outline}`,
+      display: "flex", flexDirection: "column",
+      height: 540, fontFamily: "'Inter', sans-serif",
+      boxShadow: "0 32px 80px rgba(0,0,0,0.5)",
+    }}>
+      {/* Chat header */}
+      <div style={{
+        height: 52, background: surfaceHigh,
+        borderBottom: `1px solid ${outline}`,
+        display: "flex", alignItems: "center", padding: "0 16px", gap: 10, flexShrink: 0,
+      }}>
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>P</div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary }}>Priya Sharma</div>
+          <div style={{ fontSize: 10, color: textMuted }}>+91 98765 43210 · last seen 2 min ago</div>
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          {/* Summarize button */}
+          <button
+            onClick={() => setSummaryVisible(v => !v)}
+            style={{
+              display: "flex", alignItems: "center", gap: 4,
+              padding: "5px 10px", borderRadius: 6, border: `1px solid ${outline}`,
+              background: summaryVisible ? `${primary}22` : "transparent",
+              color: summaryVisible ? primary : textMuted,
+              fontSize: 11, fontWeight: 500, cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            <span style={{ fontSize: 12 }}>✨</span> Summarize
+          </button>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: success }} />
+          <span style={{ fontSize: 11, color: textMuted }}>Kavya R.</span>
+        </div>
+      </div>
+
+      {/* Summary panel */}
+      <div style={{
+        maxHeight: summaryVisible ? 120 : 0, overflow: "hidden",
+        transition: "max-height 0.4s cubic-bezier(0.16,1,0.3,1)",
+        flexShrink: 0,
+      }}>
+        <div style={{ margin: "10px 12px 0", padding: "10px 12px", background: `${primary}0d`, border: `1px solid ${primary}22`, borderRadius: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 12 }}>✨</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: primary }}>AI Summary</span>
+            </div>
+            <button onClick={() => setSummaryVisible(false)} style={{ background: "none", border: "none", color: textMuted, cursor: "pointer", fontSize: 14, lineHeight: 1 }}>×</button>
+          </div>
+          <p style={{ fontSize: 12, color: textPrimary, lineHeight: 1.6, margin: 0 }}>
+            Customer reporting non-delivery of order #WZ-29831 placed 8 days ago. Requesting refund after warehouse escalation confirmed delay. Sentiment has shifted from frustrated to urgent.
+          </p>
+          <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+            {["↘ NEGATIVE", "refund", "delivery-delay", "escalated"].map((tag, i) => (
+              <span key={i} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 4, background: i === 0 ? `${warning}18` : `${primary}12`, color: i === 0 ? warning : `${primary}cc`, border: `1px solid ${i === 0 ? warning + "30" : primary + "25"}` }}>{tag}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, scrollbarWidth: "none" }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.from === "agent" ? "flex-end" : "flex-start" }}>
+            <div style={{
+              maxWidth: "72%", padding: "8px 11px", borderRadius: m.from === "agent" ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
+              background: m.from === "agent" ? primary : surfaceHigh,
+              fontSize: 12, color: m.from === "agent" ? "#fff" : textPrimary, lineHeight: 1.55,
+            }}>{m.text}</div>
+            <span style={{ fontSize: 9, color: textMuted, marginTop: 3, paddingLeft: 2, paddingRight: 2 }}>{m.time}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* AI Insights Panel */}
+      <div style={{ borderTop: `1px solid ${outline}`, background: `${surfaceHigh}88`, flexShrink: 0 }}>
+        <button
+          onClick={() => setInsightExpanded(v => !v)}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            width: "100%", padding: "7px 14px",
+            background: "none", border: "none", cursor: "pointer",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 13 }}>🧠</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: primary }}>AI Insights</span>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", borderRadius: 3, background: `${error}20`, color: error, border: `1px solid ${error}35` }}>URGENT</span>
+          </div>
+          <span style={{ fontSize: 12, color: textMuted }}>{insightExpanded ? "⌃" : "⌄"}</span>
+        </button>
+
+        <div style={{
+          maxHeight: insightExpanded ? 300 : 0,
+          overflow: "hidden",
+          transition: "max-height 0.35s cubic-bezier(0.16,1,0.3,1)",
+        }}>
+          <div style={{ padding: "0 14px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
+
+            {/* Sentiment row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", borderRadius: 6, background: `${warning}15` }}>
+                <span style={{ fontSize: 11 }}>🙁</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: warning }}>Negative</span>
+                <span style={{ fontSize: 9, color: textMuted }}>87%</span>
+              </div>
+              <span style={{ fontSize: 10, color: textMuted }}>Frustrated about delivery delay and requesting refund</span>
+            </div>
+
+            {/* Intent row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 11 }}>🎯</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: textPrimary }}>Refund Request</span>
+              <span style={{ fontSize: 9, color: textMuted }}>→ order_status_query</span>
+              <span style={{ fontSize: 9, fontWeight: 600, padding: "1px 7px", borderRadius: 3, background: `${info}15`, color: info, border: `1px solid ${info}25` }}>
+                ↗ Escalate
+              </span>
+            </div>
+
+            {/* Entities */}
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+              {[["order_id","WZ-29831"],["days","8"],["location","Bengaluru"]].map(([k,v]) => (
+                <span key={k} style={{ fontSize: 9, padding: "2px 6px", borderRadius: 3, background: "rgba(255,255,255,0.05)", color: textMuted }}>
+                  <span style={{ fontWeight: 600 }}>{k}:</span> {v}
+                </span>
+              ))}
+            </div>
+
+            {/* Labels + priority */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 11 }}>🏷</span>
+              {["refund","logistics","e-commerce"].map(t => (
+                <span key={t} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 3, background: "rgba(255,255,255,0.06)", color: textMuted }}>{t}</span>
+              ))}
+              <button style={{ fontSize: 9, color: primary, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Apply</button>
+              <span style={{ marginLeft: 4, fontSize: 9, fontWeight: 600, padding: "1px 6px", borderRadius: 3, background: `${warning}18`, color: warning, border: `1px solid ${warning}28` }}>HIGH priority</span>
+              <span style={{ fontSize: 9, color: textMuted }}>EN-IN</span>
+            </div>
+
+            {/* KB toggle */}
+            <div style={{ borderTop: `1px solid ${outline}`, paddingTop: 7, display: "flex", alignItems: "flex-start", flexDirection: "column", gap: 6 }}>
+              <button onClick={() => setKbOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: primary, background: "none", border: "none", cursor: "pointer" }}>
+                <span>📖</span> {kbOpen ? "Hide KB Suggestions" : "Find KB Articles"}
+              </button>
+              <div style={{
+                maxHeight: kbOpen ? 120 : 0, overflow: "hidden",
+                transition: "max-height 0.35s ease",
+                width: "100%",
+              }}>
+                <div style={{ padding: "8px 10px", background: `${primary}0a`, border: `1px solid ${primary}18`, borderRadius: 8 }}>
+                  <p style={{ fontSize: 10, color: textPrimary, lineHeight: 1.6, margin: "0 0 6px" }}>
+                    For orders marked as undelivered after 7 business days, customers are eligible for a full refund or free re-shipment within 5–7 working days.
+                  </p>
+                  <div style={{ display: "flex", gap: 5 }}>
+                    {["📄 refund-policy.md", "📄 shipping-sla.md"].map(s => (
+                      <span key={s} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 3, background: `${primary}10`, color: `${primary}bb` }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Smart Reply chips */}
+      <div style={{
+        borderTop: `1px solid ${outline}`, background: `${surfaceHigh}55`,
+        padding: "6px 12px", display: "flex", gap: 6, overflowX: "auto",
+        alignItems: "center", flexShrink: 0, scrollbarWidth: "none",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+          <span style={{ fontSize: 12 }}>✨</span>
+          <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.1em", color: `${primary}80`, textTransform: "uppercase" }}>AI</span>
+        </div>
+        {[
+          "Refunds are processed in 5–7 business days.",
+          "I've flagged order #WZ-29831 for priority review.",
+          "Would you prefer a refund or re-shipment?",
+        ].map((r, i) => (
+          <button key={i} onClick={() => setTyped(r)} style={{
+            flexShrink: 0, padding: "4px 10px", borderRadius: 100,
+            background: `${primary}0d`, border: `1px solid ${primary}20`,
+            fontSize: 11, color: textPrimary, cursor: "pointer",
+            whiteSpace: "nowrap", transition: "all 0.15s ease",
+          }}>
+            {r.length > 50 ? r.slice(0, 47) + "…" : r}
+          </button>
+        ))}
+      </div>
+
+      {/* Input bar */}
+      <div style={{
+        height: 46, background: surfaceHigh, borderTop: `1px solid ${outline}`,
+        display: "flex", alignItems: "center", padding: "0 12px", gap: 10, flexShrink: 0,
+      }}>
+        <div style={{
+          flex: 1, height: 30, background: "rgba(255,255,255,0.05)", borderRadius: 8,
+          border: `1px solid ${outline}`, padding: "0 10px",
+          display: "flex", alignItems: "center",
+          fontSize: 11, color: typed ? textPrimary : textMuted,
+          overflow: "hidden",
+        }}>
+          {typed || "Type a message..."}
+          {activeTab === "replies" && typed && typed.length < replyText.length && (
+            <span style={{ display: "inline-block", width: 6, height: 11, background: primary, marginLeft: 1, animation: "cursorBlink 1s ease-in-out infinite" }} />
+          )}
+        </div>
+        <button style={{ width: 28, height: 28, borderRadius: 6, background: primary, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <span style={{ color: "#fff", fontSize: 13 }}>↑</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── AI Features Section ─────────────────────────────────────────────────────
+function AiFeaturesSection() {
+  const { ref, inView } = useInView(0.12);
+  const { mobile, tablet } = useBreakpoint();
+  const [activeTab, setActiveTab] = useState<InboxTab>("insights");
+  const [paused, setPaused] = useState(false);
+  const pauseRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const tabs: Array<{ id: InboxTab; label: string; tagline: string }> = [
+    { id: "insights",  label: "AI Insights Panel",       tagline: "Sentiment, intent, entities, labels, priority, and KB answers — live inside every conversation." },
+    { id: "summary",   label: "Conversation Summary",    tagline: "One click summarises the full thread with key topics, outcome, and predicted CSAT." },
+    { id: "replies",   label: "Smart Reply Suggestions", tagline: "3 contextual reply chips generated from the last 20 messages — click to fill the input instantly." },
+  ];
+
+  useEffect(() => {
+    if (paused || !inView) return;
+    const id = setInterval(() => setActiveTab(t => {
+      const i = tabs.findIndex(x => x.id === t);
+      return tabs[(i + 1) % tabs.length].id;
+    }), 6000);
+    return () => clearInterval(id);
+  }, [paused, inView]);
+
+  const handleTab = (id: InboxTab) => {
+    setActiveTab(id);
+    setPaused(true);
+    if (pauseRef.current) clearTimeout(pauseRef.current);
+    pauseRef.current = setTimeout(() => setPaused(false), 15000);
+  };
+
+  const active = tabs.find(t => t.id === activeTab)!;
+
+  return (
+    <section style={{ background: "#0d0d0d", padding: mobile ? "72px 20px" : tablet ? "88px 32px" : "112px 48px" }}>
+      <div style={{ maxWidth: 1300, margin: "0 auto" }}>
+
+        {/* Header */}
+        <div ref={ref} style={{ marginBottom: mobile ? 40 : 64 }}>
+          <span className="font-body" style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase",
+            color: "#ffb77d", display: "inline-block", marginBottom: 18,
+            borderBottom: "1px solid rgba(255,183,125,0.25)", paddingBottom: 6,
+            opacity: inView ? 1 : 0, transition: "all 0.7s ease",
+          }}>AI-NATIVE INTELLIGENCE</span>
+          <div style={{ display: "flex", flexDirection: mobile ? "column" : "row", alignItems: mobile ? "flex-start" : "flex-end", justifyContent: "space-between", gap: 24 }}>
+            <h2 className="font-headline" style={{
+              fontSize: mobile ? "clamp(36px,10vw,60px)" : "clamp(48px,5vw,80px)",
+              fontWeight: 900, lineHeight: 0.9, letterSpacing: "-0.045em",
+              textTransform: "uppercase", color: "#e5e2e1", marginTop: 12,
+              opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(28px)",
+              transition: "all 0.8s 0.1s ease",
+            }}>
+              YOUR INBOX.<br />
+              <span style={{ background: "linear-gradient(135deg,#ffb77d,#d97707)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>NOW THINKS.</span>
+            </h2>
+            <p className="font-body" style={{
+              fontSize: 15, lineHeight: 1.75, color: "#dbc2b0", fontWeight: 300,
+              maxWidth: 380, flexShrink: 0,
+              opacity: inView ? 1 : 0, transition: "all 0.8s 0.2s ease",
+            }}>
+              AI runs silently on every conversation — detecting intent, scoring sentiment, suggesting replies, and pulling KB answers — so your agents close faster without thinking harder.
+            </p>
+          </div>
+        </div>
+
+        {/* Main layout */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: mobile ? "1fr" : tablet ? "1fr" : "1fr 1fr",
+          gap: mobile ? 32 : 56,
+          alignItems: "start",
+          opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(32px)",
+          transition: "all 0.9s 0.3s ease",
+        }}>
+          {/* Left: tab selector + description */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {tabs.map(tab => (
+              <button key={tab.id} onClick={() => handleTab(tab.id)} style={{
+                display: "flex", alignItems: "flex-start", gap: 14, padding: "18px 20px",
+                background: tab.id === activeTab ? "#1c1b1b" : "transparent",
+                border: "none",
+                borderLeft: `3px solid ${tab.id === activeTab ? "#ffb77d" : "rgba(85,67,54,0.25)"}`,
+                borderRadius: "0 8px 8px 0",
+                cursor: "pointer", textAlign: "left", transition: "all 0.25s ease",
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                  background: tab.id === activeTab ? "rgba(255,183,125,0.12)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${tab.id === activeTab ? "rgba(255,183,125,0.3)" : "rgba(255,255,255,0.06)"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 16, transition: "all 0.25s ease",
+                }}>
+                  {tab.id === "insights" ? "🧠" : tab.id === "summary" ? "✨" : "💬"}
+                </div>
+                <div>
+                  <div style={{
+                    fontSize: 14, fontWeight: 700,
+                    color: tab.id === activeTab ? "#e5e2e1" : "rgba(163,140,124,0.65)",
+                    fontFamily: "'Manrope', sans-serif", marginBottom: 5,
+                    transition: "color 0.25s ease",
+                  }}>{tab.label}</div>
+                  <div style={{
+                    fontSize: 12, color: "rgba(163,140,124,0.5)",
+                    fontFamily: "'Manrope', sans-serif", lineHeight: 1.55,
+                    maxWidth: 340,
+                  }}>{tab.tagline}</div>
+                </div>
+              </button>
+            ))}
+
+            {/* Feature chips */}
+            <div style={{ marginTop: 12, paddingLeft: 20, display: "flex", flexWrap: "wrap", gap: 7 }}>
+              {[
+                "Sentiment Analysis","Intent Detection","Entity Extraction",
+                "Auto-Categorization","Smart Replies","KB RAG Search",
+                "Conversation Summary","Priority Classification",
+              ].map(f => (
+                <span key={f} className="font-body" style={{
+                  fontSize: 10, fontWeight: 600, padding: "4px 9px",
+                  borderRadius: 4, border: "1px solid rgba(85,67,54,0.25)",
+                  color: "rgba(163,140,124,0.55)", letterSpacing: "0.02em",
+                }}>{f}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: real inbox mockup */}
+          <div style={{ position: "relative" }}>
+            {/* Glow */}
+            <div className="animate-glow" style={{
+              position: "absolute", inset: 0, background: "rgba(99,102,241,0.08)",
+              filter: "blur(60px)", borderRadius: 16, transform: "translateY(16px)", pointerEvents: "none",
+            }} />
+            <div style={{ position: "relative" }}>
+              <InboxMockup activeTab={activeTab} inView={inView} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Stats & Social Proof ─────────────────────────────────────────────────────
 function StatsSection() {
   const { ref, inView } = useInView(0.15);
@@ -1489,6 +1956,7 @@ export default function LandingPage() {
       <PartnersSection />
       <FeatureScrollSection />
       <AiChatSection />
+      <AiFeaturesSection />
       <StatsSection />
       <PricingSection />
       <CtaSection />
