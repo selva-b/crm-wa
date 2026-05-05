@@ -179,6 +179,38 @@ body {
   transition: transform 0.25s;
 }
 
+/* ── Feature Card v2 (Bento redesign) ───────────────────────────────────────── */
+.feature-card-v2 {
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+}
+.feature-card-v2:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.feature-card-v2:hover .card-icon-v2 {
+  transform: scale(1.08) rotate(-4deg);
+}
+.card-icon-v2 {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.feature-card-v2:hover .card-accent-stripe {
+  opacity: 0.9;
+}
+.card-accent-stripe {
+  transition: opacity 0.3s ease;
+}
+.code-block-feature {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.9;
+  white-space: pre;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.code-block-feature::-webkit-scrollbar { display: none; }
+
 /* ── Amber glow strong ──────────────────────────────────────────────────────── */
 .amber-glow-strong {
   box-shadow: 0 0 60px 10px rgba(217, 119, 6, 0.12);

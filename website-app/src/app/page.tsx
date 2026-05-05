@@ -83,6 +83,24 @@ const features = [
   { icon: "code", title: "Developer API", desc: "Full REST API and webhook system. Build custom integrations in minutes.", href: "/features/developer-api" },
 ];
 
+// ─── Feature metadata (bento grid layout) ─────────────────────────────────────
+const ACCENT = "#ffb77d";
+const ACCENT_GLOW = "rgba(255,183,125,0.08)";
+const featureMeta = [
+  { size: "hero" as const,     stat: { val: "3×",   label: "Faster replies"  }, tags: ["Team", "Support"] },
+  { size: "hero" as const,     stat: { val: "98%",  label: "Delivery rate"   }, tags: ["Marketing", "Broadcast"] },
+  { size: "standard" as const, stat: { val: "24/7", label: "Always on"       }, tags: ["Workflows"] },
+  { size: "standard" as const, stat: null,                                       tags: ["Reporting"] },
+  { size: "standard" as const, stat: null,                                       tags: ["CRM"] },
+  { size: "standard" as const, stat: { val: "0",    label: "Code needed"     }, tags: ["AI", "No-code"] },
+  { size: "standard" as const, stat: null,                                       tags: ["Sales"] },
+  { size: "standard" as const, stat: null,                                       tags: ["Drip"] },
+  { size: "standard" as const, stat: null,                                       tags: ["Support"] },
+  { size: "standard" as const, stat: null,                                       tags: ["Sales", "AI"] },
+  { size: "standard" as const, stat: null,                                       tags: ["Channels"] },
+  { size: "wide" as const,     stat: { val: "REST", label: "Full API"        }, tags: ["API", "Webhooks", "Dev"] },
+];
+
 // App base URL — register page
 const APP_REGISTER_URL = "https://app.wazelo.in/auth/register";
 const APP_LOGIN_URL    = "https://app.wazelo.in/auth/login";
@@ -530,32 +548,198 @@ function PartnersSection() {
   );
 }
 
-// ─── Feature Card (extracted to satisfy Rules of Hooks) ──────────────────────
-function FeatureCard({ f, i, mobile }: { f: typeof features[0]; i: number; mobile: boolean }) {
+// ─── Feature Card v2 (Bento redesign) ────────────────────────────────────────
+function FeatureCard({ f, i, mobile, tablet, meta }: {
+  f: typeof features[0];
+  i: number;
+  mobile: boolean;
+  tablet: boolean;
+  meta: typeof featureMeta[0];
+}) {
   const { ref, inView } = useInView(0.1);
+  const [hovered, setHovered] = useState(false);
+  const { size, stat, tags } = meta;
+  const accentColor = ACCENT;
+  const gradientFrom = ACCENT_GLOW;
+  const isHero = size === "hero";
+  const isWide = size === "wide";
+
+  // Grid span for the animation wrapper (direct grid child)
+  const gridColumn = isHero
+    ? mobile ? "auto" : tablet ? "span 2" : "span 2"
+    : isWide
+      ? mobile ? "auto" : tablet ? "span 2" : "span 4"
+      : "auto";
+
+  const delay = isHero ? i * 0.06 : 0.12 + i * 0.07;
+
+  const enterTransform = inView
+    ? "translateY(0) scale(1)"
+    : isHero
+      ? "translateY(40px) scale(0.97)"
+      : "translateY(32px)";
+
+  const padding = isHero
+    ? mobile ? "28px" : "40px 44px"
+    : isWide
+      ? mobile ? "28px" : "36px 44px"
+      : mobile ? "24px" : "28px 32px";
+
+  const bg = isHero
+    ? "linear-gradient(135deg, #1e1c1c 0%, #191818 100%)"
+    : isWide
+      ? "linear-gradient(90deg, #151514 0%, #121211 100%)"
+      : "#1a1919";
+
+  const glowSize = isHero ? 220 : 120;
+
   return (
-    <div ref={ref} style={{
-      opacity: inView ? 1 : 0,
-      transform: inView ? "translateY(0)" : "translateY(32px)",
-      transition: `all 0.7s ${i * 0.08}s ease`,
-    }}>
-      <a href={f.href} className="feature-card" style={{
-        background: "#2a2a2a", borderRadius: 8, padding: mobile ? "24px 24px" : "32px 36px",
-        border: "1px solid rgba(255,255,255,0.05)", cursor: "pointer",
-        textDecoration: "none", display: "block",
-      }}>
-        <div className="card-icon" style={{
-          width: 48, height: 48, background: "#0e0e0e", borderRadius: "50%",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          marginBottom: 20, color: "#ffb77d",
-        }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 22 }}>{f.icon}</span>
+    <div
+      ref={ref}
+      style={{
+        gridColumn,
+        opacity: inView ? 1 : 0,
+        transform: enterTransform,
+        transition: `all 0.7s ${delay}s ease`,
+        display: "flex",
+        height: "100%",
+      }}
+    >
+      <a
+        href={f.href}
+        className="feature-card-v2"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          background: bg,
+          borderRadius: 12,
+          padding,
+          border: `1px solid ${hovered ? `${accentColor}40` : "rgba(255,255,255,0.06)"}`,
+          borderTop: `2px solid ${accentColor}35`,
+          cursor: "pointer",
+          textDecoration: "none",
+          display: isWide && !mobile ? "grid" : "flex",
+          gridTemplateColumns: isWide && !mobile ? "1fr auto" : undefined,
+          flexDirection: isWide && !mobile ? undefined : "column",
+          gap: isWide && !mobile ? 48 : 0,
+          alignItems: isWide && !mobile ? "center" : undefined,
+          width: "100%",
+          minHeight: isHero ? 280 : undefined,
+          transition: "border-color 0.3s",
+          position: "relative",
+        }}
+      >
+        {/* Corner glow blob */}
+        <div className="animate-glow" style={{
+          position: "absolute", top: 0, right: 0,
+          width: glowSize, height: glowSize,
+          borderRadius: "50%",
+          background: gradientFrom,
+          filter: "blur(60px)",
+          pointerEvents: "none",
+        }} />
+
+        {/* Left accent stripe */}
+        <div className="card-accent-stripe" style={{
+          position: "absolute", left: 0, top: 20, bottom: 20,
+          width: 3, borderRadius: 4,
+          background: accentColor, opacity: 0.4,
+        }} />
+
+        {/* Main content */}
+        <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+          {/* Icon */}
+          <div className="card-icon-v2" style={{
+            width: isHero ? 56 : 48,
+            height: isHero ? 56 : 48,
+            borderRadius: isHero ? 14 : 12,
+            background: "rgba(255,255,255,0.04)",
+            border: `1px solid ${accentColor}30`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            marginBottom: isHero ? 24 : 20,
+            color: accentColor,
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: isHero ? 24 : 22 }}>{f.icon}</span>
+          </div>
+
+          {/* Title */}
+          <h3 className="font-headline" style={{
+            fontSize: isHero ? 22 : 19,
+            fontWeight: isHero ? 800 : 700,
+            color: "#e5e2e1",
+            marginBottom: 10,
+            letterSpacing: "-0.03em",
+          }}>{f.title}</h3>
+
+          {/* Description */}
+          <p className="font-body" style={{
+            fontSize: isHero ? 15 : 14,
+            color: "#dbc2b0",
+            lineHeight: 1.75,
+            marginBottom: stat || tags.length > 0 ? 20 : 0,
+          }}>{f.desc}</p>
+
+          {/* Stat pill */}
+          {stat && (
+            <div style={{
+              display: "inline-flex", alignItems: "baseline", gap: 8,
+              padding: "8px 16px",
+              background: "rgba(255,255,255,0.04)",
+              borderRadius: 100,
+              border: "1px solid rgba(255,255,255,0.07)",
+              marginBottom: tags.length > 0 ? 12 : 0,
+              alignSelf: "flex-start",
+            }}>
+              <span className="font-headline" style={{ fontSize: isHero ? 28 : 20, fontWeight: 900, color: accentColor, letterSpacing: "-0.04em" }}>{stat.val}</span>
+              <span className="font-body" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a38c7c" }}>{stat.label}</span>
+            </div>
+          )}
+
+          {/* Tags */}
+          {tags.length > 0 && (
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+              {tags.map(tag => (
+                <span key={tag} className="font-body" style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                  padding: "3px 10px", borderRadius: 100,
+                  border: `1px solid ${accentColor}25`,
+                  color: `${accentColor}CC`,
+                }}>{tag}</span>
+              ))}
+            </div>
+          )}
+
+          {/* CTA */}
+          <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 6, color: accentColor, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "Manrope, sans-serif" }}>
+            Learn more <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_right_alt</span>
+          </div>
         </div>
-        <h3 className="font-headline" style={{ fontSize: 19, fontWeight: 700, color: "#e5e2e1", marginBottom: 10, letterSpacing: "-0.025em" }}>{f.title}</h3>
-        <p className="font-body" style={{ fontSize: 14, color: "#dbc2b0", lineHeight: 1.7 }}>{f.desc}</p>
-        <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 4, color: "#ffb77d", fontSize: 12, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>
-          Learn more <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
-        </div>
+
+        {/* Wide card: code block on right */}
+        {isWide && !mobile && (
+          <div style={{
+            background: "#0a0a0a",
+            borderRadius: 10,
+            padding: "20px 24px",
+            border: `1px solid ${accentColor}20`,
+            minWidth: 340,
+            alignSelf: "stretch",
+            display: "flex",
+            alignItems: "center",
+          }}>
+            <pre className="code-block-feature" style={{ margin: 0 }}>
+              <span style={{ color: "#7a6a5a" }}>{"curl -X POST \\\n"}</span>
+              <span style={{ color: "#ffb77d" }}>{"  https://api.wazelo.in/v1/messages \\\n"}</span>
+              <span style={{ color: "#7a6a5a" }}>{"  -H "}</span>
+              <span style={{ color: "#dbc2b0" }}>{'"Authorization: '}</span>
+              <span style={{ color: "#ffb77d" }}>{"Bearer"}</span>
+              <span style={{ color: "#dbc2b0" }}>{' $TOKEN" \\\n'}</span>
+              <span style={{ color: "#7a6a5a" }}>{"  -d '"}</span>
+              <span style={{ color: "#dbc2b0" }}>{'{ "to": "+91...", "text": "Hello!" }'}</span>
+              <span style={{ color: "#7a6a5a" }}>{"'"}</span>
+            </pre>
+          </div>
+        )}
       </a>
     </div>
   );
@@ -739,11 +923,12 @@ function FeaturesSection() {
         {/* Grid */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: mobile ? "1fr" : tablet ? "repeat(2,1fr)" : "repeat(3,1fr)",
-          gap: mobile ? 16 : 20,
+          gridTemplateColumns: mobile ? "1fr" : tablet ? "repeat(2,1fr)" : "repeat(4,1fr)",
+          gap: mobile ? 16 : tablet ? 20 : 24,
+          alignItems: "stretch",
         }}>
           {features.map((f, i) => (
-            <FeatureCard key={f.title} f={f} i={i} mobile={mobile} />
+            <FeatureCard key={f.title} f={f} i={i} mobile={mobile} tablet={tablet} meta={featureMeta[i]} />
           ))}
         </div>
       </div>
