@@ -1252,17 +1252,17 @@ function InboxMockup({ activeTab, inView }: { activeTab: InboxTab; inView: boole
     { from: "contact", text: "This is really frustrating. I'd like a refund please.", time: "10:49 AM" },
   ];
 
-  // Color vars matching the real product's design tokens
-  const primary    = "#6366f1";   // Indigo primary
-  const surface    = "#1e1e2e";   // Surface
-  const surfaceHigh= "#262637";
-  const outline    = "rgba(255,255,255,0.08)";
-  const textPrimary= "#e2e8f0";
-  const textMuted  = "rgba(148,163,184,0.7)";
-  const success    = "#22c55e";
+  // Color vars — warm amber theme matching homepage
+  const primary    = "#ffb77d";   // Amber primary
+  const surface    = "#141210";   // Dark warm surface
+  const surfaceHigh= "#1c1916";
+  const outline    = "rgba(255,183,125,0.10)";
+  const textPrimary= "#e5e2e1";
+  const textMuted  = "rgba(219,194,176,0.55)";
+  const success    = "#4ade80";
   const warning    = "#f59e0b";
-  const error      = "#ef4444";
-  const info       = "#3b82f6";
+  const error      = "#f87171";
+  const info       = "#ffb77d";
 
   return (
     <div style={{
@@ -1278,7 +1278,7 @@ function InboxMockup({ activeTab, inView }: { activeTab: InboxTab; inView: boole
         borderBottom: `1px solid ${outline}`,
         display: "flex", alignItems: "center", padding: "0 16px", gap: 10, flexShrink: 0,
       }}>
-        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>P</div>
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#ffb77d,#e8834a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#141210" }}>P</div>
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: textPrimary }}>Priya Sharma</div>
           <div style={{ fontSize: 10, color: textMuted }}>+91 98765 43210 · last seen 2 min ago</div>
@@ -1335,7 +1335,7 @@ function InboxMockup({ activeTab, inView }: { activeTab: InboxTab; inView: boole
             <div style={{
               maxWidth: "72%", padding: "8px 11px", borderRadius: m.from === "agent" ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
               background: m.from === "agent" ? primary : surfaceHigh,
-              fontSize: 12, color: m.from === "agent" ? "#fff" : textPrimary, lineHeight: 1.55,
+              fontSize: 12, color: m.from === "agent" ? "#141210" : textPrimary, lineHeight: 1.55,
             }}>{m.text}</div>
             <span style={{ fontSize: 9, color: textMuted, marginTop: 3, paddingLeft: 2, paddingRight: 2 }}>{m.time}</span>
           </div>
@@ -1477,7 +1477,7 @@ function InboxMockup({ activeTab, inView }: { activeTab: InboxTab; inView: boole
           )}
         </div>
         <button style={{ width: 28, height: 28, borderRadius: 6, background: primary, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span style={{ color: "#fff", fontSize: 13 }}>↑</span>
+          <span style={{ color: "#141210", fontSize: 13 }}>↑</span>
         </button>
       </div>
     </div>
@@ -1609,15 +1609,36 @@ function AiFeaturesSection() {
             </div>
           </div>
 
-          {/* Right: real inbox mockup */}
+          {/* Right: MacBook frame with inbox mockup as screen */}
           <div style={{ position: "relative" }}>
-            {/* Glow */}
+            {/* Glow behind */}
             <div className="animate-glow" style={{
               position: "absolute", inset: 0, background: "rgba(99,102,241,0.08)",
               filter: "blur(60px)", borderRadius: 16, transform: "translateY(16px)", pointerEvents: "none",
             }} />
-            <div style={{ position: "relative" }}>
-              <InboxMockup activeTab={activeTab} inView={inView} />
+            {/* Laptop frame container */}
+            <div style={{ position: "relative", width: "100%" }}>
+              {/* Screen content — positioned inside the MacBook screen area */}
+              <div style={{
+                position: "absolute",
+                left: "11.33%",
+                top: "6.53%",
+                width: "77.34%",
+                height: "84.25%",
+                overflow: "hidden",
+                borderRadius: 4,
+                zIndex: 0,
+              }}>
+                <div style={{ transform: "scale(0.62)", transformOrigin: "top left", width: "161.3%", height: "161.3%" }}>
+                  <InboxMockup activeTab={activeTab} inView={inView} />
+                </div>
+              </div>
+              {/* MacBook SVG frame on top */}
+              <img
+                src="/macbook-frame.svg"
+                alt="MacBook frame"
+                style={{ width: "100%", display: "block", position: "relative", zIndex: 1, pointerEvents: "none" }}
+              />
             </div>
           </div>
         </div>
