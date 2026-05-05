@@ -1,83 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useBreakpoint, APP_REGISTER_URL, APP_LOGIN_URL } from "@/lib/wazelo";
+import { useBreakpoint } from "@/lib/wazelo";
 import SiteFooter from "@/components/Footer";
-
-// ─── Navbar ───────────────────────────────────────────────────────────────────
-function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { mobile } = useBreakpoint();
-
-  useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 20);
-    h();
-    window.addEventListener("scroll", h, { passive: true });
-    return () => window.removeEventListener("scroll", h);
-  }, []);
-
-  const navLinks = [
-    ["Features", "/#features"],
-    ["Use Cases", "/use-cases"],
-    ["Pricing", "/#pricing"],
-    ["About", "/about"],
-  ];
-
-  return (
-    <nav style={{
-      position: "fixed", top: 0, width: "100%", zIndex: 50,
-      background: scrolled ? "rgba(13,13,13,0.96)" : "rgba(13,13,13,0.7)",
-      backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-      borderBottom: "1px solid rgba(255,183,125,0.08)",
-      transition: "background 0.3s ease",
-    }}>
-      <div style={{ maxWidth: 1440, margin: "0 auto", padding: mobile ? "0 20px" : "0 48px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <a href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 8 }}>
-          <Image src="/logo/logo.jpeg" alt="Wazelo CRM" width={36} height={36} style={{ height: 36, width: 36, objectFit: "contain", mixBlendMode: "screen" }} />
-          <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.04em", color: "#e5e2e1", fontFamily: "'Inter', sans-serif" }}>
-            Wazelo <span style={{ color: "#ffb77d" }}>CRM</span>
-          </span>
-        </a>
-        {!mobile && (
-          <div style={{ display: "flex", gap: 36, alignItems: "center" }}>
-            {navLinks.map(([label, href]) => (
-              <a key={label} href={href} style={{ fontSize: 13, fontWeight: 500, textDecoration: "none", color: "rgba(219,194,176,0.75)", fontFamily: "'Inter', sans-serif", transition: "color 0.2s" }}
-                onMouseEnter={e => ((e.target as HTMLAnchorElement).style.color = "#e5e2e1")}
-                onMouseLeave={e => ((e.target as HTMLAnchorElement).style.color = "rgba(219,194,176,0.75)")}
-              >{label}</a>
-            ))}
-          </div>
-        )}
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          {!mobile && <a href={APP_LOGIN_URL} style={{ fontSize: 13, fontWeight: 500, color: "#dbc2b0", textDecoration: "none", fontFamily: "'Inter', sans-serif" }}>Sign In</a>}
-          {!mobile && <a href={APP_REGISTER_URL} style={{ fontSize: 13, fontWeight: 700, padding: "10px 22px", borderRadius: 100, background: "#fff", color: "#131313", textDecoration: "none", fontFamily: "'Inter', sans-serif" }}>Get Started Free</a>}
-          {mobile && (
-            <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", flexDirection: "column", gap: 5 }}>
-              <span style={{ display: "block", width: 22, height: 2, background: menuOpen ? "#ffb77d" : "#e5e2e1", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translate(5px,5px)" : "none" }} />
-              <span style={{ display: "block", width: 22, height: 2, background: menuOpen ? "#ffb77d" : "#e5e2e1", transition: "all 0.3s", opacity: menuOpen ? 0 : 1 }} />
-              <span style={{ display: "block", width: 22, height: 2, background: menuOpen ? "#ffb77d" : "#e5e2e1", transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translate(5px,-5px)" : "none" }} />
-            </button>
-          )}
-        </div>
-      </div>
-      {mobile && (
-        <div style={{ maxHeight: menuOpen ? 400 : 0, overflow: "hidden", transition: "max-height 0.35s ease", background: "rgba(13,13,13,0.98)", borderTop: menuOpen ? "1px solid rgba(255,183,125,0.08)" : "none" }}>
-          <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 0 }}>
-            {navLinks.map(([label, href]) => (
-              <a key={label} href={href} onClick={() => setMenuOpen(false)} style={{ padding: "14px 0", fontSize: 16, fontWeight: 500, color: "rgba(219,194,176,0.8)", textDecoration: "none", fontFamily: "'Inter', sans-serif", borderBottom: "1px solid rgba(255,183,125,0.06)" }}>{label}</a>
-            ))}
-            <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-              <a href={APP_LOGIN_URL} style={{ flex: 1, fontSize: 14, fontWeight: 500, padding: "12px", borderRadius: 8, border: "1px solid rgba(255,183,125,0.2)", color: "#dbc2b0", textDecoration: "none", textAlign: "center", fontFamily: "'Inter', sans-serif" }}>Sign In</a>
-              <a href={APP_REGISTER_URL} style={{ flex: 1, fontSize: 14, fontWeight: 700, padding: "12px", borderRadius: 8, background: "#fff", color: "#131313", textDecoration: "none", textAlign: "center", fontFamily: "'Inter', sans-serif" }}>Get Started</a>
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
-  );
-}
+import SiteNavbar from "@/components/Navbar";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const METHOD_COLORS: Record<string, string> = {
@@ -111,7 +37,7 @@ function Endpoint({ method, path, desc, params, bodyFields, responseExample, not
   const [open, setOpen] = useState(false);
   return (
     <div style={{ border: "1px solid rgba(255,183,125,0.08)", borderRadius: 10, marginBottom: 12, overflow: "hidden" }}>
-      <button onClick={() => setOpen(o => !o)} style={{
+      <button onClick={() => setOpen((o: boolean) => !o)} style={{
         width: "100%", background: open ? "#1c1b1b" : "#161616", border: "none", cursor: "pointer",
         padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, textAlign: "left",
       }}>
@@ -214,7 +140,7 @@ export default function ApiReferencePage() {
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-      <Navbar />
+      <SiteNavbar />
 
       {/* Hero */}
       <div style={{ background: "#131313", borderBottom: "1px solid rgba(255,183,125,0.06)", padding: mobile ? "100px 20px 48px" : "100px 48px 56px" }}>

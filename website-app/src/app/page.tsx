@@ -32,39 +32,28 @@ function useInView(threshold = 0.15) {
   return { ref, inView };
 }
 
-// ─── Typing effect hook ──────────────────────────────────────────────────────
-function useTypingEffect(text: string, speed = 18, active = false) {
-  const [displayText, setDisplayText] = useState("");
-  const [done, setDone] = useState(false);
-  useEffect(() => {
-    if (!active) { setDisplayText(""); setDone(false); return; }
-    let i = 0;
-    setDisplayText(""); setDone(false);
-    const timer = setInterval(() => {
-      i++;
-      setDisplayText(text.slice(0, i));
-      if (i >= text.length) { setDone(true); clearInterval(timer); }
-    }, speed);
-    return () => clearInterval(timer);
-  }, [text, speed, active]);
-  return { displayText, done };
-}
-
-// ─── Counter animation hook ──────────────────────────────────────────────────
-function useCounter(target: number, duration = 1800, active = false) {
-  const [count, setCount] = useState(0);
+// ─── Counter animation hook (DOM-direct, zero React re-renders) ──────────────
+// Returns a ref to attach to the display element; updates textContent directly.
+function useCounter(target: number, duration = 1800, active = false, format: (n: number) => string = n => String(n)) {
+  const elRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!active) return;
-    let start = 0;
-    const step = target / (duration / 16);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= target) { setCount(target); clearInterval(timer); }
-      else setCount(Math.floor(start));
-    }, 16);
-    return () => clearInterval(timer);
-  }, [active, target, duration]);
-  return count;
+    const el = elRef.current;
+    if (!el) return;
+    let startTime: number | null = null;
+    let rafId: number;
+    const animate = (ts: number) => {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      el.textContent = format(Math.floor(eased * target));
+      if (progress < 1) { rafId = requestAnimationFrame(animate); }
+      else { el.textContent = format(target); }
+    };
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [active, target, duration, format]);
+  return elRef;
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -84,26 +73,24 @@ const features = [
 ];
 
 // ─── Feature metadata (bento grid layout) ─────────────────────────────────────
-const ACCENT = "#ffb77d";
-const ACCENT_GLOW = "rgba(255,183,125,0.08)";
 const featureMeta = [
-  { size: "hero" as const,     stat: { val: "3×",   label: "Faster replies"  }, tags: ["Team", "Support"] },
-  { size: "hero" as const,     stat: { val: "98%",  label: "Delivery rate"   }, tags: ["Marketing", "Broadcast"] },
-  { size: "standard" as const, stat: { val: "24/7", label: "Always on"       }, tags: ["Workflows"] },
-  { size: "standard" as const, stat: null,                                       tags: ["Reporting"] },
-  { size: "standard" as const, stat: null,                                       tags: ["CRM"] },
-  { size: "standard" as const, stat: { val: "0",    label: "Code needed"     }, tags: ["AI", "No-code"] },
-  { size: "standard" as const, stat: null,                                       tags: ["Sales"] },
-  { size: "standard" as const, stat: null,                                       tags: ["Drip"] },
-  { size: "standard" as const, stat: null,                                       tags: ["Support"] },
-  { size: "standard" as const, stat: null,                                       tags: ["Sales", "AI"] },
-  { size: "standard" as const, stat: null,                                       tags: ["Channels"] },
-  { size: "wide" as const,     stat: { val: "REST", label: "Full API"        }, tags: ["API", "Webhooks", "Dev"] },
+  { size: "hero" as const, stat: { val: "3×", label: "Faster replies" }, tags: ["Team", "Support"] },
+  { size: "hero" as const, stat: { val: "98%", label: "Delivery rate" }, tags: ["Marketing", "Broadcast"] },
+  { size: "standard" as const, stat: { val: "24/7", label: "Always on" }, tags: ["Workflows"] },
+  { size: "standard" as const, stat: null, tags: ["Reporting"] },
+  { size: "standard" as const, stat: null, tags: ["CRM"] },
+  { size: "standard" as const, stat: { val: "0", label: "Code needed" }, tags: ["AI", "No-code"] },
+  { size: "standard" as const, stat: null, tags: ["Sales"] },
+  { size: "standard" as const, stat: null, tags: ["Drip"] },
+  { size: "standard" as const, stat: null, tags: ["Support"] },
+  { size: "standard" as const, stat: null, tags: ["Sales", "AI"] },
+  { size: "standard" as const, stat: null, tags: ["Channels"] },
+  { size: "wide" as const, stat: { val: "REST", label: "Full API" }, tags: ["API", "Webhooks", "Dev"] },
 ];
 
 // App base URL — register page
 const APP_REGISTER_URL = "https://app.wazelo.in/auth/register";
-const APP_LOGIN_URL    = "https://app.wazelo.in/auth/login";
+const APP_LOGIN_URL = "https://app.wazelo.in/auth/login";
 
 const plans = [
   {
@@ -142,20 +129,6 @@ const plans = [
 ];
 
 
-// ─── AI Features data ────────────────────────────────────────────────────────
-type AiOutputType = "replies" | "sentiment" | "summary" | "categorization" | "intent" | "kbrag" | "routing" | "insights";
-type AiFeature = { id: string; icon: string; label: string; tagline: string; outputType: AiOutputType; };
-const AI_FEATURES: AiFeature[] = [
-  { id: "smart-replies",       icon: "auto_fix_high",  label: "Smart Replies",        tagline: "3 contextual reply suggestions from conversation history",  outputType: "replies" },
-  { id: "conversation-summary",icon: "summarize",      label: "Conversation Summary", tagline: "Key topics, timeline, and predicted CSAT in one pass",       outputType: "summary" },
-  { id: "sentiment-analysis",  icon: "mood",           label: "Sentiment Analysis",   tagline: "Real-time POSITIVE / NEGATIVE / URGENT detection",           outputType: "sentiment" },
-  { id: "auto-categorization", icon: "category",       label: "Auto-Categorization",  tagline: "Intent, priority, and language detection automatically",     outputType: "categorization" },
-  { id: "intent-detection",    icon: "travel_explore", label: "Intent Detection",     tagline: "Entities, sub-intents, and routing hints extracted",         outputType: "intent" },
-  { id: "kb-rag",              icon: "library_books",  label: "Knowledge Base RAG",   tagline: "Searches KB and generates cited answers for agents",         outputType: "kbrag" },
-  { id: "routing-suggestions", icon: "account_tree",   label: "Routing Suggestions",  tagline: "Routes conversations to the right team based on context",    outputType: "routing" },
-  { id: "ai-insights",         icon: "insights",       label: "AI Insights",          tagline: "Trend summaries, highlights, and warnings over 7d / 30d",   outputType: "insights" },
-];
-
 const partnerLogos = [
   { name: "Meta Business", abbr: "META" },
   { name: "Razorpay", abbr: "RZRPAY" },
@@ -179,10 +152,44 @@ function SvgDivider({ inView }: { inView: boolean }) {
   );
 }
 
+// ─── Section Divider ─────────────────────────────────────────────────────────
+function SectionDivider({ bg = "#0e0e0e", label }: { bg?: string; label?: string }) {
+  const { ref, inView } = useInView(0.4);
+  const W = 600;
+  return (
+    <div ref={ref} style={{ background: bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 0 8px", gap: 5, overflow: "hidden", width: "100%" }}>
+      {/* Lines + diamond row — full width */}
+      <div style={{ display: "flex", alignItems: "center", width: "100%", padding: "0 32px", boxSizing: "border-box", opacity: inView ? 1 : 0, transition: "opacity 0.5s ease" }}>
+        <svg style={{ flex: 1, overflow: "visible", display: "block" }} height="1">
+          <line x1="100%" y1="0" x2="0" y2="0"
+            stroke="rgba(255,183,125,0.22)" strokeWidth="1"
+            strokeDasharray={W} strokeDashoffset={inView ? 0 : W}
+            style={{ transition: "stroke-dashoffset 1.1s 0.1s cubic-bezier(0.16,1,0.3,1)" }}
+          />
+        </svg>
+        <div className="divider-diamond" style={{ width: 6, height: 6, background: "#ffb77d", transform: "rotate(45deg)", flexShrink: 0, margin: "0 12px", borderRadius: 1 }} />
+        <svg style={{ flex: 1, overflow: "visible", display: "block" }} height="1">
+          <line x1="0" y1="0" x2="100%" y2="0"
+            stroke="rgba(255,183,125,0.22)" strokeWidth="1"
+            strokeDasharray={W} strokeDashoffset={inView ? 0 : W}
+            style={{ transition: "stroke-dashoffset 1.1s 0.1s cubic-bezier(0.16,1,0.3,1)" }}
+          />
+        </svg>
+      </div>
+      {/* Optional label */}
+      {label && (
+        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,183,125,0.3)", fontFamily: "Manrope, sans-serif", opacity: inView ? 1 : 0, transition: "opacity 0.6s 0.3s ease" }}>{label}</span>
+      )}
+      {/* Chevron */}
+      <span className="divider-chevron material-symbols-outlined" style={{ fontSize: 18, color: "rgba(255,183,125,0.5)", opacity: inView ? 1 : 0, transition: "opacity 0.5s 0.4s ease" }}>keyboard_arrow_down</span>
+    </div>
+  );
+}
+
 // ─── Square Grid (Hero background) ───────────────────────────────────────────
-function SquareGrid({ scrollY }: { scrollY: number }) {
-  const cols = 24;
-  const rows = 14;
+function SquareGrid({ scrollY, mobile, tablet }: { scrollY: number; mobile: boolean; tablet: boolean }) {
+  const cols = mobile ? 8 : tablet ? 16 : 24;
+  const rows = mobile ? 6 : tablet ? 10 : 14;
   const total = cols * rows;
   const progress = Math.min(scrollY / 600, 1);
 
@@ -397,7 +404,7 @@ function Navbar() {
 function HeroSection() {
   const [started, setStarted] = useState(false);
   const [scrollY, setScrollY] = useState(0);
-  const { mobile } = useBreakpoint();
+  const { mobile, tablet } = useBreakpoint();
 
   useEffect(() => { const t = setTimeout(() => setStarted(true), 80); return () => clearTimeout(t); }, []);
   useEffect(() => {
@@ -413,7 +420,7 @@ function HeroSection() {
       </video>
 
       {/* Square grid overlay */}
-      <SquareGrid scrollY={scrollY} />
+      <SquareGrid scrollY={scrollY} mobile={mobile} tablet={tablet} />
 
       {/* Floating liquid-glass pill navbar */}
       <div style={{ position: "relative", zIndex: 40, width: "100%", padding: mobile ? "16px 16px 0" : "24px 48px 0", display: "flex", justifyContent: "center" }}>
@@ -500,6 +507,22 @@ function HeroSection() {
           )}
         </div>
       </div>
+
+      {/* Scroll indicator */}
+      <div style={{
+        position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)",
+        zIndex: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+        opacity: started ? 1 : 0, transition: "opacity 1s 2.2s ease",
+      }}>
+        {/* Lines + diamond */}
+        <div style={{ display: "flex", alignItems: "center", gap: 0, width: 120 }}>
+          <div style={{ flex: 1, height: 1, background: "linear-gradient(to left, rgba(255,183,125,0.25), transparent)" }} />
+          <div className="divider-diamond" style={{ width: 5, height: 5, background: "#ffb77d", transform: "rotate(45deg)", flexShrink: 0, margin: "0 8px", borderRadius: 1 }} />
+          <div style={{ flex: 1, height: 1, background: "linear-gradient(to right, rgba(255,183,125,0.25), transparent)" }} />
+        </div>
+        <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif" }}>scroll</span>
+        <span className="divider-chevron material-symbols-outlined" style={{ fontSize: 20, color: "rgba(255,183,125,0.6)" }}>keyboard_arrow_down</span>
+      </div>
     </section>
   );
 }
@@ -527,7 +550,7 @@ function PartnersSection() {
     <section style={{ background: "#0e0e0e", padding: mobile ? "56px 0" : "80px 0", overflow: "hidden" }}>
       <div ref={ref} style={{ maxWidth: 1300, margin: "0 auto", padding: mobile ? "0 20px" : "0 48px", marginBottom: 40 }}>
         <p className="font-body" style={{
-          textAlign: "center", fontSize: 11, fontWeight: 700, letterSpacing: "0.2em",
+          textAlign: "center", fontSize: 11, fontWeight: 700, letterSpacing: mobile ? "0.08em" : "0.2em",
           textTransform: "uppercase", color: "rgba(163,140,124,0.5)", marginBottom: 0,
           opacity: inView ? 1 : 0, transition: "all 0.7s ease",
         }}>
@@ -548,200 +571,396 @@ function PartnersSection() {
   );
 }
 
-// ─── Feature Card v2 (Bento redesign) ────────────────────────────────────────
-function FeatureCard({ f, i, mobile, tablet, meta }: {
+// ─── Bento Mockup Components ──────────────────────────────────────────────────
+
+function SharedInboxMockup({ inView }: { inView: boolean }) {
+  return (
+    <div className="bento-mockup-wrap" style={{ width: "100%", borderRadius: "0 0 14px 14px", overflow: "hidden", background: "#0d0d0d", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#25D366", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 11, color: "#fff" }}>person</span>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ width: 64, height: 6, borderRadius: 4, background: "rgba(255,255,255,0.14)", marginBottom: 3 }} />
+          <div style={{ width: 40, height: 5, borderRadius: 4, background: "rgba(255,255,255,0.06)" }} />
+        </div>
+        <div style={{ display: "flex", gap: 3 }}>
+          {["#ffb77d", "#a38c7c", "#444"].map((c, j) => <div key={j} style={{ width: 5, height: 5, borderRadius: "50%", background: c, opacity: 0.5 }} />)}
+        </div>
+      </div>
+      {[
+        { side: "left",  text: "Hey, your order is ready!" },
+        { side: "right", text: "Great, sending payment →" },
+        { side: "left",  text: "Payment confirmed ✓" },
+      ].map((m, j) => (
+        <div key={j} style={{ display: "flex", justifyContent: m.side === "right" ? "flex-end" : "flex-start", padding: "4px 10px", opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(8px)", transition: `opacity 0.5s ${0.1 + j * 0.12}s ease, transform 0.5s ${0.1 + j * 0.12}s ease` }}>
+          <div style={{ background: m.side === "right" ? "#25D366" : "rgba(255,255,255,0.07)", borderRadius: m.side === "right" ? "10px 10px 2px 10px" : "10px 10px 10px 2px", padding: "5px 9px" }}>
+            <span style={{ fontSize: 10, color: m.side === "right" ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)", fontFamily: "Manrope, sans-serif" }}>{m.text}</span>
+          </div>
+        </div>
+      ))}
+      <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px 10px" }}>
+        <div style={{ width: 16, height: 16, borderRadius: "50%", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 8, color: "rgba(255,255,255,0.3)" }}>smart_toy</span>
+        </div>
+        <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "8px 8px 8px 2px", padding: "4px 8px", display: "flex", gap: 3, alignItems: "center" }}>
+          {([1, 2, 3] as const).map(n => <div key={n} className={`bento-dot-${n}`} style={{ width: 4, height: 4, borderRadius: "50%", background: "rgba(255,255,255,0.35)" }} />)}
+        </div>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.18)", fontFamily: "Manrope, sans-serif" }}>typing…</span>
+      </div>
+    </div>
+  );
+}
+
+function CampaignsMockup({ inView }: { inView: boolean }) {
+  const bars = [55, 78, 44, 96, 68];
+  return (
+    <div className="bento-mockup-wrap" style={{ width: "100%", borderRadius: "0 0 14px 14px", overflow: "hidden", background: "#0d0d0d", borderTop: "1px solid rgba(255,255,255,0.05)", padding: "14px 16px 12px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: "Manrope, sans-serif", letterSpacing: "0.08em", textTransform: "uppercase" }}>Delivery Rate</span>
+        <div style={{ background: "rgba(255,183,125,0.1)", border: "1px solid rgba(255,183,125,0.22)", borderRadius: 100, padding: "2px 9px", fontSize: 10, fontWeight: 700, color: "#ffb77d", fontFamily: "Manrope, sans-serif" }}>98% delivered</div>
+      </div>
+      <div className={inView ? "bento-bars-active" : ""} style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 56 }}>
+        {bars.map((h, j) => (
+          <div key={j} style={{ flex: 1, height: "100%", display: "flex", alignItems: "flex-end" }}>
+            <div className="bento-bar" style={{ width: "100%", height: `${h}%`, background: j === 3 ? "linear-gradient(to top,#ffb77d,#d97707)" : "linear-gradient(to top,rgba(255,183,125,0.45),rgba(255,183,125,0.15))", borderRadius: "3px 3px 0 0" }} />
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 5, marginTop: 5 }}>
+        {["Mon","Tue","Wed","Thu","Fri"].map(d => <div key={d} style={{ flex: 1, textAlign: "center", fontSize: 8, color: "rgba(255,255,255,0.18)", fontFamily: "Manrope, sans-serif" }}>{d}</div>)}
+      </div>
+    </div>
+  );
+}
+
+function AutomationMockup() {
+  return (
+    <div className="bento-mockup-wrap" style={{ padding: "8px 0 0" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, justifyContent: "center" }}>
+        {["Trigger", "Filter", "Action"].map((label, j) => (
+          <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ background: j === 0 ? "rgba(255,183,125,0.1)" : "rgba(255,255,255,0.04)", border: `1px solid ${j === 0 ? "rgba(255,183,125,0.25)" : "rgba(255,255,255,0.07)"}`, borderRadius: 6, padding: "4px 8px", fontSize: 9, color: j === 0 ? "#ffb77d" : "rgba(255,255,255,0.3)", fontFamily: "Manrope, sans-serif", fontWeight: 600, whiteSpace: "nowrap" as const }}>{label}</div>
+            {j < 2 && <div style={{ width: 12, height: 1, background: "rgba(255,183,125,0.2)" }} />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsMockup() {
+  const pts = [40, 28, 35, 18, 30, 12, 22, 8, 16, 5];
+  const W = 100, H = 36;
+  const xs = pts.map((_, j) => (j / (pts.length - 1)) * W);
+  const ys = pts.map(v => H - (v / 44) * H);
+  const d = xs.map((x, j) => `${j === 0 ? "M" : "L"}${x.toFixed(1)},${ys[j].toFixed(1)}`).join(" ");
+  const area = `${d} L${W},${H} L0,${H} Z`;
+  return (
+    <div className="bento-mockup-wrap" style={{ padding: "8px 0 0" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={36} style={{ overflow: "visible" }}>
+        <defs>
+          <linearGradient id="bento-sg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffb77d" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#ffb77d" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#bento-sg)" />
+        <path d={d} className="bento-sparkline" />
+        <circle cx={xs[xs.length - 1]} cy={ys[ys.length - 1]} r={2.5} fill="#ffb77d" />
+      </svg>
+    </div>
+  );
+}
+
+function ContactsMockup() {
+  const contacts = [
+    { name: "Priya S.", tag: "Lead", color: "#25D366" },
+    { name: "Rahul M.", tag: "Customer", color: "#ffb77d" },
+    { name: "Sneha K.", tag: "VIP", color: "#a78bfa" },
+  ];
+  return (
+    <div className="bento-mockup-wrap" style={{ padding: "8px 0 0", display: "flex", flexDirection: "column", gap: 4 }}>
+      {contacts.map(c => (
+        <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.03)", borderRadius: 6, padding: "4px 7px" }}>
+          <div style={{ width: 18, height: 18, borderRadius: "50%", background: `${c.color}20`, border: `1px solid ${c.color}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 9, color: c.color }}>person</span>
+          </div>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Manrope, sans-serif", flex: 1 }}>{c.name}</span>
+          <span style={{ fontSize: 9, color: c.color, background: `${c.color}12`, borderRadius: 100, padding: "1px 6px", fontFamily: "Manrope, sans-serif", fontWeight: 600 }}>{c.tag}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChatbotMockup() {
+  return (
+    <div className="bento-mockup-wrap" style={{ padding: "8px 0 0", display: "flex", flexDirection: "column", gap: 5 }}>
+      <div style={{ display: "flex", justifyContent: "flex-start" }}>
+        <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "9px 9px 9px 2px", padding: "5px 9px" }}>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "Manrope, sans-serif" }}>How can I help you? 🤖</span>
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ background: "#25D366", borderRadius: "9px 9px 2px 9px", padding: "5px 9px" }}>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.9)", fontFamily: "Manrope, sans-serif" }}>Track order #4421 →</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DealsMockup() {
+  const cols = [
+    { label: "Prospect", count: 2, color: "#a38c7c" },
+    { label: "Proposal", count: 1, color: "#ffb77d" },
+    { label: "Closed", count: 2, color: "#25D366" },
+  ];
+  return (
+    <div className="bento-mockup-wrap" style={{ padding: "8px 0 0", display: "flex", gap: 5 }}>
+      {cols.map(col => (
+        <div key={col.label} style={{ flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
+          <div style={{ fontSize: 8, color: col.color, fontFamily: "Manrope, sans-serif", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 2 }}>{col.label}</div>
+          {Array.from({ length: col.count }).map((_, j) => (
+            <div key={j} style={{ height: 13, background: `${col.color}15`, border: `1px solid ${col.color}25`, borderRadius: 4 }} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SequencesMockup() {
+  const steps = ["Day 0 — Welcome", "Day 2 — Follow-up", "Day 5 — Demo invite", "Day 9 — Close"];
+  return (
+    <div className="bento-mockup-wrap" style={{ padding: "8px 0 0", display: "flex", flexDirection: "column" }}>
+      {steps.map((s, j) => (
+        <div key={s} style={{ display: "flex", alignItems: "flex-start", gap: 7 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: j === 0 ? "#ffb77d" : "rgba(255,183,125,0.25)", border: `1px solid ${j === 0 ? "#ffb77d" : "rgba(255,183,125,0.15)"}`, flexShrink: 0, marginTop: 2 }} />
+            {j < steps.length - 1 && <div style={{ width: 1, height: 12, background: "rgba(255,183,125,0.15)" }} />}
+          </div>
+          <span style={{ fontSize: 9, color: j === 0 ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.18)", fontFamily: "Manrope, sans-serif", lineHeight: 1, paddingTop: 2 }}>{s}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CsatMockup() {
+  return (
+    <div className="bento-mockup-wrap" style={{ padding: "8px 0 0" }}>
+      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: "Manrope, sans-serif", marginBottom: 6, letterSpacing: "0.04em" }}>How was your experience?</div>
+      <div style={{ display: "flex", gap: 4 }}>
+        {[1,2,3,4,5].map(n => (
+          <span key={n} className="material-symbols-outlined" style={{ fontSize: 18, color: n <= 4 ? "#ffb77d" : "rgba(255,255,255,0.12)", filter: n <= 4 ? "drop-shadow(0 0 4px rgba(255,183,125,0.35))" : "none" }}>star</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LeadScoringMockup() {
+  return (
+    <div className="bento-mockup-wrap" style={{ padding: "8px 0 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: "Manrope, sans-serif" }}>Lead Score</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: "#ffb77d", fontFamily: "Epilogue, sans-serif" }}>87<span style={{ fontSize: 9, color: "rgba(255,183,125,0.45)", fontWeight: 400 }}>/100</span></span>
+      </div>
+      <div style={{ height: 4, borderRadius: 100, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: "87%", borderRadius: 100, background: "linear-gradient(to right,#ffb77d,#d97707)" }} />
+      </div>
+      <div style={{ display: "flex", gap: 4, marginTop: 7 }}>
+        {["Engaged","Fit","Intent"].map(l => (
+          <div key={l} style={{ flex: 1, background: "rgba(255,183,125,0.06)", borderRadius: 4, padding: "3px 0", textAlign: "center" }}>
+            <span style={{ fontSize: 8, color: "rgba(255,183,125,0.4)", fontFamily: "Manrope, sans-serif" }}>{l}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MultiChannelMockup() {
+  const channels = [
+    { icon: "chat", label: "WhatsApp", color: "#25D366" },
+    { icon: "photo_camera", label: "Instagram", color: "#e1306c" },
+    { icon: "mail", label: "Email", color: "#4a90d9" },
+  ];
+  return (
+    <div className="bento-mockup-wrap" style={{ padding: "8px 0 0", display: "flex", gap: 8, justifyContent: "center" }}>
+      {channels.map(ch => (
+        <div key={ch.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: `${ch.color}15`, border: `1px solid ${ch.color}30`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 13, color: ch.color }}>{ch.icon}</span>
+          </div>
+          <span style={{ fontSize: 8, color: "rgba(255,255,255,0.22)", fontFamily: "Manrope, sans-serif" }}>{ch.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ApiCodeMockup() {
+  return (
+    <div className="bento-mockup-wrap" style={{ flex: 1, borderRadius: 10, overflow: "hidden", background: "#090909", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+        {["#ff5f57","#febc2e","#28c840"].map(c => <div key={c} style={{ width: 8, height: 8, borderRadius: "50%", background: c }} />)}
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.18)", fontFamily: "Manrope, sans-serif", marginLeft: 8, letterSpacing: "0.06em" }}>bash — wazelo-api</span>
+      </div>
+      <div className="bento-code" style={{ padding: "14px 16px", color: "rgba(255,255,255,0.5)" }}>
+        <span style={{ color: "rgba(255,183,125,0.45)" }}>$ </span>
+        <span style={{ color: "#ffb77d" }}>curl</span>
+        <span style={{ color: "rgba(255,255,255,0.25)" }}>{" -X POST \\\n  "}</span>
+        <span style={{ color: "#86efac" }}>{"'https://api.wazelo.in/v1/messages'"}</span>
+        <span style={{ color: "rgba(255,255,255,0.25)" }}>{" \\\n  -H "}</span>
+        <span style={{ color: "#86efac" }}>{"'Authorization: Bearer YOUR_KEY'"}</span>
+        <span style={{ color: "rgba(255,255,255,0.25)" }}>{" \\\n  -d "}</span>
+        <span style={{ color: "#86efac" }}>{"'{\"to\":\"+91...\",\"message\":\"Hello!\"}'"}
+        </span>
+        <span style={{ color: "rgba(255,255,255,0.2)" }}>{"\n{\n  "}</span>
+        <span style={{ color: "#fbbf24" }}>"status"</span>
+        <span style={{ color: "rgba(255,255,255,0.2)" }}>: </span>
+        <span style={{ color: "#86efac" }}>"queued"</span>
+        <span style={{ color: "rgba(255,255,255,0.2)" }}>{",\n  "}</span>
+        <span style={{ color: "#fbbf24" }}>"id"</span>
+        <span style={{ color: "rgba(255,255,255,0.2)" }}>: </span>
+        <span style={{ color: "#86efac" }}>"msg_9xKp2..."</span>
+        <span style={{ color: "rgba(255,255,255,0.2)" }}>{"\n}"}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mockup map ───────────────────────────────────────────────────────────────
+const MOCKUP_COMPONENTS: Record<string, (props: { inView: boolean }) => ReturnType<typeof SharedInboxMockup>> = {
+  "Shared Inbox":    (p) => <SharedInboxMockup {...p} />,
+  "Bulk Campaigns":  (p) => <CampaignsMockup {...p} />,
+  "Automation":      (_) => <AutomationMockup />,
+  "Analytics":       (_) => <AnalyticsMockup />,
+  "Contacts CRM":    (_) => <ContactsMockup />,
+  "Chatbot Builder": (_) => <ChatbotMockup />,
+  "Deals Pipeline":  (_) => <DealsMockup />,
+  "Sequences":       (_) => <SequencesMockup />,
+  "CSAT Surveys":    (_) => <CsatMockup />,
+  "Lead Scoring":    (_) => <LeadScoringMockup />,
+  "Multi-Channel":   (_) => <MultiChannelMockup />,
+  "Developer API":   (_) => <ApiCodeMockup />,
+};
+
+// ─── Bento Feature Card ───────────────────────────────────────────────────────
+function FeatureCard({ f, i, meta, mobile, tablet }: {
   f: typeof features[0];
   i: number;
+  meta: typeof featureMeta[0];
   mobile: boolean;
   tablet: boolean;
-  meta: typeof featureMeta[0];
 }) {
-  const { ref, inView } = useInView(0.1);
-  const [hovered, setHovered] = useState(false);
+  const { ref, inView } = useInView(0.12);
   const { size, stat, tags } = meta;
-  const accentColor = ACCENT;
-  const gradientFrom = ACCENT_GLOW;
+  const delay = Math.min(i, 5) * 0.07;
+
   const isHero = size === "hero";
   const isWide = size === "wide";
 
-  // Grid span for the animation wrapper (direct grid child)
-  const gridColumn = isHero
-    ? mobile ? "auto" : tablet ? "span 2" : "span 2"
-    : isWide
-      ? mobile ? "auto" : tablet ? "span 2" : "span 4"
-      : "auto";
+  // Column span
+  const colSpan = mobile ? 1 : isHero ? 2 : isWide ? (tablet ? 2 : 4) : 1;
 
-  const delay = isHero ? i * 0.06 : 0.12 + i * 0.07;
+  const MockupEl = MOCKUP_COMPONENTS[f.title];
 
-  const enterTransform = inView
-    ? "translateY(0) scale(1)"
-    : isHero
-      ? "translateY(40px) scale(0.97)"
-      : "translateY(32px)";
+  const padding = isHero || isWide
+    ? mobile ? "20px 20px 0" : "24px 24px 0"
+    : mobile ? "18px 18px 16px" : "20px 20px 16px";
 
-  const padding = isHero
-    ? mobile ? "28px" : "40px 44px"
-    : isWide
-      ? mobile ? "28px" : "36px 44px"
-      : mobile ? "24px" : "28px 32px";
-
-  const bg = isHero
-    ? "linear-gradient(135deg, #1e1c1c 0%, #191818 100%)"
-    : isWide
-      ? "linear-gradient(90deg, #151514 0%, #121211 100%)"
-      : "#1a1919";
-
-  const glowSize = isHero ? 220 : 120;
+  const minH = isHero ? (mobile ? 280 : 320) : isWide ? 200 : 180;
 
   return (
-    <div
-      ref={ref}
+    <a
+      ref={ref as any}
+      href={f.href}
+      className="bento-card"
       style={{
-        gridColumn,
+        gridColumn: `span ${colSpan}`,
+        padding,
+        minHeight: minH,
         opacity: inView ? 1 : 0,
-        transform: enterTransform,
-        transition: `all 0.7s ${delay}s ease`,
-        display: "flex",
-        height: "100%",
+        transform: inView ? "translateY(0)" : "translateY(28px)",
+        transition: `opacity 0.65s ${delay}s ease, transform 0.65s ${delay}s ease`,
       }}
     >
-      <a
-        href={f.href}
-        className="feature-card-v2"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          background: bg,
-          borderRadius: 12,
-          padding,
-          border: `1px solid ${hovered ? `${accentColor}40` : "rgba(255,255,255,0.06)"}`,
-          borderTop: `2px solid ${accentColor}35`,
-          cursor: "pointer",
-          textDecoration: "none",
-          display: isWide && !mobile ? "grid" : "flex",
-          gridTemplateColumns: isWide && !mobile ? "1fr auto" : undefined,
-          flexDirection: isWide && !mobile ? undefined : "column",
-          gap: isWide && !mobile ? 48 : 0,
-          alignItems: isWide && !mobile ? "center" : undefined,
-          width: "100%",
-          minHeight: isHero ? 280 : undefined,
-          transition: "border-color 0.3s",
-          position: "relative",
-        }}
-      >
-        {/* Corner glow blob */}
-        <div className="animate-glow" style={{
-          position: "absolute", top: 0, right: 0,
-          width: glowSize, height: glowSize,
-          borderRadius: "50%",
-          background: gradientFrom,
-          filter: "blur(60px)",
-          pointerEvents: "none",
-        }} />
+      {/* Subtle top gradient accent */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg,transparent,rgba(255,183,125,0.2),transparent)", pointerEvents: "none" }} />
 
-        {/* Left accent stripe */}
-        <div className="card-accent-stripe" style={{
-          position: "absolute", left: 0, top: 20, bottom: 20,
-          width: 3, borderRadius: 4,
-          background: accentColor, opacity: 0.4,
-        }} />
-
-        {/* Main content */}
-        <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-          {/* Icon */}
-          <div className="card-icon-v2" style={{
-            width: isHero ? 56 : 48,
-            height: isHero ? 56 : 48,
-            borderRadius: isHero ? 14 : 12,
-            background: "rgba(255,255,255,0.04)",
-            border: `1px solid ${accentColor}30`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            marginBottom: isHero ? 24 : 20,
-            color: accentColor,
-          }}>
-            <span className="material-symbols-outlined" style={{ fontSize: isHero ? 24 : 22 }}>{f.icon}</span>
-          </div>
-
-          {/* Title */}
-          <h3 className="font-headline" style={{
-            fontSize: isHero ? 22 : 19,
-            fontWeight: isHero ? 800 : 700,
-            color: "#e5e2e1",
-            marginBottom: 10,
-            letterSpacing: "-0.03em",
-          }}>{f.title}</h3>
-
-          {/* Description */}
-          <p className="font-body" style={{
-            fontSize: isHero ? 15 : 14,
-            color: "#dbc2b0",
-            lineHeight: 1.75,
-            marginBottom: stat || tags.length > 0 ? 20 : 0,
-          }}>{f.desc}</p>
-
-          {/* Stat pill */}
-          {stat && (
-            <div style={{
-              display: "inline-flex", alignItems: "baseline", gap: 8,
-              padding: "8px 16px",
-              background: "rgba(255,255,255,0.04)",
-              borderRadius: 100,
-              border: "1px solid rgba(255,255,255,0.07)",
-              marginBottom: tags.length > 0 ? 12 : 0,
-              alignSelf: "flex-start",
-            }}>
-              <span className="font-headline" style={{ fontSize: isHero ? 28 : 20, fontWeight: 900, color: accentColor, letterSpacing: "-0.04em" }}>{stat.val}</span>
-              <span className="font-body" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#a38c7c" }}>{stat.label}</span>
-            </div>
-          )}
-
-          {/* Tags */}
-          {tags.length > 0 && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
-              {tags.map(tag => (
-                <span key={tag} className="font-body" style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                  padding: "3px 10px", borderRadius: 100,
-                  border: `1px solid ${accentColor}25`,
-                  color: `${accentColor}CC`,
-                }}>{tag}</span>
-              ))}
-            </div>
-          )}
-
-          {/* CTA */}
-          <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 6, color: accentColor, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "Manrope, sans-serif" }}>
-            Learn more <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_right_alt</span>
-          </div>
+      {/* Icon + tags row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: isHero ? 18 : 12 }}>
+        <div className="bento-card-icon" style={{
+          width: isHero ? 34 : 28, height: isHero ? 34 : 28, borderRadius: 8, flexShrink: 0,
+          background: "rgba(255,183,125,0.07)", border: "1px solid rgba(255,183,125,0.12)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <span className="material-symbols-outlined" style={{ fontSize: isHero ? 17 : 14, color: "#ffb77d" }}>{f.icon}</span>
         </div>
-
-        {/* Wide card: code block on right */}
-        {isWide && !mobile && (
-          <div style={{
-            background: "#0a0a0a",
-            borderRadius: 10,
-            padding: "20px 24px",
-            border: `1px solid ${accentColor}20`,
-            minWidth: 340,
-            alignSelf: "stretch",
-            display: "flex",
-            alignItems: "center",
-          }}>
-            <pre className="code-block-feature" style={{ margin: 0 }}>
-              <span style={{ color: "#7a6a5a" }}>{"curl -X POST \\\n"}</span>
-              <span style={{ color: "#ffb77d" }}>{"  https://api.wazelo.in/v1/messages \\\n"}</span>
-              <span style={{ color: "#7a6a5a" }}>{"  -H "}</span>
-              <span style={{ color: "#dbc2b0" }}>{'"Authorization: '}</span>
-              <span style={{ color: "#ffb77d" }}>{"Bearer"}</span>
-              <span style={{ color: "#dbc2b0" }}>{' $TOKEN" \\\n'}</span>
-              <span style={{ color: "#7a6a5a" }}>{"  -d '"}</span>
-              <span style={{ color: "#dbc2b0" }}>{'{ "to": "+91...", "text": "Hello!" }'}</span>
-              <span style={{ color: "#7a6a5a" }}>{"'"}</span>
-            </pre>
-          </div>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" as const }}>
+          {tags.map(tag => <span key={tag} className="bento-tag">{tag}</span>)}
+        </div>
+        {isWide && (
+          <span className="bento-cta" style={{ marginLeft: "auto" }}>
+            See more <span className="material-symbols-outlined" style={{ fontSize: 13 }}>arrow_right_alt</span>
+          </span>
         )}
-      </a>
-    </div>
+      </div>
+
+      {/* Title */}
+      <h3 className="font-headline" style={{
+        fontSize: isHero ? 22 : isWide ? 20 : 16,
+        fontWeight: 800, color: "#e5e2e1",
+        letterSpacing: "-0.03em", lineHeight: 1.2,
+        marginBottom: 8,
+      }}>{f.title}</h3>
+
+      {/* Desc */}
+      <p className="font-body" style={{
+        fontSize: 13, color: "rgba(219,194,176,0.45)",
+        lineHeight: 1.7, marginBottom: stat ? 14 : (isHero || isWide ? 16 : 12),
+        maxWidth: isWide ? 460 : "100%",
+      }}>{f.desc}</p>
+
+      {/* Stat */}
+      {stat && (
+        <div style={{ marginBottom: isHero ? 16 : 12 }}>
+          <span className="font-headline" style={{
+            fontSize: isHero ? 38 : 26, fontWeight: 900,
+            color: "#ffb77d", letterSpacing: "-0.04em", lineHeight: 1,
+          }}>{stat.val}</span>
+          <span className="font-body" style={{
+            fontSize: 10, color: "rgba(255,183,125,0.5)",
+            letterSpacing: "0.1em", textTransform: "uppercase", marginLeft: 8,
+          }}>{stat.label}</span>
+        </div>
+      )}
+
+      {/* CTA (non-wide) */}
+      {!isWide && (
+        <span className="bento-cta" style={{ marginBottom: isHero || isWide ? 0 : 0 }}>
+          See more <span className="material-symbols-outlined" style={{ fontSize: 13 }}>arrow_right_alt</span>
+        </span>
+      )}
+
+      {/* Mockup visual */}
+      {MockupEl && (
+        <div style={{
+          flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end",
+          marginTop: isHero || isWide ? 16 : 10,
+          marginLeft: isWide ? -24 : 0,
+          marginRight: isWide ? -24 : 0,
+          maxHeight: isHero ? 210 : isWide ? 150 : 110,
+          overflow: "hidden",
+        }}>
+          <MockupEl inView={inView} />
+        </div>
+      )}
+    </a>
   );
 }
 
@@ -764,7 +983,7 @@ function AiChatSection() {
         }}>
           <div>
             <span className="font-body" style={{
-              fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase",
+              fontSize: 11, fontWeight: 700, letterSpacing: mobile ? "0.1em" : "0.22em", textTransform: "uppercase",
               color: "#ffb77d", display: "inline-block",
               borderBottom: "1px solid rgba(255,183,125,0.3)", paddingBottom: 6, marginBottom: 20,
               opacity: inView ? 1 : 0, transition: "all 0.7s ease",
@@ -882,55 +1101,96 @@ function AiChatSection() {
   );
 }
 
-// ─── Features ─────────────────────────────────────────────────────────────────
+// ─── Bento Features Section ───────────────────────────────────────────────────
 function FeaturesSection() {
-  const { ref, inView } = useInView(0.1);
+  const { ref, inView } = useInView(0.08);
   const { mobile, tablet } = useBreakpoint();
+  const [showAll, setShowAll] = useState(false);
+
+  // Show 6 by default on desktop/tablet (2 hero + 4 standard = 2 full visual rows)
+  // Show 3 on mobile (single column, too long otherwise)
+  const defaultCount = mobile ? 3 : 6;
+  const visibleFeatures = showAll ? features : features.slice(0, defaultCount);
+  const remaining = features.length - defaultCount;
+
+  // 4-col grid on desktop: hero cards span 2, wide spans 4
+  const gridCols = mobile ? "1fr" : tablet ? "repeat(2,1fr)" : "repeat(4,1fr)";
 
   return (
-    <section id="features" style={{ background: "#131313", padding: mobile ? "72px 20px" : tablet ? "88px 32px" : "112px 48px" }}>
-      <div style={{ maxWidth: 1300, margin: "0 auto" }}>
-        {/* SVG Divider top */}
+    <section
+      id="features"
+      className="bento-section-bg"
+      style={{ padding: mobile ? "72px 20px 80px" : tablet ? "88px 32px 96px" : "112px 48px 128px" }}
+    >
+      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+
+        {/* Top separator */}
         <SvgDivider inView={inView} />
-        {/* <div style={{ height: 64 }} /> */}
+        <div style={{ height: mobile ? 48 : 64 }} />
 
         {/* Header */}
-        <div ref={ref} style={{ marginBottom: mobile ? 48 : 80, maxWidth: 680 }}>
-          <span className="font-headline" style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase",
-            color: "#ffb77d", display: "block", marginBottom: 18,
-            opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(20px)",
-            transition: "all 0.7s ease",
-          }}>EVERYTHING YOU NEED</span>
-          <h2 className="font-headline" style={{
-            fontSize: mobile ? "clamp(36px,10vw,56px)" : "clamp(44px,5.5vw,80px)",
-            fontWeight: 900, lineHeight: 0.9,
-            letterSpacing: "-0.045em", textTransform: "uppercase", color: "#e5e2e1", marginBottom: 28,
-            opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(28px)",
-            transition: "all 0.8s 0.1s ease",
+        <div ref={ref} style={{ marginBottom: mobile ? 48 : 72 }}>
+
+          {/* Eyebrow */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 24,
+            opacity: inView ? 1 : 0, transition: "opacity 0.6s ease",
           }}>
-            ONE PLATFORM.<br />EVERY WHATSAPP<br />USE CASE.
+            <div style={{ width: 20, height: 1, background: "rgba(255,183,125,0.4)" }} />
+            <span className="font-body" style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: "0.2em",
+              textTransform: "uppercase", color: "rgba(255,183,125,0.65)",
+            }}>Platform Features</span>
+          </div>
+
+          {/* Headline */}
+          <h2 className="font-headline" style={{
+            fontSize: mobile ? "clamp(32px,9vw,52px)" : "clamp(40px,4.5vw,64px)",
+            fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em",
+            color: "#e5e2e1", marginBottom: 20,
+            opacity: inView ? 1 : 0,
+            transform: inView ? "translateY(0)" : "translateY(24px)",
+            transition: "opacity 0.8s 0.1s ease, transform 0.8s 0.1s ease",
+          }}>
+            One platform.<br />
+            <span style={{
+              background: "linear-gradient(135deg,#ffb77d 0%,#d97707 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+            }}>Every WhatsApp</span><br />
+            use case.
           </h2>
+
+          {/* Subtext */}
           <p className="font-body" style={{
-            fontSize: 17, lineHeight: 1.7, color: "#dbc2b0", fontWeight: 300, maxWidth: 500,
-            opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(20px)",
-            transition: "all 0.8s 0.2s ease",
+            fontSize: 15, lineHeight: 1.75, fontWeight: 300,
+            color: "rgba(219,194,176,0.5)", maxWidth: 440,
+            opacity: inView ? 1 : 0,
+            transform: inView ? "translateY(0)" : "translateY(16px)",
+            transition: "opacity 0.8s 0.2s ease, transform 0.8s 0.2s ease",
           }}>
             From solo sales reps to enterprise teams — Wazelo CRM scales with your business.
           </p>
         </div>
 
-        {/* Grid */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: mobile ? "1fr" : tablet ? "repeat(2,1fr)" : "repeat(4,1fr)",
-          gap: mobile ? 16 : tablet ? 20 : 24,
-          alignItems: "stretch",
-        }}>
-          {features.map((f, i) => (
-            <FeatureCard key={f.title} f={f} i={i} mobile={mobile} tablet={tablet} meta={featureMeta[i]} />
+        {/* Bento grid */}
+        <div style={{ display: "grid", gridTemplateColumns: gridCols, gap: mobile ? 12 : 14, alignItems: "stretch" }}>
+          {visibleFeatures.map((f, i) => (
+            <FeatureCard key={f.title} f={f} i={i} meta={featureMeta[i]} mobile={mobile} tablet={tablet} />
           ))}
         </div>
+
+        {/* Load more */}
+        {remaining > 0 && (
+          <div style={{ marginTop: mobile ? 32 : 48, display: "flex", justifyContent: "center" }}>
+            <button className="bento-load-btn" onClick={() => setShowAll(v => !v)}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                {showAll ? "expand_less" : "expand_more"}
+              </span>
+              {showAll ? "Show less" : `Show all ${remaining} more features`}
+            </button>
+          </div>
+        )}
+
       </div>
     </section>
   );
@@ -939,29 +1199,40 @@ function FeaturesSection() {
 // ─── Scroll Sequence Section ──────────────────────────────────────────────────
 // Frame filenames in order (gaps 008–011 are missing)
 const SEQUENCE_FRAMES = [
-  ...Array.from({ length: 7 },  (_, i) => `ezgif-frame-${String(i + 1).padStart(3, "0")}.jpg`),
+  ...Array.from({ length: 7 }, (_, i) => `ezgif-frame-${String(i + 1).padStart(3, "0")}.jpg`),
   ...Array.from({ length: 29 }, (_, i) => `ezgif-frame-${String(i + 12).padStart(3, "0")}.jpg`),
 ];
 const FRAME_COUNT = SEQUENCE_FRAMES.length; // 36
 
 function ScrollSequenceSection() {
-  const outerRef  = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
-  const frameRef  = useRef(0);
-  const rafRef    = useRef<number>(0);
+  const frameRef = useRef(0);
+  const rafRef = useRef<number>(0);
   const [progress, setProgress] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const { mobile } = useBreakpoint();
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Preload all frames
   useEffect(() => {
     let done = 0;
+    const onDone = () => { done++; if (done === FRAME_COUNT) setLoaded(true); };
     const imgs: HTMLImageElement[] = SEQUENCE_FRAMES.map((name) => {
       const img = new window.Image();
+      // Set handlers BEFORE src to avoid missing cached-image load events
+      img.onload = onDone;
+      img.onerror = onDone;
       img.src = `/scroll-sequence/${name}`;
-      img.onload = () => { done++; if (done === FRAME_COUNT) setLoaded(true); };
-      img.onerror = () => { done++; if (done === FRAME_COUNT) setLoaded(true); };
+      // If already cached and complete, count it immediately
+      if (img.complete) { img.onload = null; img.onerror = null; onDone(); }
       return img;
     });
     imagesRef.current = imgs;
@@ -988,15 +1259,18 @@ function ScrollSequenceSection() {
     ctx.drawImage(img, dx, dy, dw, dh);
   }, []);
 
-  // RAF loop — read scroll, advance frame, draw
+  // Scroll-driven progress: tracks window.scrollY relative to section entry point
+  // Uses a virtual scroll budget of 1.5x window height (no extra DOM space needed)
   useEffect(() => {
+    const SCROLL_BUDGET = window.innerHeight * 1.5;
     const tick = () => {
       const outer = outerRef.current;
       if (outer) {
         const rect = outer.getBoundingClientRect();
-        const totalScroll = outer.offsetHeight - window.innerHeight;
+        // Start counting when section top hits the top of viewport
         const scrolled = Math.max(0, -rect.top);
-        const p = Math.min(1, Math.max(0, scrolled / totalScroll));
+        if (SCROLL_BUDGET <= 0) { rafRef.current = requestAnimationFrame(tick); return; }
+        const p = Math.min(1, Math.max(0, scrolled / SCROLL_BUDGET));
         setProgress(p);
         const newFrame = Math.min(FRAME_COUNT - 1, Math.round(p * (FRAME_COUNT - 1)));
         if (newFrame !== frameRef.current || p === 0) {
@@ -1015,15 +1289,19 @@ function ScrollSequenceSection() {
     if (loaded) drawFrame(frameRef.current);
   }, [loaded, drawFrame]);
 
+  // null = not yet determined (client hasn't run yet) → render nothing
+  if (isMobile === null) return null;
+
   // Mobile fallback — just show first frame as img
-  if (mobile) {
+  if (isMobile) {
     return (
-      <section style={{ background: "#0d0d0d", padding: "64px 20px", textAlign: "center" }}>
-        <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#ffb77d", display: "block", marginBottom: 16 }}>PLATFORM WALKTHROUGH</span>
+      <section style={{ background: "#0d0d0d", padding: "64px 20px 0", textAlign: "center" }}>
+        <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#ffb77d", display: "block", marginBottom: 16 }}>PLATFORM WALKTHROUGH</span>
         <h2 className="font-headline" style={{ fontSize: "clamp(32px,9vw,52px)", fontWeight: 900, lineHeight: 0.92, letterSpacing: "-0.045em", textTransform: "uppercase", color: "#e5e2e1", marginBottom: 32 }}>
           SEE IT IN ACTION.
         </h2>
-        <Image src={`/scroll-sequence/${SEQUENCE_FRAMES[0]}`} alt="Wazelo CRM walkthrough" width={760} height={475} style={{ width: "100%", height: "auto", borderRadius: 8, border: "1px solid rgba(85,67,54,0.2)" }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`/scroll-sequence/${SEQUENCE_FRAMES[0]}`} alt="Wazelo CRM walkthrough" style={{ width: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid rgba(85,67,54,0.2)" }} />
       </section>
     );
   }
@@ -1032,11 +1310,13 @@ function ScrollSequenceSection() {
   return (
     <div
       ref={outerRef}
-      style={{ height: "350vh", position: "relative", background: "#0d0d0d" }}
+      style={{ height: "100vh", position: "relative" }}
     >
       <div style={{
         position: "sticky", top: 0, height: "100vh",
         overflow: "hidden", background: "#0d0d0d",
+        opacity: progress > 0.92 ? 1 - (progress - 0.92) / 0.08 : 1,
+        pointerEvents: progress >= 1 ? "none" : "auto",
       }}>
         {/* Header — slides out as you scroll past 60% */}
         <div style={{
@@ -1069,8 +1349,8 @@ function ScrollSequenceSection() {
             position: "absolute", inset: 0,
             width: "100%", height: "100%",
             objectFit: "cover",
-            opacity: loaded ? 1 : 0,
-            transition: "opacity 0.6s ease",
+            opacity: loaded ? (progress > 0.85 ? 1 - (progress - 0.85) / 0.15 : 1) : 0,
+            transition: progress > 0.85 ? "none" : "opacity 0.6s ease",
           }}
         />
 
@@ -1118,261 +1398,6 @@ function ScrollSequenceSection() {
         </div>
       </div>
     </div>
-  );
-}
-
-
-
-// ─── Feature Scroll Section (scroll-driven interactive) ──────────────────────
-const featureReveals = [
-  {
-    id: "inbox",
-    tag: "Shared Inbox",
-    title: "YOUR WHOLE TEAM.\nONE INBOX.",
-    desc: "Every WhatsApp conversation, routed to the right agent. Assign, transfer, resolve — at scale. No lead slips through.",
-    img: "/screens/01-inbox-shared-team.jpeg",
-    watermark: "INBOX",
-    href: "/features/shared-inbox",
-  },
-  {
-    id: "campaigns",
-    tag: "Bulk Campaigns",
-    title: "REACH THOUSANDS.\nONE CLICK.",
-    desc: "Schedule and send personalised WhatsApp broadcasts to segmented lists. Real-time delivery tracking, retry logic, and CSAT follow-ups built in.",
-    img: "/screens/02-campaigns-broadcast.png",
-    watermark: "CAMPAIGNS",
-    href: "/features/campaigns",
-  },
-  {
-    id: "automation",
-    tag: "Automation",
-    title: "BUILD FLOWS.\nNOT BUSYWORK.",
-    desc: "Visual workflow builder for follow-up sequences, lead qualification, and routing — no code required. Runs 24/7 so your team doesn't have to.",
-    img: "/screens/03-automation-workflow.png",
-    watermark: "AUTOMATE",
-    href: "/features/automation",
-  },
-  {
-    id: "analytics",
-    tag: "Analytics",
-    title: "DATA THAT\nDRIVES DEALS.",
-    desc: "Track response times, delivery rates, agent performance, and CSAT scores. Export reports or pipe to your BI tool via API.",
-    img: "/screens/04-analytics-dashboard.png",
-    watermark: "ANALYTICS",
-    href: "/features/analytics",
-  },
-  {
-    id: "deals",
-    tag: "Deals Pipeline",
-    title: "TRACK EVERY\nDEAL. ALWAYS.",
-    desc: "Full CRM pipeline for WhatsApp-driven sales. Move deals through stages, set values, assign owners, and forecast revenue — without leaving the platform.",
-    img: "/screens/10-deals-pipeline.png",
-    watermark: "DEALS",
-    href: "/features/deals",
-  },
-  {
-    id: "sequences",
-    tag: "Sequences",
-    title: "DRIP ON\nAUTOPILOT.",
-    desc: "Build multi-step WhatsApp drip sequences. Enrol contacts automatically, space messages by days or hours, and stop the moment they reply.",
-    img: "/screens/11-sequences-drip.png",
-    watermark: "DRIP",
-    href: "/features/sequences",
-  },
-];
-
-// Single pinned feature panel — each gets its own 200vh scroll budget
-function FeaturePin({ feat, reverse }: { feat: typeof featureReveals[0]; reverse: boolean }) {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const rafRef   = useRef<number>(0);
-  const [p, setP] = useState(0); // 0→1 through this panel's scroll range
-  const { mobile, tablet } = useBreakpoint();
-
-  useEffect(() => {
-    const tick = () => {
-      const el = outerRef.current;
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        const total = el.offsetHeight - window.innerHeight;
-        const scrolled = Math.max(0, -rect.top);
-        setP(Math.min(1, Math.max(0, scrolled / total)));
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
-
-  // Smooth easing
-  const ease = (v: number) => v < 0.5 ? 2*v*v : -1+(4-2*v)*v;
-
-  // Phase 0→0.5: content enters (clip-path wipe + slide)
-  // Phase 0.5→1: fully visible hold — NO exit fade (next panel overlays seamlessly)
-  const enterP  = Math.min(1, p / 0.5);
-  const entered = ease(enterP);
-
-  // Image panel: clips in from the outer edge
-  const imgClip = reverse
-    ? `inset(0 ${(1 - entered) * 100}% 0 0)`
-    : `inset(0 0 0 ${(1 - entered) * 100}%)`;
-
-  // Text: slides in from opposite side, fully opaque once entered
-  const textSlide = reverse
-    ? (1 - entered) * 60
-    : -(1 - entered) * 60;
-
-
-  if (mobile || tablet) {
-    return (
-      <section style={{ background: "#131313", padding: mobile ? "72px 20px" : "80px 32px", position: "relative", overflow: "hidden" }}>
-        <div className="font-headline" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: mobile ? "22vw" : "15vw", fontWeight: 900, color: "rgba(255,255,255,0.014)", letterSpacing: "-0.04em", pointerEvents: "none", userSelect: "none", whiteSpace: "nowrap" }}>{feat.watermark}</div>
-        <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <span style={{ width: 28, height: 2, background: "#ffb77d", display: "inline-block" }} />
-            <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#ffb77d" }}>{feat.tag}</span>
-          </div>
-          <h2 className="font-headline" style={{ fontSize: "clamp(30px,8vw,48px)", fontWeight: 900, lineHeight: 0.92, letterSpacing: "-0.045em", textTransform: "uppercase", color: "#e5e2e1", marginBottom: 18, whiteSpace: "pre-line" }}>{feat.title}</h2>
-          <p className="font-body" style={{ fontSize: 14, color: "#dbc2b0", lineHeight: 1.75, marginBottom: 28, maxWidth: 480 }}>{feat.desc}</p>
-          <a href={feat.href} style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", padding: "12px 24px", borderRadius: 6, background: "#2a2a2a", textDecoration: "none", color: "#dbc2b0", border: "1px solid rgba(85,67,54,0.3)" }}>
-            Learn More <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_right_alt</span>
-          </a>
-          <div style={{ marginTop: 36, borderRadius: 10, border: "1px solid rgba(85,67,54,0.2)", overflow: "hidden", background: "#201f1f" }}>
-            <div style={{ height: 28, background: "#0e0e0e", display: "flex", alignItems: "center", padding: "0 12px", gap: 6 }}>
-              {[0,1,2].map(i => <span key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#353534", display: "inline-block" }} />)}
-            </div>
-            <Image src={feat.img} alt={feat.tag} width={760} height={475} style={{ width: "100%", height: "auto", display: "block" }} />
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <div ref={outerRef} style={{ height: "150vh", position: "relative" }}>
-      <div style={{
-        position: "sticky", top: 0, height: "100vh", overflow: "hidden",
-        background: "#0f0f0f",
-        display: "flex", flexDirection: reverse ? "row-reverse" : "row",
-      }}>
-        {/* ── Left / right: text half ───────────────────── */}
-        <div style={{
-          flex: "0 0 45%", display: "flex", alignItems: "center",
-          padding: reverse ? "0 5% 0 7%" : "0 7% 0 9%",
-          position: "relative", zIndex: 10,
-          opacity: entered,
-          transform: `translateX(${textSlide}px)`,
-          transition: "none",
-        }}>
-          {/* Watermark behind text */}
-          <div className="font-headline" style={{
-            position: "absolute", bottom: "8%", left: reverse ? "auto" : "5%", right: reverse ? "5%" : "auto",
-            fontSize: "11vw", fontWeight: 900, color: "rgba(255,255,255,0.022)",
-            letterSpacing: "-0.04em", pointerEvents: "none", userSelect: "none", whiteSpace: "nowrap",
-            lineHeight: 1,
-          }}>{feat.watermark}</div>
-
-          <div style={{ position: "relative" }}>
-            {/* Step number */}
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28 }}>
-              <span style={{ width: 36, height: 2, background: "linear-gradient(to right, #ffb77d, #d97707)", display: "inline-block" }} />
-              <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#ffb77d" }}>{feat.tag}</span>
-            </div>
-
-            <h2 className="font-headline" style={{
-              fontSize: "clamp(38px,4vw,64px)", fontWeight: 900, lineHeight: 0.88,
-              letterSpacing: "-0.045em", textTransform: "uppercase", color: "#e5e2e1",
-              marginBottom: 24, whiteSpace: "pre-line",
-            }}>{feat.title}</h2>
-
-            <p className="font-body" style={{
-              fontSize: 15, color: "rgba(219,194,176,0.75)", lineHeight: 1.85,
-              maxWidth: 380, marginBottom: 40,
-            }}>{feat.desc}</p>
-
-            <a href={feat.href} style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
-              fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-              padding: "13px 28px", borderRadius: 6,
-              background: "transparent",
-              textDecoration: "none", color: "#dbc2b0",
-              border: "1px solid rgba(85,67,54,0.4)",
-              transition: "all 0.2s",
-            }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,183,125,0.5)";
-                (e.currentTarget as HTMLAnchorElement).style.color = "#ffb77d";
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(85,67,54,0.4)";
-                (e.currentTarget as HTMLAnchorElement).style.color = "#dbc2b0";
-              }}
-            >
-              Explore {feat.tag}
-              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>arrow_right_alt</span>
-            </a>
-          </div>
-        </div>
-
-        {/* ── Right / left: screenshot half ─────────────── */}
-        <div style={{
-          flex: "0 0 55%", position: "relative", overflow: "hidden",
-        }}>
-          {/* Clip-path wipe reveal */}
-          <div style={{
-            position: "absolute", inset: 0,
-            clipPath: imgClip,
-            transition: "none",
-          }}>
-            {/* Subtle gradient fade on inner edge */}
-            <div style={{
-              position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none",
-              background: reverse
-                ? "linear-gradient(to right, #0f0f0f 0%, transparent 12%)"
-                : "linear-gradient(to left, #0f0f0f 0%, transparent 12%)",
-            }} />
-            {/* Glow */}
-            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "60%", height: "50%", background: "rgba(217,119,6,0.1)", filter: "blur(100px)", borderRadius: "50%", pointerEvents: "none", zIndex: 4 }} />
-            {/* Screenshot */}
-            <div style={{
-              position: "absolute",
-              top: "50%", left: "4%", right: "4%",
-              transform: "translateY(-50%)",
-              borderRadius: 12, overflow: "hidden",
-              border: "1px solid rgba(85,67,54,0.2)",
-              background: "#1a1a1a",
-              boxShadow: "0 48px 120px -20px rgba(0,0,0,0.7)",
-            }}>
-              {/* Fake browser bar */}
-              <div style={{ height: 34, background: "#111", display: "flex", alignItems: "center", padding: "0 14px", gap: 7, borderBottom: "1px solid rgba(85,67,54,0.12)", flexShrink: 0 }}>
-                {[0,1,2].map(i => <span key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: i === 0 ? "#ff5f57" : i === 1 ? "#febc2e" : "#28c840", display: "inline-block" }} />)}
-                <div style={{ flex: 1, height: 18, background: "#1c1b1b", borderRadius: 3, marginLeft: 12, maxWidth: 240 }} />
-              </div>
-              <Image src={feat.img} alt={feat.tag} width={960} height={600} style={{ width: "100%", height: "auto", display: "block" }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll indicator — fades out once scrolling starts */}
-        <div style={{
-          position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)",
-          zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-          opacity: p < 0.06 ? 0.5 : 0, transition: "opacity 0.5s", pointerEvents: "none",
-        }}>
-          <span className="font-body" style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "#ffb77d" }}>SCROLL</span>
-          <div style={{ width: 1, height: 32, background: "linear-gradient(to bottom,#ffb77d,transparent)" }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FeatureScrollSection() {
-  return (
-    <>
-      {featureReveals.map((feat, i) => (
-        <FeaturePin key={feat.id} feat={feat} reverse={i % 2 === 1} />
-      ))}
-    </>
   );
 }
 
@@ -1431,23 +1456,23 @@ function InboxMockup({ activeTab, inView }: { activeTab: InboxTab; inView: boole
 
   const messages = [
     { from: "contact", text: "Hi, I placed order #WZ-29831 last week and haven't received it yet. I need help.", time: "10:42 AM" },
-    { from: "agent",   text: "Hi Priya! Let me look into this for you right away. Can you confirm the delivery address?", time: "10:44 AM" },
+    { from: "agent", text: "Hi Priya! Let me look into this for you right away. Can you confirm the delivery address?", time: "10:44 AM" },
     { from: "contact", text: "Yes, it's 14 MG Road, Bengaluru. I've been waiting 8 days now.", time: "10:45 AM" },
-    { from: "agent",   text: "I can see the shipment got delayed at our Bengaluru warehouse. I've escalated this.", time: "10:47 AM" },
+    { from: "agent", text: "I can see the shipment got delayed at our Bengaluru warehouse. I've escalated this.", time: "10:47 AM" },
     { from: "contact", text: "This is really frustrating. I'd like a refund please.", time: "10:49 AM" },
   ];
 
   // Color vars — warm amber theme matching homepage
-  const primary    = "#ffb77d";   // Amber primary
-  const surface    = "#141210";   // Dark warm surface
-  const surfaceHigh= "#1c1916";
-  const outline    = "rgba(255,183,125,0.10)";
-  const textPrimary= "#e5e2e1";
-  const textMuted  = "rgba(219,194,176,0.55)";
-  const success    = "#4ade80";
-  const warning    = "#f59e0b";
-  const error      = "#f87171";
-  const info       = "#ffb77d";
+  const primary = "#ffb77d";   // Amber primary
+  const surface = "#141210";   // Dark warm surface
+  const surfaceHigh = "#1c1916";
+  const outline = "rgba(255,183,125,0.10)";
+  const textPrimary = "#e5e2e1";
+  const textMuted = "rgba(219,194,176,0.55)";
+  const success = "#4ade80";
+  const warning = "#f59e0b";
+  const error = "#f87171";
+  const info = "#ffb77d";
 
   return (
     <div style={{
@@ -1574,7 +1599,7 @@ function InboxMockup({ activeTab, inView }: { activeTab: InboxTab; inView: boole
 
             {/* Entities */}
             <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-              {[["order_id","WZ-29831"],["days","8"],["location","Bengaluru"]].map(([k,v]) => (
+              {[["order_id", "WZ-29831"], ["days", "8"], ["location", "Bengaluru"]].map(([k, v]) => (
                 <span key={k} style={{ fontSize: 9, padding: "2px 6px", borderRadius: 3, background: "rgba(255,255,255,0.05)", color: textMuted }}>
                   <span style={{ fontWeight: 600 }}>{k}:</span> {v}
                 </span>
@@ -1584,7 +1609,7 @@ function InboxMockup({ activeTab, inView }: { activeTab: InboxTab; inView: boole
             {/* Labels + priority */}
             <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
               <span style={{ fontSize: 11 }}>🏷</span>
-              {["refund","logistics","e-commerce"].map(t => (
+              {["refund", "logistics", "e-commerce"].map(t => (
                 <span key={t} style={{ fontSize: 9, padding: "1px 6px", borderRadius: 3, background: "rgba(255,255,255,0.06)", color: textMuted }}>{t}</span>
               ))}
               <button style={{ fontSize: 9, color: primary, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Apply</button>
@@ -1677,9 +1702,9 @@ function AiFeaturesSection() {
   const [paused, setPaused] = useState(false);
   const pauseRef = useRef<ReturnType<typeof setTimeout>>(null);
   const tabs: Array<{ id: InboxTab; label: string; tagline: string }> = [
-    { id: "insights",  label: "AI Insights Panel",       tagline: "Sentiment, intent, entities, labels, priority, and KB answers — live inside every conversation." },
-    { id: "summary",   label: "Conversation Summary",    tagline: "One click summarises the full thread with key topics, outcome, and predicted CSAT." },
-    { id: "replies",   label: "Smart Reply Suggestions", tagline: "3 contextual reply chips generated from the last 20 messages — click to fill the input instantly." },
+    { id: "insights", label: "AI Insights Panel", tagline: "Sentiment, intent, entities, labels, priority, and KB answers — live inside every conversation." },
+    { id: "summary", label: "Conversation Summary", tagline: "One click summarises the full thread with key topics, outcome, and predicted CSAT." },
+    { id: "replies", label: "Smart Reply Suggestions", tagline: "3 contextual reply chips generated from the last 20 messages — click to fill the input instantly." },
   ];
 
   useEffect(() => {
@@ -1698,8 +1723,6 @@ function AiFeaturesSection() {
     pauseRef.current = setTimeout(() => setPaused(false), 15000);
   };
 
-  const active = tabs.find(t => t.id === activeTab)!;
-
   return (
     <section style={{ background: "#0d0d0d", padding: mobile ? "72px 20px" : tablet ? "88px 32px" : "112px 48px" }}>
       <div style={{ maxWidth: 1300, margin: "0 auto" }}>
@@ -1707,7 +1730,7 @@ function AiFeaturesSection() {
         {/* Header */}
         <div ref={ref} style={{ marginBottom: mobile ? 40 : 64 }}>
           <span className="font-body" style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase",
+            fontSize: 11, fontWeight: 700, letterSpacing: mobile ? "0.1em" : "0.22em", textTransform: "uppercase",
             color: "#ffb77d", display: "inline-block", marginBottom: 18,
             borderBottom: "1px solid rgba(255,183,125,0.25)", paddingBottom: 6,
             opacity: inView ? 1 : 0, transition: "all 0.7s ease",
@@ -1781,9 +1804,9 @@ function AiFeaturesSection() {
             {/* Feature chips */}
             <div style={{ marginTop: 12, paddingLeft: 20, display: "flex", flexWrap: "wrap", gap: 7 }}>
               {[
-                "Sentiment Analysis","Intent Detection","Entity Extraction",
-                "Auto-Categorization","Smart Replies","KB RAG Search",
-                "Conversation Summary","Priority Classification",
+                "Sentiment Analysis", "Intent Detection", "Entity Extraction",
+                "Auto-Categorization", "Smart Replies", "KB RAG Search",
+                "Conversation Summary", "Priority Classification",
               ].map(f => (
                 <span key={f} className="font-body" style={{
                   fontSize: 10, fontWeight: 600, padding: "4px 9px",
@@ -1794,37 +1817,44 @@ function AiFeaturesSection() {
             </div>
           </div>
 
-          {/* Right: MacBook frame with inbox mockup as screen */}
+          {/* Right: MacBook frame (desktop/tablet) or direct mockup (mobile) */}
           <div style={{ position: "relative" }}>
             {/* Glow behind */}
             <div className="animate-glow" style={{
               position: "absolute", inset: 0, background: "rgba(99,102,241,0.08)",
               filter: "blur(60px)", borderRadius: 16, transform: "translateY(16px)", pointerEvents: "none",
             }} />
-            {/* Laptop frame container */}
-            <div style={{ position: "relative", width: "100%" }}>
-              {/* Screen content — positioned inside the MacBook screen area */}
-              <div style={{
-                position: "absolute",
-                left: "11.33%",
-                top: "6.53%",
-                width: "77.34%",
-                height: "84.25%",
-                overflow: "hidden",
-                borderRadius: 4,
-                zIndex: 0,
-              }}>
-                <div style={{ transform: "scale(0.62)", transformOrigin: "top left", width: "161.3%", height: "161.3%" }}>
-                  <InboxMockup activeTab={activeTab} inView={inView} />
-                </div>
+            {mobile ? (
+              /* Mobile: render mockup directly, no MacBook frame */
+              <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,183,125,0.12)" }}>
+                <InboxMockup activeTab={activeTab} inView={inView} />
               </div>
-              {/* MacBook SVG frame on top */}
-              <img
-                src="/macbook-frame.svg"
-                alt="MacBook frame"
-                style={{ width: "100%", display: "block", position: "relative", zIndex: 1, pointerEvents: "none" }}
-              />
-            </div>
+            ) : (
+              /* Desktop/tablet: MacBook frame with scaled mockup inside */
+              <div style={{ position: "relative", width: "100%" }}>
+                {/* Screen content — positioned inside the MacBook screen area */}
+                <div style={{
+                  position: "absolute",
+                  left: "11.33%",
+                  top: "6.53%",
+                  width: "77.34%",
+                  height: "84.25%",
+                  overflow: "hidden",
+                  borderRadius: 4,
+                  zIndex: 0,
+                }}>
+                  <div style={{ transform: "scale(0.62)", transformOrigin: "top left", width: "161.3%", height: "161.3%" }}>
+                    <InboxMockup activeTab={activeTab} inView={inView} />
+                  </div>
+                </div>
+                {/* MacBook SVG frame on top */}
+                <img
+                  src="/macbook-frame.svg"
+                  alt="MacBook frame"
+                  style={{ width: "100%", display: "block", position: "relative", zIndex: 1, pointerEvents: "none" }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1837,16 +1867,16 @@ function StatsSection() {
   const { ref, inView } = useInView(0.15);
   const { mobile, tablet } = useBreakpoint();
 
-  const c1 = useCounter(1200, 1600, inView);
-  const c2 = useCounter(94, 1400, inView);
-  const c3 = useCounter(48, 1200, inView);
-  const c4 = useCounter(48500, 1800, inView);
+  const r1 = useCounter(1200, 1600, inView, n => `${n}+`);
+  const r2 = useCounter(94, 1400, inView, n => `${n}%`);
+  const r3 = useCounter(48, 1200, inView, n => `${(n / 10).toFixed(1)} min`);
+  const r4 = useCounter(48500, 1800, inView, n => n.toLocaleString());
 
   const metrics = [
-    { label: "Active Businesses", display: `${c1}+`, micro: "↑ Growing fast" },
-    { label: "Message Delivery Rate", display: `${c2}%`, micro: "Industry avg: 65%" },
-    { label: "Average Response Time", display: `${(c3 / 10).toFixed(1)} min`, micro: "↓ Down from 45 min" },
-    { label: "Conversations Handled", display: c4.toLocaleString(), micro: "This month" },
+    { label: "Active Businesses", elRef: r1, initial: "0+", micro: "↑ Growing fast" },
+    { label: "Message Delivery Rate", elRef: r2, initial: "0%", micro: "Industry avg: 65%" },
+    { label: "Average Response Time", elRef: r3, initial: "0.0 min", micro: "↓ Down from 45 min" },
+    { label: "Conversations Handled", elRef: r4, initial: "0", micro: "This month" },
   ];
 
   return (
@@ -1860,7 +1890,7 @@ function StatsSection() {
 
           <div ref={ref} style={{ textAlign: "center", marginBottom: 56 }}>
             <span className="font-body" style={{
-              fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#ffb77d",
+              fontSize: 11, fontWeight: 700, letterSpacing: mobile ? "0.1em" : "0.22em", textTransform: "uppercase", color: "#ffb77d",
               display: "inline-block", borderBottom: "1px solid rgba(255,183,125,0.3)", paddingBottom: 6, marginBottom: 20,
               opacity: inView ? 1 : 0, transition: "all 0.7s ease",
             }}>BY THE NUMBERS</span>
@@ -1886,8 +1916,8 @@ function StatsSection() {
                 opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(40px)",
                 transition: `all 0.8s ${i * 0.1}s ease`,
               }}>
-                <div className="font-headline" style={{ fontSize: mobile ? "clamp(36px,8vw,64px)" : "clamp(52px,4.5vw,88px)", fontWeight: 900, letterSpacing: "-0.045em", color: "#ffb77d", lineHeight: 1, marginBottom: 10 }}>
-                  {m.display}
+                <div ref={m.elRef as React.RefObject<HTMLDivElement>} className="font-headline" style={{ fontSize: mobile ? "clamp(36px,8vw,64px)" : "clamp(52px,4.5vw,88px)", fontWeight: 900, letterSpacing: "-0.045em", color: "#ffb77d", lineHeight: 1, marginBottom: 10 }}>
+                  {m.initial}
                 </div>
                 <div className="font-body" style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: "#dbc2b0", marginBottom: 14 }}>{m.label}</div>
                 <div className="font-body" style={{ fontSize: 12, color: i === 2 ? "#a3defe" : "rgba(163,140,124,0.6)" }}>{m.micro}</div>
@@ -1970,7 +2000,7 @@ function PricingSection() {
         <div style={{ height: 64 }} />
 
         <div ref={ref} style={{ textAlign: "center", marginBottom: 56 }}>
-          <span className="font-body" style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#ffb77d", marginBottom: 18, opacity: inView ? 1 : 0, transition: "all 0.7s ease" }}>
+          <span className="font-body" style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: mobile ? "0.1em" : "0.22em", textTransform: "uppercase", color: "#ffb77d", marginBottom: 18, opacity: inView ? 1 : 0, transition: "all 0.7s ease" }}>
             Pricing
           </span>
           <h2 className="font-headline" style={{
@@ -2049,7 +2079,7 @@ function PricingSection() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
             <span className="font-body" style={{ fontSize: 13, color: "#ffb77d", fontWeight: 700 }}>₹3,999<span style={{ color: "#a38c7c", fontWeight: 400 }}>/mo</span></span>
-            <a href="mailto:sales@wazelo.in" style={{ display: "flex", alignItems: "center", gap: 6, color: "#ffb77d", fontWeight: 700, fontSize: 12, textDecoration: "none", whiteSpace: "nowrap", border: "1px solid rgba(255,183,125,0.3)", padding: "10px 20px", borderRadius: 6 }}>
+            <a href="mailto:sales@wazelo.in" style={{ display: "flex", alignItems: "center", gap: 6, color: "#ffb77d", fontWeight: 700, fontSize: 12, textDecoration: "none", border: "1px solid rgba(255,183,125,0.3)", padding: "10px 20px", borderRadius: 6 }}>
               <span className="font-body">Contact Sales</span>
               <span className="material-symbols-outlined" style={{ fontSize: 15 }}>arrow_forward</span>
             </a>
@@ -2071,7 +2101,7 @@ function CtaSection() {
       {!mobile && <div className="font-headline" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", fontSize: "20vw", fontWeight: 900, color: "rgba(255,255,255,0.016)", letterSpacing: "-0.05em", pointerEvents: "none", userSelect: "none", whiteSpace: "nowrap" }}>WAZELO</div>}
 
       <div ref={ref} style={{ position: "relative", zIndex: 10, maxWidth: 860 }}>
-        <span className="font-body" style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "#ffb77d", marginBottom: 32, opacity: inView ? 1 : 0, transition: "all 0.7s ease" }}>
+        <span className="font-body" style={{ display: "block", fontSize: 11, fontWeight: 700, letterSpacing: mobile ? "0.1em" : "0.3em", textTransform: "uppercase", color: "#ffb77d", marginBottom: 32, opacity: inView ? 1 : 0, transition: "all 0.7s ease" }}>
           Get Started Today
         </span>
         <h2 className="font-headline" style={{
@@ -2112,7 +2142,7 @@ function Footer() {
           gridTemplateColumns: mobile ? "1fr 1fr" : tablet ? "1fr 1fr 1fr" : "2fr 1fr 1fr 1fr",
           gap: mobile ? 32 : 48, marginBottom: 48,
         }}>
-          <div style={{ gridColumn: mobile ? "1 / -1" : "auto" }}>
+          <div style={{ gridColumn: (mobile || tablet) ? "1 / -1" : "auto" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <Image src="/logo/logo.jpeg" alt="Wazelo CRM" width={32} height={32} style={{ height: 32, width: 32, objectFit: "contain", mixBlendMode: "screen" }} />
               <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.03em", color: "#e5e2e1", fontFamily: "'Inter', sans-serif" }}>
@@ -2150,21 +2180,159 @@ function Footer() {
   );
 }
 
+// ─── Fixed Scroll Indicator (right corner) ───────────────────────────────────
+function ScrollIndicator() {
+  const { mobile } = useBreakpoint();
+  const wrapRef    = useRef<HTMLDivElement>(null);
+  const fillRef    = useRef<HTMLDivElement>(null);
+  const dotRef     = useRef<HTMLDivElement>(null);
+  const ringRef    = useRef<SVGCircleElement>(null);
+  const arrowRef   = useRef<HTMLSpanElement>(null);
+  const labelRef   = useRef<HTMLSpanElement>(null);
+  const pctRef     = useRef<HTMLSpanElement>(null);
+  const prevY      = useRef(0);
+  const isBottomRef = useRef(false);
+
+  const R    = 28;
+  const circ = 2 * Math.PI * R;
+
+  useEffect(() => {
+    if (mobile) return;
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    const update = () => {
+      const y     = window.scrollY;
+      const total = document.body.scrollHeight - window.innerHeight || 1;
+      const p     = Math.min(y / total, 1);
+      const pct   = Math.round(p * 100);
+      const isBottom = pct >= 98;
+      const goingUp  = y < prevY.current;
+      prevY.current  = y;
+      isBottomRef.current = isBottom;
+
+      // Wrapper visibility — no React state, direct DOM
+      wrap.style.opacity   = y > 80 ? "1" : "0";
+      wrap.style.transform = y > 80 ? "translateY(0)" : "translateY(20px)";
+      wrap.style.pointerEvents = y > 80 ? "auto" : "none";
+
+      // Track fill height
+      if (fillRef.current) fillRef.current.style.height = `${p * 100}%`;
+
+      // Dot position on track
+      if (dotRef.current) dotRef.current.style.top = `${p * 100}%`;
+
+      // SVG ring dashoffset
+      if (ringRef.current) ringRef.current.style.strokeDashoffset = String(circ - circ * p);
+
+      // Arrow rotation
+      if (arrowRef.current)
+        arrowRef.current.style.transform = (isBottom || goingUp) ? "rotate(180deg)" : "rotate(0deg)";
+
+      // Label text
+      if (labelRef.current)
+        labelRef.current.textContent = isBottom ? "scroll up" : goingUp ? "scroll up" : "scroll down";
+
+      // Percentage text
+      if (pctRef.current) pctRef.current.textContent = `${pct}%`;
+    };
+
+    window.addEventListener("scroll", update, { passive: true });
+    update(); // init
+    return () => window.removeEventListener("scroll", update);
+  }, [mobile, circ]);
+
+  if (mobile) return null;
+
+  const handleClick = () => {
+    if (isBottomRef.current) window.scrollTo({ top: 0, behavior: "smooth" });
+    else window.scrollBy({ top: window.innerHeight * 0.85, behavior: "smooth" });
+  };
+
+  return (
+    <div ref={wrapRef} style={{
+      position: "fixed", right: 28, bottom: 36, zIndex: 999,
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+      opacity: 0, transform: "translateY(20px)",
+      transition: "opacity 0.4s ease, transform 0.4s ease",
+      pointerEvents: "none",
+    }}>
+      {/* Direction label */}
+      <span ref={labelRef} style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
+        color: "rgba(255,183,125,0.45)", fontFamily: "Manrope, sans-serif",
+        writingMode: "vertical-rl", transform: "rotate(180deg)",
+      }}>scroll down</span>
+
+      {/* Vertical track */}
+      <div style={{ width: 2, height: 80, background: "rgba(255,183,125,0.08)", borderRadius: 2, position: "relative" }}>
+        <div ref={fillRef} style={{
+          position: "absolute", top: 0, left: 0, width: "100%", height: "0%",
+          background: "linear-gradient(to bottom, rgba(255,183,125,0.3), #ffb77d)",
+          borderRadius: 2,
+        }} />
+        <div ref={dotRef} style={{
+          position: "absolute", left: "50%", top: "0%",
+          transform: "translate(-50%, -50%)",
+          width: 8, height: 8, borderRadius: "50%",
+          background: "#ffb77d", boxShadow: "0 0 10px 2px rgba(255,183,125,0.6)",
+        }} />
+      </div>
+
+      {/* Circle progress button */}
+      <button onClick={handleClick} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", position: "relative", width: 64, height: 64 }}>
+        <svg width={64} height={64} style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
+          <circle cx={32} cy={32} r={R} fill="rgba(255,183,125,0.04)" stroke="rgba(255,183,125,0.1)" strokeWidth={2} />
+          <circle
+            ref={ringRef}
+            cx={32} cy={32} r={R} fill="none"
+            stroke="#ffb77d" strokeWidth={2}
+            strokeDasharray={circ} strokeDashoffset={circ}
+            strokeLinecap="round"
+          />
+        </svg>
+        <span ref={arrowRef} className="material-symbols-outlined" style={{
+          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 26, color: "#ffb77d",
+          transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+        }}>keyboard_arrow_down</span>
+      </button>
+
+      {/* Percentage */}
+      <span ref={pctRef} style={{
+        fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+        color: "rgba(255,183,125,0.5)", fontFamily: "Manrope, sans-serif",
+      }}>0%</span>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
     <>
+      <ScrollIndicator />
       <Navbar />
       <HeroSection />
       <MarqueeTicker />
-      <FeaturesSection />
-      <ScrollSequenceSection />
-      <PartnersSection />
-      <FeatureScrollSection />
-      <AiChatSection />
+      <SectionDivider bg="#0e0e0e" label="AI Features" />
       <AiFeaturesSection />
-      <StatsSection />
+      {/* <SectionDivider bg="#131313" label="Integrations" /> */}
+      <PartnersSection />
+      {/* <SectionDivider bg="#0e0e0e" label="AI Chat" /> */}
+      <AiChatSection />
+      {/* <SectionDivider bg="#0b0b0b" label="Platform" /> */}
+      <FeaturesSection />
+      {/* <SectionDivider bg="#0a0a0a" label="Product" /> */}
+      <ScrollSequenceSection />
+      <SectionDivider bg="#131313" label="Ecosystem" />
+      <PartnersSection />
+      {/* <FeatureScrollSection /> */}
+      {/* <SectionDivider bg="#0e0e0e" label="Pricing" /> */}
       <PricingSection />
+      {/* <SectionDivider bg="#131313" label="Impact" /> */}
+      <StatsSection />
+      <SectionDivider bg="#0e0e0e" label="Get Started" />
       <CtaSection />
       <Footer />
     </>

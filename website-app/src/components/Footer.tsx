@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useBreakpoint } from "@/lib/wazelo";
 
 const cols = [
@@ -21,7 +22,7 @@ export default function Footer() {
           gridTemplateColumns: mobile ? "1fr 1fr" : tablet ? "1fr 1fr 1fr" : "2fr 1fr 1fr 1fr",
           gap: mobile ? 32 : 48, marginBottom: 48,
         }}>
-          <div style={{ gridColumn: mobile ? "1 / -1" : "auto" }}>
+          <div style={{ gridColumn: (mobile || tablet) ? "1 / -1" : "auto" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <Image src="/logo/logo.jpeg" alt="Wazelo CRM" width={32} height={32} style={{ height: 32, width: 32, objectFit: "contain", mixBlendMode: "screen" }} />
               <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.03em", color: "#e5e2e1", fontFamily: "'Inter', sans-serif" }}>
@@ -38,10 +39,10 @@ export default function Footer() {
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {col.links.map(([label, href]) => (
                   <li key={label} style={{ marginBottom: 10 }}>
-                    <a href={href} style={{ fontSize: 13, color: "rgba(163,140,124,0.7)", textDecoration: "none", transition: "color 0.2s", fontFamily: "'Inter', sans-serif" }}
+                    <Link href={href} style={{ fontSize: 13, color: "rgba(163,140,124,0.7)", textDecoration: "none", transition: "color 0.2s", fontFamily: "'Inter', sans-serif" }}
                       onMouseEnter={e => ((e.target as HTMLAnchorElement).style.color = "#e5e2e1")}
                       onMouseLeave={e => ((e.target as HTMLAnchorElement).style.color = "rgba(163,140,124,0.7)")}
-                    >{label}</a>
+                    >{label}</Link>
                   </li>
                 ))}
               </ul>
