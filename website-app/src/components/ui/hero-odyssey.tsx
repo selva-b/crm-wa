@@ -352,8 +352,23 @@ export const HeroSection: React.FC = () => {
             <motion.div custom={5} variants={fade} initial="hidden" animate="show" className="wz-arc-pills"
               style={{ position: "relative", width: "100%", height: 160, marginTop: 12, marginBottom: 0, flexShrink: 0 }}>
               {/* Arc curve SVG */}
+              {/* Arc curve SVG */}
               <svg viewBox="0 0 700 160" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
-                <path d="M 20 155 Q 350 -40 680 155" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+                <defs>
+                  <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%"   stopColor="#d97707" stopOpacity="0" />
+                    <stop offset="40%"  stopColor="#ef4444" stopOpacity="0.7" />
+                    <stop offset="60%"  stopColor="#d97707" stopOpacity="0.7" />
+                    <stop offset="100%" stopColor="#d97707" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="arcGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%"   stopColor="#d97707" stopOpacity="0" />
+                    <stop offset="50%"  stopColor="#ef4444" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor="#d97707" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path d="M 20 155 Q 350 -40 680 155" fill="none" stroke="url(#arcGlow)" strokeWidth="8" />
+                <path d="M 20 155 Q 350 -40 680 155" fill="none" stroke="url(#arcGrad)" strokeWidth="1.5" />
               </svg>
               {/* Pills — positioned along the arc */}
               {([

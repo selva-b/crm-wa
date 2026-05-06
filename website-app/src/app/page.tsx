@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/ui/hero-odyssey";
 
 // ─── Responsive hook ─────────────────────────────────────────────────────────
@@ -1185,159 +1185,194 @@ function FeaturesSection() {
   );
 }
 
-// ─── Platform Walkthrough Section ────────────────────────────────────────────
+// ─── Platform Walkthrough Section (Apple-style scroll sequence) ──────────────
 
-const WALKTHROUGH_TABS = [
-  { id: 1, label: "Shared Inbox",   frame: "ezgif-frame-001.jpg", desc: "Your whole team in one WhatsApp inbox. Assign conversations, reply faster, resolve sooner." },
-  { id: 2, label: "Bulk Campaigns", frame: "ezgif-frame-002.jpg", desc: "Broadcast personalised messages to thousands. Track delivery and opens in real-time." },
-  { id: 3, label: "Automation",     frame: "ezgif-frame-003.jpg", desc: "Set up auto-replies and workflow rules. Runs 24/7 without you lifting a finger." },
-  { id: 4, label: "AI Insights",    frame: "ezgif-frame-004.jpg", desc: "Sentiment, intent, and smart reply suggestions — live inside every conversation." },
-  { id: 5, label: "Deals Pipeline", frame: "ezgif-frame-005.jpg", desc: "Track every deal through stages. See your revenue forecast at a glance." },
-  { id: 6, label: "Analytics",      frame: "ezgif-frame-006.jpg", desc: "Delivery rates, CSAT scores, team performance — one dashboard." },
+const SEQUENCE_FRAMES: string[] = [
+  ...Array.from({ length: 7  }, (_, i) => `ezgif-frame-${String(i + 1).padStart(3, "0")}.jpg`),
+  ...Array.from({ length: 29 }, (_, i) => `ezgif-frame-${String(i + 12).padStart(3, "0")}.jpg`),
 ];
+const FRAME_COUNT = SEQUENCE_FRAMES.length; // 36
 
 function ScrollSequenceSection() {
-  const { ref, inView } = useInView(0.1);
+  const outerRef       = useRef<HTMLDivElement>(null);
+  const canvasRef      = useRef<HTMLCanvasElement>(null);
+  const imagesRef      = useRef<HTMLImageElement[]>([]);
+  const frameRef       = useRef(0);
+  const rafRef         = useRef<number>(0);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const counterRef     = useRef<HTMLSpanElement>(null);
+  const headerRef      = useRef<HTMLDivElement>(null);
+  const scrollHintRef  = useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = useState(false);
   const { mobile } = useBreakpoint();
-  const [active, setActive] = useState(0);
-  const [tabProgress, setTabProgress] = useState(0);
-  const pauseRef = useRef(false);
-  const tabStartRef = useRef(Date.now());
+  const mobileRef = useRef(mobile);
+  useEffect(() => { mobileRef.current = mobile; }, [mobile]);
 
+  // Preload all frames
   useEffect(() => {
-    if (!inView) return;
-    const id = setInterval(() => {
-      if (!pauseRef.current) {
-        setActive(i => (i + 1) % WALKTHROUGH_TABS.length);
-        tabStartRef.current = Date.now();
-        setTabProgress(0);
-      }
-    }, 4000);
-    return () => clearInterval(id);
-  }, [inView]);
+    let done = 0;
+    imagesRef.current = SEQUENCE_FRAMES.map((name) => {
+      const img = new window.Image();
+      img.src = `/scroll-sequence/${name}`;
+      img.onload  = () => { done++; if (done === FRAME_COUNT) setLoaded(true); };
+      img.onerror = () => { done++; if (done === FRAME_COUNT) setLoaded(true); };
+      return img;
+    });
+  }, []);
 
+  // Draw frame to canvas
+  const drawFrame = useCallback((index: number) => {
+    const canvas = canvasRef.current;
+    const img = imagesRef.current[index];
+    if (!canvas || !img || !img.complete || img.naturalWidth === 0) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
+    const scale = Math.max(cw / iw, ch / ih);
+    const dw = iw * scale;
+    const dh = ih * scale;
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+  }, []);
+
+  // RAF loop — no setState, all DOM updates are direct to avoid re-render
   useEffect(() => {
-    if (!inView) return;
-    tabStartRef.current = Date.now();
-    setTabProgress(0);
-    let rafId: number;
+    if (mobileRef.current) return;
     const tick = () => {
-      setTabProgress(Math.min((Date.now() - tabStartRef.current) / 4000, 1));
-      rafId = requestAnimationFrame(tick);
+      const outer = outerRef.current;
+      if (outer) {
+        const rect = outer.getBoundingClientRect();
+        const totalScroll = outer.offsetHeight - window.innerHeight;
+        const scrolled = Math.max(0, -rect.top);
+        const p = Math.min(1, Math.max(0, scrolled / totalScroll));
+        // Progress bar
+        if (progressBarRef.current) progressBarRef.current.style.width = `${p * 100}%`;
+
+        // Frame counter
+        const displayFrame = Math.min(FRAME_COUNT - 1, Math.round(p * (FRAME_COUNT - 1)));
+        if (counterRef.current) {
+          counterRef.current.textContent = `${String(displayFrame + 1).padStart(2, "0")} / ${String(FRAME_COUNT).padStart(2, "0")}`;
+        }
+
+        // Header slide-out
+        if (headerRef.current) {
+          const opacity = p < 0.7 ? 1 - p / 0.7 : 0;
+          headerRef.current.style.opacity = String(opacity);
+          headerRef.current.style.transform = `translateX(${-p * 120}px)`;
+        }
+
+        // Scroll hint fade-out
+        if (scrollHintRef.current) {
+          scrollHintRef.current.style.opacity = p < 0.08 ? "1" : "0";
+        }
+
+        // Draw frame only when it changes
+        if (displayFrame !== frameRef.current) {
+          frameRef.current = displayFrame;
+          drawFrame(displayFrame);
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
     };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [inView, active]);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [drawFrame]);
 
-  const tab = WALKTHROUGH_TABS[active];
+  // Redraw when images finish loading
+  useEffect(() => {
+    if (loaded) drawFrame(frameRef.current);
+  }, [loaded, drawFrame]);
 
+  // Mobile fallback
+  if (mobile) {
+    return (
+      <section style={{ background: "#0d0d0d", padding: "64px 20px", textAlign: "center" }}>
+        <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#ffb77d", display: "block", marginBottom: 16 }}>PLATFORM WALKTHROUGH</span>
+        <h2 className="font-headline" style={{ fontSize: "clamp(32px,9vw,52px)", fontWeight: 900, lineHeight: 0.92, letterSpacing: "-0.045em", color: "#e5e2e1", marginBottom: 32 }}>
+          SEE IT IN ACTION.
+        </h2>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`/scroll-sequence/${SEQUENCE_FRAMES[0]}`} alt="Wazelo CRM walkthrough" style={{ width: "100%", height: "auto", borderRadius: 8, border: "1px solid rgba(85,67,54,0.2)" }} />
+      </section>
+    );
+  }
+
+  // Desktop — sticky canvas scroll sequence
   return (
-    <section style={{ background: "#0d0d0d", padding: mobile ? "72px 20px 80px" : "112px 48px 128px" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <div ref={ref} style={{ marginBottom: mobile ? 40 : 64 }}>
-          <span className="font-body" style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase",
-            color: "#ffb77d", display: "block", marginBottom: 14,
-            opacity: inView ? 1 : 0, transition: "opacity 0.6s ease",
-          }}>PLATFORM WALKTHROUGH</span>
+    <div ref={outerRef} style={{ height: "350vh", position: "relative", background: "#0d0d0d" }}>
+      <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", background: "#0d0d0d" }}>
+
+        {/* Header — animated via direct DOM in RAF */}
+        <div ref={headerRef} style={{
+          position: "absolute", top: "8%", left: "5%", zIndex: 30,
+          pointerEvents: "none",
+        }}>
+          <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#ffb77d", display: "block", marginBottom: 14 }}>
+            PLATFORM WALKTHROUGH
+          </span>
           <h2 className="font-headline" style={{
-            fontSize: mobile ? "clamp(32px,9vw,52px)" : "clamp(40px,4.5vw,64px)",
-            fontWeight: 900, lineHeight: 0.92, letterSpacing: "-0.045em",
-            color: "#e5e2e1",
-            opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(24px)",
-            transition: "opacity 0.8s 0.1s ease, transform 0.8s 0.1s ease",
+            fontSize: "clamp(36px,4.5vw,64px)", fontWeight: 900, lineHeight: 0.9,
+            letterSpacing: "-0.045em", color: "#e5e2e1", maxWidth: 520,
           }}>
-            See Wazelo<br />
-            <span style={{ color: "#ffb77d" }}>in Action.</span>
+            SEE WAZELO<br />
+            <span style={{ color: "#ffb77d" }}>IN ACTION.</span>
           </h2>
         </div>
 
-        {/* Tab pills */}
-        <div style={{
-          display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20,
-          opacity: inView ? 1 : 0, transition: "opacity 0.7s 0.2s ease",
-        }}>
-          {WALKTHROUGH_TABS.map((t, i) => (
-            <div key={t.id} style={{ position: "relative" }}>
-              <button
-                onClick={() => {
-                  setActive(i);
-                  tabStartRef.current = Date.now();
-                  setTabProgress(0);
-                  pauseRef.current = true;
-                  setTimeout(() => { pauseRef.current = false; }, 15000);
-                }}
-                className="font-body"
-                style={{
-                  fontSize: 12, fontWeight: 700, padding: "8px 18px 10px", borderRadius: 100,
-                  border: `1px solid ${i === active ? "rgba(255,183,125,0.4)" : "rgba(85,67,54,0.25)"}`,
-                  background: i === active ? "rgba(255,183,125,0.1)" : "transparent",
-                  color: i === active ? "#ffb77d" : "rgba(163,140,124,0.6)",
-                  cursor: "pointer", transition: "all 0.2s ease",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {String(i + 1).padStart(2, "0")}  {t.label}
-              </button>
-              {i === active && (
-                <div style={{ position: "absolute", bottom: 3, left: "10%", right: "10%", height: 2, borderRadius: 2, background: "rgba(255,183,125,0.15)", overflow: "hidden", pointerEvents: "none" }}>
-                  <div style={{ height: "100%", width: `${tabProgress * 100}%`, background: "#ffb77d", borderRadius: 2, transition: "none" }} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        {/* Canvas — full bleed, cover fit */}
+        <canvas
+          ref={canvasRef}
+          width={1920}
+          height={1080}
+          aria-label="Wazelo CRM platform walkthrough animation"
+          style={{
+            position: "absolute", inset: 0,
+            width: "100%", height: "100%",
+            opacity: loaded ? 1 : 0,
+            transition: "opacity 0.6s ease",
+          }}
+        />
 
-        {/* Tab description */}
-        <p className="font-body" style={{
-          fontSize: 15, color: "#dbc2b0", fontWeight: 300, marginBottom: 24, lineHeight: 1.6,
-          opacity: inView ? 1 : 0, transition: "opacity 0.6s 0.25s ease",
-          minHeight: 28,
-        }}>
-          {tab.desc}
-        </p>
-
-        {/* Frame image */}
+        {/* Gradient overlay */}
         <div style={{
-          position: "relative", borderRadius: 12, overflow: "hidden",
-          border: "1px solid rgba(85,67,54,0.2)",
-          boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
-          opacity: inView ? 1 : 0, transition: "opacity 0.9s 0.3s ease",
-        }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/scroll-sequence/${tab.frame}`}
-            alt={`Wazelo CRM — ${tab.label}`}
-            style={{ width: "100%", height: "auto", display: "block" }}
-          />
-          {/* Dot progress indicators */}
-          <div style={{
-            position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
-            display: "flex", gap: 6,
-          }}>
-            {WALKTHROUGH_TABS.map((_, i) => (
-              <div
-                key={i}
-                onClick={() => { setActive(i); tabStartRef.current = Date.now(); setTabProgress(0); pauseRef.current = true; setTimeout(() => { pauseRef.current = false; }, 15000); }}
-                style={{
-                  width: i === active ? 20 : 6, height: 6, borderRadius: 100,
-                  background: i === active ? "#ffb77d" : "rgba(255,255,255,0.25)",
-                  transition: "width 0.3s ease, background 0.3s ease",
-                  cursor: "pointer",
-                }}
-              />
-            ))}
+          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 20,
+          background: "linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, transparent 25%, transparent 75%, rgba(13,13,13,0.7) 100%)",
+        }} />
+
+        {/* Loading */}
+        {!loaded && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 25 }}>
+            <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(163,140,124,0.4)" }}>LOADING...</span>
           </div>
+        )}
+
+        {/* Progress bar — width driven by ref */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 2, background: "rgba(85,67,54,0.15)", zIndex: 30 }}>
+          <div ref={progressBarRef} style={{ height: "100%", width: "0%", background: "linear-gradient(90deg, #ffb77d, #d97707)" }} />
         </div>
 
-        {/* Frame counter */}
-        <div style={{ textAlign: "right", marginTop: 10 }}>
-          <span className="font-body" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(163,140,124,0.4)" }}>
-            {String(active + 1).padStart(2, "0")} / {String(WALKTHROUGH_TABS.length).padStart(2, "0")}
+        {/* Frame counter — text driven by ref */}
+        <div style={{ position: "absolute", bottom: 20, right: 48, zIndex: 30 }}>
+          <span ref={counterRef} className="font-body" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(163,140,124,0.45)" }}>
+            01 / {String(FRAME_COUNT).padStart(2, "0")}
           </span>
         </div>
+
+        {/* Scroll hint — ref for opacity */}
+        <div ref={scrollHintRef} style={{
+          position: "absolute", bottom: 36, left: "50%", transform: "translateX(-50%)",
+          zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+          opacity: 1, transition: "opacity 0.4s ease", pointerEvents: "none",
+        }}>
+          <span className="font-body" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(255,183,125,0.6)" }}>SCROLL</span>
+          <div style={{ width: 1, height: 32, background: "linear-gradient(to bottom, rgba(255,183,125,0.6), transparent)" }} />
+        </div>
+
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -2198,14 +2233,7 @@ function CtaSection() {
             Start Your Free Trial
             <span className="material-symbols-outlined" style={{ fontSize: mobile ? 18 : 22 }}>arrow_forward</span>
           </a>
-          <a href="/contact#demo" className="font-body" style={{
-            fontSize: 14, fontWeight: 600, color: "rgba(219,194,176,0.55)",
-            textDecoration: "underline", textDecorationColor: "rgba(219,194,176,0.2)",
-            cursor: "pointer", letterSpacing: "0.02em",
-            opacity: inView ? 1 : 0, transition: "opacity 0.8s 0.35s ease",
-          }}>
-            Or book a live demo →
-          </a>
+        
         </div>
         <p className="font-body" style={{ marginTop: 18, fontSize: 11, color: "rgba(219,194,176,0.4)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
           No credit card required · 14-day free trial · Cancel anytime
@@ -2416,7 +2444,7 @@ export default function LandingPage() {
       {/* <SectionDivider bg="#0b0b0b" label="Platform" /> */}
       <FeaturesSection />
       {/* <SectionDivider bg="#0a0a0a" label="Product" /> */}
-      <ScrollSequenceSection />
+      {/* <ScrollSequenceSection /> */}
       <SectionDivider bg="#131313" label="Ecosystem" />
       <PartnersSection />
       {/* <FeatureScrollSection /> */}
