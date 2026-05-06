@@ -1,315 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const APP_REGISTER_URL = "https://app.wazelo.in/auth/register";
 const APP_LOGIN_URL = "https://app.wazelo.in/auth/login";
-
-// ─── Lightning WebGL Shader ───────────────────────────────────────────────────
-const Lightning: React.FC<{ hue?: number; speed?: number; intensity?: number; size?: number }> = ({
-  hue = 220, speed = 1, intensity = 1, size = 1,
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const resize = () => { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; };
-    resize();
-    window.addEventListener("resize", resize);
-
-    const gl = canvas.getContext("webgl");
-    if (!gl) return;
-
-    const vert = `attribute vec2 p; void main(){ gl_Position=vec4(p,0,1); }`;
-    const frag = `
-      precision mediump float;
-      uniform vec2 iRes; uniform float iTime,uHue,uSpeed,uIntensity,uSize;
-      #define N 10
-      vec3 hsv2rgb(vec3 c){vec3 r=clamp(abs(mod(c.x*6.+vec3(0,4,2),6.)-3.)-1.,0.,1.);return c.z*mix(vec3(1),r,c.y);}
-      float h11(float p){p=fract(p*.1031);p*=p+33.33;p*=p+p;return fract(p);}
-      float h12(vec2 p){vec3 p3=fract(vec3(p.xyx)*.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
-      mat2 rot(float t){float c=cos(t),s=sin(t);return mat2(c,-s,s,c);}
-      float noise(vec2 p){vec2 i=floor(p),f=fract(p);float a=h12(i),b=h12(i+vec2(1,0)),c=h12(i+vec2(0,1)),d=h12(i+vec2(1,1));vec2 t=smoothstep(0.,1.,f);return mix(mix(a,b,t.x),mix(c,d,t.x),t.y);}
-      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<N;i++){v+=a*noise(p);p*=rot(.45)*2.;a*=.5;}return v;}
-      void main(){
-        vec2 uv=gl_FragCoord.xy/iRes*2.-1.; uv.x*=iRes.x/iRes.y;
-        uv+=2.*fbm(uv*uSize+.8*iTime*uSpeed)-1.;
-        float d=abs(uv.x);
-        vec3 col=hsv2rgb(vec3(uHue/360.,.7,.8))*pow(mix(0.,.07,h11(iTime*uSpeed))/d,1.)*uIntensity;
-        gl_FragColor=vec4(col,1);
-      }`;
-
-    const compile = (src: string, type: number) => {
-      const s = gl.createShader(type)!;
-      gl.shaderSource(s, src); gl.compileShader(s); return s;
-    };
-    const vs = compile(vert, gl.VERTEX_SHADER);
-    const fs = compile(frag, gl.FRAGMENT_SHADER);
-    const prog = gl.createProgram()!;
-    gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog); gl.useProgram(prog);
-
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
-    const pos = gl.getAttribLocation(prog, "p");
-    gl.enableVertexAttribArray(pos); gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-
-    const uRes = gl.getUniformLocation(prog, "iRes");
-    const uTime = gl.getUniformLocation(prog, "iTime");
-    const uH = gl.getUniformLocation(prog, "uHue");
-    const uSp = gl.getUniformLocation(prog, "uSpeed");
-    const uIn = gl.getUniformLocation(prog, "uIntensity");
-    const uSz = gl.getUniformLocation(prog, "uSize");
-
-    let id: number;
-    const t0 = performance.now();
-    const render = () => {
-      resize();
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.uniform2f(uRes, canvas.width, canvas.height);
-      gl.uniform1f(uTime, (performance.now() - t0) / 1000);
-      gl.uniform1f(uH, hue); gl.uniform1f(uSp, speed);
-      gl.uniform1f(uIn, intensity); gl.uniform1f(uSz, size);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      id = requestAnimationFrame(render);
-    };
-    id = requestAnimationFrame(render);
-    return () => { window.removeEventListener("resize", resize); cancelAnimationFrame(id); };
-  }, [hue, speed, intensity, size]);
-
-  return <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />;
-};
-
-// ─── Earth Globe (procedural WebGL) ──────────────────────────────────────────
-const EarthGlobe: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const resize = () => {
-      canvas.width = canvas.clientWidth * window.devicePixelRatio;
-      canvas.height = canvas.clientHeight * window.devicePixelRatio;
-    };
-    resize();
-
-    const gl = canvas.getContext("webgl");
-    if (!gl) return;
-
-    // ── Shaders ──────────────────────────────────────────────────────────────
-    const vertSrc = `
-      attribute vec3 aPos;
-      attribute vec2 aUV;
-      attribute vec3 aNorm;
-      uniform mat4 uMVP;
-      uniform mat3 uNormMat;
-      varying vec2 vUV;
-      varying vec3 vNorm;
-      varying vec3 vPos;
-      void main(){
-        vUV = aUV;
-        vNorm = normalize(uNormMat * aNorm);
-        vPos = aPos;
-        gl_Position = uMVP * vec4(aPos, 1.0);
-      }
-    `;
-
-    const fragSrc = `
-      precision highp float;
-      varying vec2 vUV;
-      varying vec3 vNorm;
-      varying vec3 vPos;
-      uniform float uTime;
-
-      // ── Noise helpers ──
-      float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
-      float noise(vec2 p){
-        vec2 i=floor(p), f=fract(p);
-        vec2 u=f*f*(3.0-2.0*f);
-        return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),
-                   mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);
-      }
-      float fbm(vec2 p){
-        float v=0.0,a=0.5;
-        for(int i=0;i<6;i++){v+=a*noise(p);p*=2.1;a*=0.5;}
-        return v;
-      }
-
-      void main(){
-        // UV → land/ocean mask
-        vec2 uv = vUV;
-        float n = fbm(uv * 4.0 + vec2(1.7, 0.9));
-        float n2 = fbm(uv * 8.0 + vec2(3.1, 2.3));
-        float land = smoothstep(0.52, 0.58, n + n2 * 0.18);
-
-        // Ocean color — deep teal-blue
-        vec3 ocean = mix(vec3(0.02,0.10,0.22), vec3(0.04,0.18,0.35), fbm(uv*6.0));
-        // Land color — earthy greens and browns
-        vec3 lowLand = mix(vec3(0.12,0.22,0.08), vec3(0.20,0.30,0.10), noise(uv*12.0));
-        vec3 highland = mix(vec3(0.28,0.22,0.14), vec3(0.38,0.30,0.18), noise(uv*20.0));
-        float elev = fbm(uv*10.0+vec2(5.0));
-        vec3 landColor = mix(lowLand, highland, smoothstep(0.45,0.65,elev));
-
-        // Ice caps
-        float lat = abs(vUV.y - 0.5) * 2.0; // 0 at equator, 1 at poles
-        float ice = smoothstep(0.78, 0.92, lat + noise(uv*8.0)*0.1);
-        landColor = mix(landColor, vec3(0.88,0.92,0.96), ice);
-        ocean = mix(ocean, vec3(0.80,0.88,0.94), ice);
-
-        vec3 surface = mix(ocean, landColor, land);
-
-        // ── Lighting ──
-        vec3 lightDir = normalize(vec3(1.2, 0.8, 1.0)); // sun direction
-        float diff = max(dot(vNorm, lightDir), 0.0);
-        float ambient = 0.12;
-        vec3 lit = surface * (ambient + diff * 0.88);
-
-        // Ocean specular
-        vec3 viewDir = normalize(vec3(0,0,1));
-        vec3 halfV = normalize(lightDir + viewDir);
-        float spec = pow(max(dot(vNorm, halfV),0.0), 64.0) * (1.0 - land) * 0.6;
-        lit += vec3(0.7,0.85,1.0) * spec;
-
-        // ── Atmosphere rim — Wazelo amber ──
-        float rim = 1.0 - max(dot(vNorm, viewDir), 0.0);
-        rim = pow(rim, 3.5);
-        vec3 atmo = vec3(1.0, 0.72, 0.49) * rim * 1.2; // #ffb77d amber
-        lit += atmo;
-
-        // Night side city-lights twinkle (subtle)
-        float night = smoothstep(0.1, -0.2, diff);
-        float city = fbm(uv*18.0) * land;
-        lit += vec3(1.0,0.85,0.5) * city * night * 0.4;
-
-        gl_FragColor = vec4(lit, 1.0);
-      }
-    `;
-
-    const compile = (src: string, type: number) => {
-      const s = gl.createShader(type)!;
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
-        console.error(gl.getShaderInfoLog(s));
-      return s;
-    };
-    const prog = gl.createProgram()!;
-    gl.attachShader(prog, compile(vertSrc, gl.VERTEX_SHADER));
-    gl.attachShader(prog, compile(fragSrc, gl.FRAGMENT_SHADER));
-    gl.linkProgram(prog);
-    gl.useProgram(prog);
-
-    // ── Sphere geometry (lat/lon grid) ──────────────────────────────────────
-    const SLICES = 64, STACKS = 64;
-    const positions: number[] = [], uvs: number[] = [], normals: number[] = [], indices: number[] = [];
-
-    for (let i = 0; i <= STACKS; i++) {
-      const phi = (i / STACKS) * Math.PI;
-      for (let j = 0; j <= SLICES; j++) {
-        const theta = (j / SLICES) * 2 * Math.PI;
-        const x = Math.sin(phi) * Math.cos(theta);
-        const y = Math.cos(phi);
-        const z = Math.sin(phi) * Math.sin(theta);
-        positions.push(x, y, z);
-        normals.push(x, y, z);
-        uvs.push(j / SLICES, i / STACKS);
-      }
-    }
-    for (let i = 0; i < STACKS; i++) {
-      for (let j = 0; j < SLICES; j++) {
-        const a = i * (SLICES + 1) + j;
-        const b = a + SLICES + 1;
-        indices.push(a, b, a + 1, b, b + 1, a + 1);
-      }
-    }
-
-    const mkBuf = (data: Float32Array, type: number) => {
-      const buf = gl.createBuffer()!;
-      gl.bindBuffer(type, buf);
-      gl.bufferData(type, data, gl.STATIC_DRAW);
-      return buf;
-    };
-    const posBuf = mkBuf(new Float32Array(positions), gl.ARRAY_BUFFER);
-    const uvBuf = mkBuf(new Float32Array(uvs), gl.ARRAY_BUFFER);
-    const normBuf = mkBuf(new Float32Array(normals), gl.ARRAY_BUFFER);
-    const idxBuf = mkBuf(new Uint16Array(indices) as unknown as Float32Array, gl.ELEMENT_ARRAY_BUFFER);
-
-    const bindAttr = (buf: WebGLBuffer, name: string, size: number) => {
-      const loc = gl.getAttribLocation(prog, name);
-      if (loc < 0) return;
-      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.enableVertexAttribArray(loc);
-      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
-    };
-
-    // ── Matrix helpers ────────────────────────────────────────────────────────
-    const perspective = (fov: number, aspect: number, near: number, far: number) => {
-      const f = 1 / Math.tan(fov / 2), nf = 1 / (near - far);
-      return new Float32Array([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0]);
-    };
-    const rotY = (a: number) => new Float32Array([Math.cos(a),0,Math.sin(a),0, 0,1,0,0, -Math.sin(a),0,Math.cos(a),0, 0,0,0,1]);
-    const mulMat4 = (a: Float32Array, b: Float32Array) => {
-      const out = new Float32Array(16);
-      for (let i=0;i<4;i++) for (let j=0;j<4;j++) for (let k=0;k<4;k++) out[i*4+j]+=a[i*4+k]*b[k*4+j];
-      return out;
-    };
-    const translate = (x: number, y: number, z: number) => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]);
-
-    const uMVP = gl.getUniformLocation(prog, "uMVP");
-    const uNM = gl.getUniformLocation(prog, "uNormMat");
-    const uTime = gl.getUniformLocation(prog, "uTime");
-
-    gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-
-    let animId: number;
-    const t0 = performance.now();
-
-    const render = () => {
-      resize();
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-      const t = (performance.now() - t0) / 1000;
-      const aspect = canvas.width / canvas.height;
-      const proj = perspective(0.7, aspect, 0.1, 100);
-      const model = mulMat4(translate(0, 0, -2.6), rotY(t * 0.25));
-      const mvp = mulMat4(proj, model);
-
-      gl.uniformMatrix4fv(uMVP, false, mvp);
-      // Normal matrix (simplified — just rotation part, no non-uniform scale)
-      gl.uniformMatrix3fv(uNM, false, new Float32Array([
-        model[0],model[1],model[2],
-        model[4],model[5],model[6],
-        model[8],model[9],model[10],
-      ]));
-      gl.uniform1f(uTime, t);
-
-      bindAttr(posBuf, "aPos", 3);
-      bindAttr(uvBuf, "aUV", 2);
-      bindAttr(normBuf, "aNorm", 3);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuf);
-      gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
-
-      animId = requestAnimationFrame(render);
-    };
-    animId = requestAnimationFrame(render);
-
-    return () => cancelAnimationFrame(animId);
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: "100%", height: "100%", display: "block", borderRadius: "50%" }}
-    />
-  );
-};
 
 // ─── DashBar — animated bar for analytics chart ──────────────────────────────
 const DashBar: React.FC<{ pct: number }> = ({ pct }) => {
@@ -329,11 +24,110 @@ const DashBar: React.FC<{ pct: number }> = ({ pct }) => {
   );
 };
 
+// ─── Dashboard animation data sets (cycle through on interval) ───────────────
+const DASH_STATES = [
+  {
+    range: 0,
+    kpis: [
+      { label: "Total Messages", value: "48,500", delta: "+12%", icon: "forum" },
+      { label: "Avg Response",   value: "4m 12s", delta: "-8%",  icon: "timer" },
+      { label: "CSAT Score",     value: "4.3/5",  delta: "+0.3", icon: "star"  },
+      { label: "Resolution Rate",value: "87%",    delta: "+5%",  icon: "check_circle" },
+    ],
+    bars: [62, 88, 45, 91, 73, 58, 84],
+  },
+  {
+    range: 1,
+    kpis: [
+      { label: "Total Messages", value: "186,200", delta: "+18%", icon: "forum" },
+      { label: "Avg Response",   value: "3m 50s",  delta: "-14%", icon: "timer" },
+      { label: "CSAT Score",     value: "4.5/5",   delta: "+0.5", icon: "star"  },
+      { label: "Resolution Rate",value: "91%",     delta: "+9%",  icon: "check_circle" },
+    ],
+    bars: [55, 70, 80, 65, 90, 78, 88],
+  },
+  {
+    range: 2,
+    kpis: [
+      { label: "Total Messages", value: "541,000", delta: "+22%", icon: "forum" },
+      { label: "Avg Response",   value: "3m 30s",  delta: "-19%", icon: "timer" },
+      { label: "CSAT Score",     value: "4.6/5",   delta: "+0.6", icon: "star"  },
+      { label: "Resolution Rate",value: "93%",     delta: "+11%", icon: "check_circle" },
+    ],
+    bars: [72, 65, 88, 76, 95, 83, 91],
+  },
+];
+
+const NAV_ITEMS = [
+  { icon: "💬", label: "Inbox" },
+  { icon: "📊", label: "Analytics" },
+  { icon: "👥", label: "Contacts" },
+  { icon: "📢", label: "Campaigns" },
+  { icon: "⚡", label: "Automation" },
+  { icon: "⚙️", label: "Settings"  },
+];
+
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 export const HeroSection: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  const [dashState, setDashState] = useState(0);
+  const [activeNav, setActiveNav] = useState(1);
+
+  // ── Custom page cursor ──
+  const cursorRef = useRef<HTMLDivElement>(null);
+  const cursorDotRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate(${e.clientX - 18}px, ${e.clientY - 18}px)`;
+      }
+      if (cursorDotRef.current) {
+        cursorDotRef.current.style.transform = `translate(${e.clientX - 3}px, ${e.clientY - 3}px)`;
+      }
+    };
+    window.addEventListener("mousemove", move);
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+
+  // ── Mockup fake cursor waypoints (% of mockup content area) ──
+  const WAYPOINTS = [
+    { x: 18, y: 15 },  // Analytics nav item
+    { x: 70, y: 12 },  // 30D range toggle
+    { x: 25, y: 38 },  // KPI card 1
+    { x: 75, y: 38 },  // KPI card 4
+    { x: 35, y: 65 },  // bar chart
+    { x: 80, y: 65 },  // leaderboard
+    { x: 50, y: 88 },  // campaign table
+  ];
+  const [cursorWp, setCursorWp] = useState(0);
+  const [clicking, setClicking] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => {
+      setClicking(true);
+      setTimeout(() => setClicking(false), 180);
+      setTimeout(() => setCursorWp(w => (w + 1) % WAYPOINTS.length), 220);
+    }, 1800);
+    return () => clearInterval(t);
+  }, []);
+
+  // Cycle range + KPIs every 3s
+  useEffect(() => {
+    const t = setInterval(() => {
+      setDashState(s => (s + 1) % DASH_STATES.length);
+    }, 3000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Cycle active nav item every 2.5s
+  useEffect(() => {
+    const t = setInterval(() => {
+      setActiveNav(n => (n + 1) % NAV_ITEMS.length);
+    }, 2500);
+    return () => clearInterval(t);
+  }, []);
+
+  const ds = DASH_STATES[dashState];
+  const wp = WAYPOINTS[cursorWp];
 
   const navLinks: [string, string][] = [
     ["Features", "#features"],
@@ -351,31 +145,63 @@ export const HeroSection: React.FC = () => {
   };
 
   return (
-    <div style={{ position: "relative", width: "100%", background: "#131313", color: "#fff", fontFamily: "'Inter',sans-serif" }}>
+    <div style={{ position: "relative", width: "100%", background: "#131313", color: "#fff", fontFamily: "'Inter',sans-serif", cursor: "none" }}>
+
+      {/* ── Custom page cursor ── */}
+      <div ref={cursorRef} style={{
+        position: "fixed", top: 0, left: 0, zIndex: 9999,
+        width: 36, height: 36, borderRadius: "50%",
+        border: "1.5px solid rgba(255,183,125,0.7)",
+        pointerEvents: "none", transition: "transform 0.08s linear",
+        mixBlendMode: "normal",
+      }} />
+      <div ref={cursorDotRef} style={{
+        position: "fixed", top: 0, left: 0, zIndex: 9999,
+        width: 6, height: 6, borderRadius: "50%",
+        background: "#ffb77d",
+        pointerEvents: "none", transition: "transform 0.04s linear",
+      }} />
 
       {/* ── Background layer ── */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
-        {/* Amber glow orb behind planet */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, overflow: "hidden" }}>
+
+        {/* Light beam — shoots up from top center, like 96AI */}
         <div style={{
-          position: "absolute", bottom: "-20%", left: "50%", transform: "translateX(-50%)",
-          width: 700, height: 700, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(217,119,6,0.28) 0%, transparent 70%)",
-          filter: "blur(50px)",
+          position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)",
+          width: 2, height: "55%",
+          background: "linear-gradient(to bottom, rgba(255,210,140,0.95) 0%, rgba(255,183,125,0.6) 30%, rgba(217,119,6,0.15) 75%, transparent 100%)",
+          filter: "blur(0px)",
+          zIndex: 2,
         }} />
-        {/* Lightning canvas — full bleed, amber hue ~35 */}
-        <div style={{ position: "absolute", inset: 0 }}>
-          {mounted && <Lightning hue={35} speed={1.5} intensity={0.7} size={2.2} />}
-        </div>
-        {/* Earth Globe */}
-        <div className="wz-globe" style={{
-          position: "absolute", bottom: "-30%", left: "50%", transform: "translateX(-50%)",
-          width: 620, height: 620, borderRadius: "50%",
-          overflow: "hidden", zIndex: 2,
-        }}>
-          {mounted && <EarthGlobe />}
-        </div>
-        {/* Soft overlay for text contrast */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(19,19,19,0.6) 0%, rgba(19,19,19,0.15) 50%, rgba(19,19,19,0.65) 100%)", zIndex: 3 }} />
+        {/* Beam core glow — slightly wider soft layer */}
+        <div style={{
+          position: "absolute", top: -60, left: "50%", transform: "translateX(-50%)",
+          width: 60, height: "50%",
+          background: "linear-gradient(to bottom, rgba(255,200,120,0.25) 0%, rgba(217,119,6,0.12) 50%, transparent 100%)",
+          filter: "blur(18px)",
+          zIndex: 1,
+        }} />
+        {/* Wide ambient bloom at the tip */}
+        <div style={{
+          position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)",
+          width: 320, height: 320,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(255,200,120,0.22) 0%, rgba(217,119,6,0.08) 50%, transparent 75%)",
+          filter: "blur(30px)",
+          zIndex: 1,
+        }} />
+
+        {/* Bottom warm glow pool */}
+        <div style={{
+          position: "absolute", bottom: "-10%", left: "50%", transform: "translateX(-50%)",
+          width: 900, height: 400, borderRadius: "50%",
+          background: "radial-gradient(ellipse, rgba(180,80,0,0.35) 0%, rgba(120,40,0,0.15) 50%, transparent 75%)",
+          filter: "blur(60px)",
+          zIndex: 1,
+        }} />
+
+        {/* Dark vignette edges */}
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 100% at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%)", zIndex: 3 }} />
       </div>
 
       {/* ── Content layer ── */}
@@ -463,7 +289,7 @@ export const HeroSection: React.FC = () => {
         </AnimatePresence>
 
         {/* Hero body */}
-        <div className="wz-hero-body" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "0 24px 0", position: "relative" }}>
+        <div className="wz-hero-body" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", padding: "0 16px 0", position: "relative" }}>
 
           {/* ── Top text block ── */}
           <div className="wz-hero-text" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", maxWidth: 680, position: "relative", zIndex: 2, width: "100%", paddingTop: 20, paddingBottom: 8 }}>
@@ -522,7 +348,42 @@ export const HeroSection: React.FC = () => {
               }}>Book a Demo</a>
             </motion.div>
 
-         
+            {/* Feature pills — arc layout */}
+            <motion.div custom={5} variants={fade} initial="hidden" animate="show" className="wz-arc-pills"
+              style={{ position: "relative", width: "100%", height: 160, marginTop: 12, marginBottom: 0, flexShrink: 0 }}>
+              {/* Arc curve SVG */}
+              <svg viewBox="0 0 700 160" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+                <path d="M 20 155 Q 350 -40 680 155" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+              </svg>
+              {/* Pills — positioned along the arc */}
+              {([
+                { label: "Shared Inbox",   sub: "real-time",   pct: 0.08, align: "left"   },
+                { label: "Bulk Campaigns", sub: "broadcasts",  pct: 0.34, align: "center" },
+                { label: "Automation",     sub: "no-code",     pct: 0.66, align: "center" },
+                { label: "AI Chatbot",     sub: "24/7 replies",pct: 0.92, align: "right"  },
+              ] as { label: string; sub: string; pct: number; align: "left"|"center"|"right" }[]).map(({ label, sub, pct, align }) => {
+                // Arc y = quadratic bezier at t=pct: P0=(0,155) P1=(350,-40) P2=(700,155)
+                const t = pct;
+                const arcY = (1-t)*(1-t)*155 + 2*(1-t)*t*(-40) + t*t*155;
+                const xPct = pct * 100;
+                return (
+                  <div key={label} style={{
+                    position: "absolute",
+                    left: `${xPct}%`, top: arcY / 160 * 100 + "%",
+                    transform: align === "left" ? "translateY(-50%)" : align === "right" ? "translate(-100%, -50%)" : "translate(-50%, -50%)",
+                    display: "flex", flexDirection: "column",
+                    alignItems: align === "left" ? "flex-start" : align === "right" ? "flex-end" : "center",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ffb77d", flexShrink: 0, display: "inline-block" }} />
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#fff", fontFamily: "'Inter',sans-serif", whiteSpace: "nowrap" }}>{label}</span>
+                    </div>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter',sans-serif", marginLeft: align === "left" ? 12 : 0, marginRight: align === "right" ? 12 : 0 }}>{sub}</span>
+                  </div>
+                );
+              })}
+            </motion.div>
+
           </div>
 
           {/* ── Analytics Dashboard Mockup ── */}
@@ -530,15 +391,19 @@ export const HeroSection: React.FC = () => {
             custom={6} variants={fade} initial="hidden" animate="show"
             className="wz-mockup"
             style={{
-              width: "calc(100% + 48px)", maxWidth: 1200,
-              marginLeft: -24, marginRight: -24,
-              borderRadius: 20,
-              boxShadow: "0 0 0 1px rgba(255,183,125,0.1), 0 40px 100px rgba(0,0,0,0.7), 0 0 80px rgba(217,119,6,0.1)",
-              overflow: "hidden",
+              width: "calc(100% + 0px)", maxWidth: 960,
+              marginLeft: 0, marginRight: 0,
               position: "relative", zIndex: 5,
               flexShrink: 0,
+              borderRadius: 28,
+              padding: 2,
+              border: "2px solid rgba(255,183,125,0.8)",
               background: "#131313",
+              boxShadow: "0 40px 100px rgba(0,0,0,0.75), 0 0 80px rgba(217,119,6,0.15)",
             }}
+          >
+            {/* Inner screen — clipped content */}
+            <div style={{ borderRadius: 26, overflow: "hidden", background: "#131313" }}
           >
             {/* Chrome bar */}
             <div style={{ background: "#0e0e0e", height: 38, display: "flex", alignItems: "center", padding: "0 16px", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
@@ -553,36 +418,54 @@ export const HeroSection: React.FC = () => {
             </div>
 
             {/* App shell — sidebar + main */}
-            <div style={{ display: "flex", height: 520 }}>
+            <div style={{ display: "flex", height: 520, position: "relative" }}>
+
+              {/* ── Fake cursor inside mockup ── */}
+              <div style={{
+                position: "absolute",
+                left: `${wp.x}%`, top: `${wp.y}%`,
+                zIndex: 20, pointerEvents: "none",
+                transition: "left 0.6s cubic-bezier(0.4,0,0.2,1), top 0.6s cubic-bezier(0.4,0,0.2,1)",
+              }}>
+                {/* Arrow SVG */}
+                <svg width="18" height="22" viewBox="0 0 18 22" fill="none" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.6))", transform: clicking ? "scale(0.85)" : "scale(1)", transition: "transform 0.12s ease" }}>
+                  <path d="M2 2L2 18L6.5 13.5L9.5 20L11.5 19L8.5 12.5L15 12.5L2 2Z" fill="white" stroke="rgba(0,0,0,0.4)" strokeWidth="0.8"/>
+                </svg>
+                {/* Click ripple */}
+                {clicking && (
+                  <div style={{
+                    position: "absolute", top: -6, left: -6,
+                    width: 18, height: 18, borderRadius: "50%",
+                    border: "1.5px solid rgba(255,183,125,0.8)",
+                    animation: "none", opacity: 0.8,
+                  }} />
+                )}
+              </div>
 
               {/* Sidebar nav */}
               <div className="wz-sidebar" style={{ width: 200, flexShrink: 0, background: "#0b0b0b", borderRight: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column", padding: "16px 0" }}>
                 <div style={{ padding: "0 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", marginBottom: 8 }}>
                   <span style={{ fontSize: 14, fontWeight: 900, color: "#fff", letterSpacing: "-0.04em", fontFamily: "'Inter',sans-serif" }}>Wazelo <span style={{ color: "#ffb77d" }}>CRM</span></span>
                 </div>
-                {[
-                  { icon: "💬", label: "Inbox",      active: false },
-                  { icon: "📊", label: "Analytics",  active: true  },
-                  { icon: "👥", label: "Contacts",   active: false },
-                  { icon: "📢", label: "Campaigns",  active: false },
-                  { icon: "⚡", label: "Automation", active: false },
-                  { icon: "⚙️", label: "Settings",   active: false },
-                ].map(item => (
-                  <div key={item.label} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "9px 16px", margin: "1px 8px", borderRadius: 8,
-                    background: item.active ? "rgba(255,183,125,0.12)" : "transparent",
-                    borderLeft: item.active ? "2px solid #ffb77d" : "2px solid transparent",
-                    cursor: "pointer",
-                  }}>
-                    <span style={{ fontSize: 14 }}>{item.icon}</span>
-                    <span style={{ fontSize: 12, fontWeight: item.active ? 600 : 400, color: item.active ? "#ffb77d" : "rgba(229,226,225,0.45)", fontFamily: "'Inter',sans-serif" }}>{item.label}</span>
-                  </div>
-                ))}
+                {NAV_ITEMS.map((item, idx) => {
+                  const active = idx === activeNav;
+                  return (
+                    <div key={item.label} style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "9px 16px", margin: "1px 8px", borderRadius: 8,
+                      background: active ? "rgba(255,183,125,0.12)" : "transparent",
+                      borderLeft: active ? "2px solid #ffb77d" : "2px solid transparent",
+                      transition: "all 0.4s ease",
+                    }}>
+                      <span style={{ fontSize: 14 }}>{item.icon}</span>
+                      <span style={{ fontSize: 12, fontWeight: active ? 600 : 400, color: active ? "#ffb77d" : "rgba(229,226,225,0.45)", fontFamily: "'Inter',sans-serif", transition: "color 0.4s ease" }}>{item.label}</span>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Main content */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="wz-dash-main" style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
 
                 {/* Page header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -592,27 +475,30 @@ export const HeroSection: React.FC = () => {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     {["7D","30D","90D"].map((r, i) => (
-                      <div key={r} style={{ fontSize: 11, padding: "4px 12px", borderRadius: 6, background: i === 0 ? "rgba(255,183,125,0.15)" : "transparent", border: i === 0 ? "1px solid rgba(255,183,125,0.3)" : "1px solid rgba(255,255,255,0.08)", color: i === 0 ? "#ffb77d" : "rgba(229,226,225,0.45)", fontFamily: "'Inter',sans-serif", cursor: "pointer" }}>{r}</div>
+                      <div key={r} style={{ fontSize: 11, padding: "4px 12px", borderRadius: 6, background: i === ds.range ? "rgba(255,183,125,0.15)" : "transparent", border: i === ds.range ? "1px solid rgba(255,183,125,0.3)" : "1px solid rgba(255,255,255,0.08)", color: i === ds.range ? "#ffb77d" : "rgba(229,226,225,0.45)", fontFamily: "'Inter',sans-serif", transition: "all 0.4s ease" }}>{r}</div>
                     ))}
                   </div>
                 </div>
 
                 {/* KPI cards — 4 cols, exact from AnalyticsMockup */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }} className="wz-kpi-grid">
-                  {[
-                    { label: "Total Messages", value: "48,500", delta: "+12%", good: true },
-                    { label: "Avg Response",   value: "4m 12s", delta: "-8%",  good: true },
-                    { label: "CSAT Score",     value: "4.3/5",  delta: "+0.3", good: true },
-                    { label: "Resolution Rate",value: "87%",    delta: "+5%",  good: true },
-                  ].map(kpi => (
-                    <div key={kpi.label} style={{ background: "#2a2a2a", borderRadius: 12, padding: "14px 16px" }}>
-                      <div style={{ fontSize: 11, color: "rgba(219,194,176,0.55)", marginBottom: 8, fontFamily: "'Inter',sans-serif" }}>{kpi.label}</div>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                        <span style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: "'Inter',sans-serif" }}>{kpi.value}</span>
-                        <span style={{ fontSize: 11, color: "#34d399", fontFamily: "'Inter',sans-serif" }}>{kpi.delta}</span>
+                  {ds.kpis.map(kpi => {
+                    const deltaColor = kpi.label === "Avg Response"
+                      ? (kpi.delta.startsWith("-") ? "#34d399" : "#f87171")
+                      : (kpi.delta.startsWith("+") ? "#34d399" : "#f87171");
+                    return (
+                      <div key={kpi.label} style={{ background: "#2a2a2a", borderRadius: 12, padding: "14px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#ffb77d", lineHeight: 1 }}>{kpi.icon}</span>
+                          <span style={{ fontSize: 11, color: "rgba(219,194,176,0.55)", fontFamily: "'Inter',sans-serif" }}>{kpi.label}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                          <span style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: "'Inter',sans-serif" }}>{kpi.value}</span>
+                          <span style={{ fontSize: 11, color: deltaColor, fontFamily: "'Inter',sans-serif" }}>{kpi.delta}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Chart + Leaderboard row — exact from AnalyticsMockup */}
@@ -621,14 +507,11 @@ export const HeroSection: React.FC = () => {
                   {/* Bar chart */}
                   <div style={{ background: "#2a2a2a", borderRadius: 12, padding: "16px 16px 12px" }}>
                     <div style={{ fontSize: 12, color: "rgba(219,194,176,0.55)", marginBottom: 12, fontFamily: "'Inter',sans-serif" }}>Message Volume — Last 7 Days</div>
-                    <div style={{ height: 130, display: "flex", alignItems: "flex-end", gap: 6 }}>
-                      {[
-                        { day: "Mon", h: 62 }, { day: "Tue", h: 88 }, { day: "Wed", h: 45 },
-                        { day: "Thu", h: 91 }, { day: "Fri", h: 73 }, { day: "Sat", h: 58 }, { day: "Sun", h: 84 },
-                      ].map(({ day, h }) => (
+                    <div style={{ height: 160, display: "flex", alignItems: "flex-end", gap: 6 }}>
+                      {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day, di) => (
                         <div key={day} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, height: "100%" }}>
                           <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end" }}>
-                            <DashBar pct={h} />
+                            <DashBar pct={ds.bars[di]} />
                           </div>
                           <span style={{ fontSize: 9, color: "rgba(219,194,176,0.4)", fontFamily: "'Inter',sans-serif" }}>{day}</span>
                         </div>
@@ -657,7 +540,7 @@ export const HeroSection: React.FC = () => {
                 </div>
 
                 {/* Campaign performance mini-table */}
-                <div style={{ background: "#2a2a2a", borderRadius: 12, padding: "16px" }}>
+                <div className="wz-campaign-table" style={{ background: "#2a2a2a", borderRadius: 12, padding: "16px" }}>
                   <div style={{ fontSize: 12, color: "rgba(219,194,176,0.55)", marginBottom: 12, fontFamily: "'Inter',sans-serif" }}>Recent Campaigns</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto auto auto", gap: "8px 16px", alignItems: "center" }}>
                     {/* Header */}
@@ -682,6 +565,7 @@ export const HeroSection: React.FC = () => {
 
               </div>
             </div>
+            </div>{/* /inner screen */}
           </motion.div>
 
         </div>
@@ -699,19 +583,28 @@ export const HeroSection: React.FC = () => {
             height: min(420px, 110vw) !important;
             bottom: -22% !important;
           }
-          .wz-hero-body { padding: 0 0 !important; }
+          .wz-hero-body { padding: 0 8px !important; }
           .wz-hero-text { padding-top: 16px !important; padding-left: 16px !important; padding-right: 16px !important; }
           .wz-cta-row { flex-direction: column !important; width: 100% !important; }
           .wz-cta-row a { width: 100% !important; text-align: center !important; box-sizing: border-box !important; }
           .wz-mockup {
-            border-radius: 16px !important;
+            border-radius: 14px !important;
             margin-bottom: 32px !important;
             width: 100% !important;
             margin-left: 0 !important;
             margin-right: 0 !important;
           }
-          .wz-mockup > div:nth-child(2) { height: 360px !important; }
+          .wz-mockup > div:nth-child(2) { height: auto !important; min-height: 480px !important; }
           .wz-sidebar { display: none !important; }
+          /* KPI grid: 2×2 on mobile */
+          .wz-kpi-grid { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+          /* Chart + leaderboard: stack vertically on mobile */
+          .wz-chart-row { grid-template-columns: 1fr !important; }
+          /* Campaign table: hide on mobile (too many columns) */
+          .wz-campaign-table { display: none !important; }
+          .wz-arc-pills { display: none !important; }
+          /* Tighter main content padding on mobile */
+          .wz-dash-main { padding: 12px 10px !important; gap: 10px !important; }
         }
         @media (min-width: 641px) {
           .wz-show-mobile { display: none !important; }
