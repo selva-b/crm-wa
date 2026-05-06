@@ -16,6 +16,7 @@ export interface LoginResponse {
 export interface RefreshTokenResponse {
   accessToken: string;
   expiresIn: number;
+  user: AuthUser;
 }
 
 export interface SessionInfo {

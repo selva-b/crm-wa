@@ -152,7 +152,7 @@ export default function BillingPage() {
   // Plan change error (must be declared before any early returns)
   const [planChangeError, setPlanChangeError] = useState<string | null>(null);
 
-  if (user?.role !== "ADMIN" && user?.role !== "MANAGER") {
+  if (user?.role !== "ADMIN") {
     return (
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center">

@@ -36,7 +36,8 @@ export function Header() {
   const menuRef = useRef<HTMLDivElement>(null);
   const logout = useLogout();
 
-  const { data: billingData } = useSubscription();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { data: billingData } = useSubscription({ enabled: isAuthenticated });
   const aiCredits = billingData?.usage?.aiCredits;
   const subscription = billingData?.subscription;
 

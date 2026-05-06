@@ -3,7 +3,11 @@ import { getSuperAdminToken, useSuperAdminAuthStore } from "@/stores/super-admin
 
 const superAdminClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    "x-requested-with": "XMLHttpRequest",
+  },
+  withCredentials: true,
 });
 
 superAdminClient.interceptors.request.use((config) => {

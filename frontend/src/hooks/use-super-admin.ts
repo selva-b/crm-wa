@@ -70,3 +70,24 @@ export function useSACreateTicket() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["sa", "tickets"] }),
   });
 }
+
+export function useSAPlans() {
+  return useQuery({ queryKey: ["sa", "plans"], queryFn: superAdminApi.listPlans });
+}
+
+export function useSACreatePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => superAdminApi.createPlan(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sa", "plans"] }),
+  });
+}
+
+export function useSAUpdatePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      superAdminApi.updatePlan(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sa", "plans"] }),
+  });
+}

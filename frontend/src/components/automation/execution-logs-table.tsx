@@ -1,7 +1,7 @@
 "use client";
 
 import { ScrollText, ChevronDown, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 import {
@@ -111,9 +111,8 @@ export function ExecutionLogsTable({
             const hasDetail = !!(log.error || (log.actionResults && log.actionResults.length > 0));
 
             return (
-              <>
+              <Fragment key={log.id}>
                 <TableRow
-                  key={log.id}
                   onClick={() => hasDetail && setExpandedId(isExpanded ? null : log.id)}
                   className={hasDetail ? "cursor-pointer" : undefined}
                 >
@@ -189,7 +188,7 @@ export function ExecutionLogsTable({
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             );
           })}
         </TableBody>

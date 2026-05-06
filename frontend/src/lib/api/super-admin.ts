@@ -38,4 +38,13 @@ export const superAdminApi = {
 
   updateTicketStatus: (id: string, status: string) =>
     superAdminClient.patch<any>(`/super-admin/tickets/${id}/status`, { status }).then((r) => r.data.data),
+
+  listPlans: () =>
+    superAdminClient.get<any>("/super-admin/plans").then((r) => r.data.data),
+
+  createPlan: (data: Record<string, unknown>) =>
+    superAdminClient.post<any>("/super-admin/plans", data).then((r) => r.data.data),
+
+  updatePlan: (id: string, data: Record<string, unknown>) =>
+    superAdminClient.patch<any>(`/super-admin/plans/${id}`, data).then((r) => r.data.data),
 };

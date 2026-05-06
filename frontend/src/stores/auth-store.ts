@@ -17,6 +17,7 @@ interface AuthState {
   setTokens: (data: {
     accessToken: string;
     expiresIn: number;
+    user?: AuthUser;
   }) => void;
   clearAuth: () => void;
 }
@@ -47,12 +48,14 @@ export const useAuthStore = create<AuthState>()((set) => ({
     });
   },
 
-  setTokens: ({ accessToken, expiresIn }) => {
+  setTokens: ({ accessToken, expiresIn, user }) => {
     setSessionCookie(true);
-    set({
+    set((state) => ({
       accessToken,
       expiresAt: Date.now() + expiresIn * 1000,
-    });
+      isAuthenticated: true,
+      user: user ?? state.user,
+    }));
   },
 
   clearAuth: () => {

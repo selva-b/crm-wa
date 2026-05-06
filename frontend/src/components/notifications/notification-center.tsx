@@ -84,8 +84,9 @@ export function NotificationCenter() {
 
   // Listen for real-time notification events via WebSocket
   const accessToken = useAuthStore((s) => s.accessToken);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   useEffect(() => {
-    if (!accessToken) return;
+    if (!isAuthenticated || !accessToken) return;
 
     const socket = getSocket(accessToken);
 
@@ -106,7 +107,7 @@ export function NotificationCenter() {
       socket.off("notification:new", handleNewNotification);
       socket.off("notification:unread-count", handleUnreadCount);
     };
-  }, [accessToken, queryClient]);
+  }, [isAuthenticated, accessToken, queryClient]);
 
   // Close on outside click
   useEffect(() => {

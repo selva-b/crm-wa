@@ -28,10 +28,11 @@ export function usePlans() {
 }
 
 /** Returns { subscription, usage } in a single call */
-export function useSubscription() {
+export function useSubscription(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: billingKeys.subscription(),
     queryFn: () => billingApi.getSubscription(),
+    enabled: options?.enabled,
   });
 }
 

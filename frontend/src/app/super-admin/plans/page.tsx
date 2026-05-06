@@ -10,9 +10,7 @@ import {
   X,
   Check,
 } from "lucide-react";
-import { usePageTitle } from "@/hooks/use-page-title";
-import { useAuthStore } from "@/stores/auth-store";
-import { usePlans, useCreatePlan, useUpdatePlan } from "@/hooks/use-billing";
+import { useSAPlans, useSACreatePlan, useSAUpdatePlan } from "@/hooks/use-super-admin";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -100,7 +98,6 @@ function PlanModal({
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* Name */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Plan Name</label>
             <input
@@ -110,7 +107,6 @@ function PlanModal({
               placeholder="Starter"
             />
           </div>
-          {/* Slug */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Slug</label>
             <input
@@ -120,7 +116,6 @@ function PlanModal({
               placeholder="starter-monthly"
             />
           </div>
-          {/* Billing Cycle */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Billing Cycle</label>
             <select
@@ -132,7 +127,6 @@ function PlanModal({
               <option value="YEARLY">Yearly</option>
             </select>
           </div>
-          {/* Price */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Price (paise)</label>
             <input {...intField("priceInCents")} placeholder="49900" />
@@ -140,69 +134,58 @@ function PlanModal({
               {formatINR(form.priceInCents)} / {form.billingCycle === "MONTHLY" ? "mo" : "yr"}
             </p>
           </div>
-          {/* Max Users */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Max Users</label>
             <input {...intField("maxUsers")} />
           </div>
-          {/* Max Sessions */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Max WA Sessions</label>
             <input {...intField("maxWhatsappSessions")} />
           </div>
-          {/* Max Messages */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Max Messages/mo <span className="text-gray-400">(0 = unlimited)</span>
             </label>
             <input {...intField("maxMessagesPerMonth")} />
           </div>
-          {/* Max Campaigns */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Max Campaigns/mo <span className="text-gray-400">(0 = unlimited)</span>
             </label>
             <input {...intField("maxCampaignsPerMonth")} />
           </div>
-          {/* Max API Calls */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Max API Calls/mo <span className="text-gray-400">(0 = unlimited)</span>
             </label>
             <input {...intField("maxApiCallsPerMonth")} />
           </div>
-          {/* AI Credits */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               AI Credits/mo <span className="text-gray-400">(0 = unlimited)</span>
             </label>
             <input {...intField("aiCreditsPerMonth")} />
           </div>
-          {/* Max Templates */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Max Templates <span className="text-gray-400">(0 = unlimited)</span>
             </label>
             <input {...intField("maxMessageTemplates")} />
           </div>
-          {/* Max Shopify Stores */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Max Shopify Stores <span className="text-gray-400">(0 = unlimited)</span>
             </label>
             <input {...intField("maxShopifyStores")} />
           </div>
-          {/* Trial Days */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Trial Days</label>
             <input {...intField("trialDays")} />
           </div>
-          {/* Sort Order */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Sort Order</label>
             <input {...intField("sortOrder")} />
           </div>
-          {/* Description */}
           <div className="col-span-2">
             <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
             <textarea
@@ -212,7 +195,6 @@ function PlanModal({
               onChange={(e) => set("description", e.target.value)}
             />
           </div>
-          {/* Toggles */}
           <div className="col-span-2 flex flex-wrap gap-4">
             {(
               [
@@ -254,25 +236,17 @@ function PlanModal({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function AdminPlansPage() {
-  usePageTitle("Plan Management");
-  const user = useAuthStore((s) => s.user);
-  const { data: plans, isLoading } = usePlans();
-  const createPlan = useCreatePlan();
-  const updatePlan = useUpdatePlan();
+export default function SuperAdminPlansPage() {
+  const { data, isLoading } = useSAPlans();
+  const createPlan = useSACreatePlan();
+  const updatePlan = useSAUpdatePlan();
+
+  const plans: Plan[] = data?.plans ?? [];
 
   const [modal, setModal] = useState<{ open: boolean; editing: Plan | null }>({
     open: false,
     editing: null,
   });
-
-  if (user?.role !== "ADMIN") {
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-500 text-sm">
-        Access restricted to admins.
-      </div>
-    );
-  }
 
   const openCreate = () => setModal({ open: true, editing: null });
   const openEdit = (plan: Plan) => setModal({ open: true, editing: plan });
@@ -281,11 +255,11 @@ export default function AdminPlansPage() {
   const handleSave = (form: PlanForm) => {
     if (modal.editing) {
       updatePlan.mutate(
-        { id: modal.editing.id, data: form as Partial<Plan> },
+        { id: modal.editing.id, data: form as unknown as Record<string, unknown> },
         { onSuccess: closeModal },
       );
     } else {
-      createPlan.mutate(form as Partial<Plan>, { onSuccess: closeModal });
+      createPlan.mutate(form as unknown as Record<string, unknown>, { onSuccess: closeModal });
     }
   };
 
@@ -297,7 +271,6 @@ export default function AdminPlansPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
@@ -314,13 +287,12 @@ export default function AdminPlansPage() {
         </Button>
       </div>
 
-      {/* Table */}
       <Card>
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <Spinner />
           </div>
-        ) : !plans?.length ? (
+        ) : !plans.length ? (
           <div className="flex flex-col items-center justify-center h-40 text-gray-400">
             <Package className="w-10 h-10 mb-2 opacity-30" />
             <p className="text-sm">No plans yet. Create your first plan.</p>
@@ -361,21 +333,11 @@ export default function AdminPlansPage() {
                       <td className="px-4 py-3 text-gray-600">{formatLimit(plan.maxMessagesPerMonth)}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
-                          {plan.campaignsEnabled && (
-                            <Badge variant="muted" className="text-xs">Campaigns</Badge>
-                          )}
-                          {plan.automationEnabled && (
-                            <Badge variant="muted" className="text-xs">Auto</Badge>
-                          )}
-                          {(plan as any).apiEnabled && (
-                            <Badge variant="muted" className="text-xs">API</Badge>
-                          )}
-                          {(plan as any).aiEnabled && (
-                            <Badge variant="muted" className="text-xs">AI</Badge>
-                          )}
-                          {(plan as any).shopifyEnabled && (
-                            <Badge variant="muted" className="text-xs">Shopify</Badge>
-                          )}
+                          {plan.campaignsEnabled && <Badge variant="muted" className="text-xs">Campaigns</Badge>}
+                          {plan.automationEnabled && <Badge variant="muted" className="text-xs">Auto</Badge>}
+                          {(plan as any).apiEnabled && <Badge variant="muted" className="text-xs">API</Badge>}
+                          {(plan as any).aiEnabled && <Badge variant="muted" className="text-xs">AI</Badge>}
+                          {(plan as any).shopifyEnabled && <Badge variant="muted" className="text-xs">Shopify</Badge>}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -418,7 +380,6 @@ export default function AdminPlansPage() {
         )}
       </Card>
 
-      {/* Modal */}
       {modal.open && (
         <PlanModal
           initial={

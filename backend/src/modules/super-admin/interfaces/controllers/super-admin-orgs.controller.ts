@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Public } from '@/common/decorators/public.decorator';
 import { SuperAdminGuard } from '../guards/super-admin.guard';
 import { GetPlatformStatsUseCase } from '../../application/use-cases/get-platform-stats.use-case';
 import { GetAllOrgsUseCase } from '../../application/use-cases/get-all-orgs.use-case';
@@ -6,6 +7,7 @@ import { GetOrgDetailUseCase } from '../../application/use-cases/get-org-detail.
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 
 @Controller('super-admin')
+@Public()
 @UseGuards(SuperAdminGuard)
 export class SuperAdminOrgsController {
   constructor(

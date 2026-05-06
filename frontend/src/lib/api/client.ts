@@ -127,6 +127,7 @@ apiClient.interceptors.response.use(
         useAuthStore.getState().setTokens({
           accessToken: data.accessToken,
           expiresIn: data.expiresIn,
+          user: data.user,
         });
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;

@@ -58,14 +58,14 @@ export function useResetPassword() {
 }
 
 export function useLogout() {
-  const router = useRouter();
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
   return useMutation({
     mutationFn: () => authApi.logout(),
     onSettled: () => {
+      // Only clear in-memory auth state — ProtectedLayout's redirect effect
+      // reactively navigates to /auth/login when isAuthenticated becomes false.
       clearAuth();
-      router.push("/auth/login");
     },
   });
 }

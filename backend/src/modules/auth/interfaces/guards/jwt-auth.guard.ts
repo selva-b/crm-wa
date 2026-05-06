@@ -33,13 +33,27 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Access token is required');
     }
 
+    // Try normal user JWT first
     try {
       const payload = await this.tokenService.verifyAccessToken(token);
       request.user = payload;
       return true;
     } catch {
-      throw new UnauthorizedException('Invalid or expired access token');
+      // Fall through — may be a super admin token
     }
+
+    // Try super admin JWT secret via TokenService
+    try {
+      const payload = await this.tokenService.verifySuperAdminToken(token);
+      if (payload?.isSuperAdmin) {
+        request.user = payload;
+        return true;
+      }
+    } catch {
+      // Not a valid super admin token either
+    }
+
+    throw new UnauthorizedException('Invalid or expired access token');
   }
 
   private extractTokenFromHeader(request: { headers: { authorization?: string } }): string | null {

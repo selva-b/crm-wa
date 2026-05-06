@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
+import { BillingModule } from '@/modules/billing/billing.module';
 
 // Repositories
 import { SuperAdminRepository } from './infrastructure/repositories/super-admin.repository';
@@ -29,13 +30,15 @@ import { SuperAdminGuard } from './interfaces/guards/super-admin.guard';
 import { SuperAdminAuthController } from './interfaces/controllers/super-admin-auth.controller';
 import { SuperAdminOrgsController } from './interfaces/controllers/super-admin-orgs.controller';
 import { SuperAdminTicketsController } from './interfaces/controllers/super-admin-tickets.controller';
+import { SuperAdminPlansController } from './interfaces/controllers/super-admin-plans.controller';
 
 @Module({
-  imports: [JwtModule.register({}), ConfigModule],
+  imports: [JwtModule.register({}), ConfigModule, BillingModule],
   controllers: [
     SuperAdminAuthController,
     SuperAdminOrgsController,
     SuperAdminTicketsController,
+    SuperAdminPlansController,
   ],
   providers: [
     // Repositories

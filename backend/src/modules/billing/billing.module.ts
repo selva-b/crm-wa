@@ -78,6 +78,10 @@ import { RazorpayWebhookController } from './interfaces/controllers/razorpay-web
     FeatureFlagGuard,
     StripePaymentService,
     RazorpayPaymentService,
+    // Plan management — used by super-admin module
+    ListPlansUseCase,
+    CreatePlanUseCase,
+    UpdatePlanUseCase,
   ],
 })
 export class BillingModule {}

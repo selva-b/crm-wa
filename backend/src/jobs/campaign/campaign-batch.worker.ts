@@ -116,7 +116,7 @@ export class CampaignBatchWorker implements OnModuleInit {
         orgId,
         deletedAt: null,
       },
-      select: { id: true, optedOut: true, phoneNumber: true },
+      select: { id: true, optedOut: true, phoneNumber: true, name: true, email: true, leadStatus: true },
     });
 
     if (!contact) {
@@ -165,6 +165,23 @@ export class CampaignBatchWorker implements OnModuleInit {
       return;
     }
 
+    // Interpolate template variables in message body
+    const resolvedBody = campaign.messageBody
+      ? campaign.messageBody.replace(/\{\{([\w.]+)\}\}/g, (_: string, key: string) => {
+          const vars: Record<string, string> = {
+            name: contact.name ?? '',
+            phone: contact.phoneNumber,
+            email: contact.email ?? '',
+            leadStatus: contact.leadStatus ?? '',
+            'contact.name': contact.name ?? '',
+            'contact.phone': contact.phoneNumber,
+            'contact.email': contact.email ?? '',
+            'contact.leadStatus': contact.leadStatus ?? '',
+          };
+          return vars[key] ?? `{{${key}}}`;
+        })
+      : null;
+
     // Create new message record
     const message = await this.messageRepo.create({
       orgId,
@@ -173,7 +190,7 @@ export class CampaignBatchWorker implements OnModuleInit {
       direction: MessageDirection.OUTBOUND,
       type: campaign.messageType as MessageType,
       contactPhone: recipient.contactPhone,
-      body: campaign.messageBody || null,
+      body: resolvedBody,
       mediaUrl: campaign.mediaUrl || null,
       mediaMimeType: campaign.mediaMimeType || null,
       idempotencyKey,

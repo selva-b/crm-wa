@@ -55,6 +55,13 @@ export class TokenService {
     });
   }
 
+  async verifySuperAdminToken(token: string): Promise<JwtPayload> {
+    const superAdminSecret = this.configService.getOrThrow<string>('jwt.superAdminSecret');
+    return this.jwtService.verifyAsync<JwtPayload>(token, {
+      secret: superAdminSecret,
+    });
+  }
+
   async verifyRefreshToken(
     token: string,
   ): Promise<{ sub: string; orgId: string }> {

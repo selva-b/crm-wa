@@ -13,6 +13,14 @@ export interface RefreshTokenResult {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    orgId: string;
+  };
 }
 
 @Injectable()
@@ -92,6 +100,14 @@ export class RefreshTokenUseCase {
       accessToken: tokenPair.accessToken,
       refreshToken: tokenPair.refreshToken,
       expiresIn: tokenPair.expiresIn,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        orgId: user.orgId,
+      },
     };
   }
 }
