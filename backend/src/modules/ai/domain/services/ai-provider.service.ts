@@ -98,7 +98,8 @@ export class AiProviderService {
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      throw new Error(`${this.provider} API error: ${response.status} ${response.statusText} — ${body}`);
+      this.logger.warn(`${this.provider} API non-OK: ${response.status}`, { body: body.slice(0, 200) });
+      throw new Error(`${this.provider} API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -135,11 +136,11 @@ export class AiProviderService {
 
   private async completeGemini(req: AiCompletionRequest): Promise<AiCompletionResponse> {
     const model = this.model || 'gemini-2.0-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': this.apiKey },
       body: JSON.stringify({
         system_instruction: {
           parts: [{ text: req.systemPrompt }],

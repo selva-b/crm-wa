@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IsOptional, IsString, MaxLength, IsInt, Min, Max } from 'class-validator';
 import { AiProviderService } from '@/modules/ai/domain/services/ai-provider.service';
 import { OrgContextService } from '@/modules/ai/domain/services/org-context.service';
+import { sanitizePromptInput } from '@/common/utils/prompt-sanitizer.util';
 
 export class GenerateCampaignCopyDto {
   @IsString()
@@ -48,9 +49,9 @@ export class GenerateCampaignCopyUseCase {
       : `You are a WhatsApp marketing copywriter. Write concise, engaging WhatsApp messages under 160 characters each. Use {{name}} for name personalization where natural. Return ONLY a valid JSON array of strings, no extra text.`;
 
     const userPrompt = [
-      `Write ${count} different WhatsApp campaign messages for this goal: "${dto.goal}".`,
-      dto.audienceDesc ? `Target audience: ${dto.audienceDesc}.` : '',
-      dto.tone ? `Tone: ${dto.tone}.` : '',
+      `Write ${count} different WhatsApp campaign messages for this goal: "${sanitizePromptInput(dto.goal, 500)}".`,
+      dto.audienceDesc ? `Target audience: ${sanitizePromptInput(dto.audienceDesc, 300)}.` : '',
+      dto.tone ? `Tone: ${sanitizePromptInput(dto.tone, 50)}.` : '',
     ]
       .filter(Boolean)
       .join(' ');

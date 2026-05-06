@@ -1,7 +1,8 @@
 import {
   Controller, Get, Post, Param, Query, Body,
-  ParseUUIDPipe, HttpCode, HttpStatus, UseGuards, SetMetadata,
+  ParseUUIDPipe, HttpCode, HttpStatus, UseGuards, SetMetadata, ValidationPipe,
 } from '@nestjs/common';
+import { IsString, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
@@ -16,6 +17,14 @@ import { KbRagSearchUseCase } from '../../application/use-cases/kb-rag-search.us
 import { DetectIntentUseCase } from '../../application/use-cases/detect-intent.use-case';
 import { SuggestRoutingUseCase } from '../../application/use-cases/suggest-routing.use-case';
 import { GenerateAiInsightsUseCase } from '../../application/use-cases/generate-ai-insights.use-case';
+
+class KbSearchQueryDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(2)
+  @MaxLength(500)
+  q: string;
+}
 
 @Controller('ai')
 export class AiController {
@@ -104,9 +113,9 @@ export class AiController {
   @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
   async kbSearch(
     @CurrentUser() user: JwtPayload,
-    @Query('q') query: string,
+    @Query(new ValidationPipe({ transform: true, whitelist: true })) dto: KbSearchQueryDto,
   ) {
-    const result = await this.kbRagSearch.execute(query || '', user.orgId);
+    const result = await this.kbRagSearch.execute(dto.q, user.orgId);
     await this.usageTracking.incrementUsage(user.orgId, UsageMetricType.AI_CREDITS);
     return result;
   }

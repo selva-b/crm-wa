@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '@/common/decorators';
@@ -10,6 +11,8 @@ import { TokenService } from '../../domain/services/token.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
+  private readonly logger = new Logger(JwtAuthGuard.name);
+
   constructor(
     private readonly reflector: Reflector,
     private readonly tokenService: TokenService,
@@ -52,6 +55,14 @@ export class JwtAuthGuard implements CanActivate {
     } catch {
       // Not a valid super admin token either
     }
+
+    // Both verification paths failed — log for intrusion detection
+    // Never log the token value itself
+    this.logger.warn('JWT authentication failed', {
+      ip: request.ip || request.socket?.remoteAddress || 'unknown',
+      path: request.url,
+      ua: String(request.headers['user-agent'] || '').slice(0, 100),
+    });
 
     throw new UnauthorizedException('Invalid or expired access token');
   }

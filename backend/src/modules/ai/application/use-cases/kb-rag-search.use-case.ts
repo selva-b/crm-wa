@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { AiProviderService } from '../../domain/services/ai-provider.service';
 import { OrgContextService } from '../../domain/services/org-context.service';
+import { sanitizePromptInput } from '@/common/utils/prompt-sanitizer.util';
 
 export interface KbRagResult {
   answer: string;
@@ -23,7 +24,11 @@ export class KbRagSearchUseCase {
    * RAG-style search: find relevant KB articles and generate an answer.
    * Used by agents to quickly find answers, or by chatbot for auto-replies.
    */
-  async execute(query: string, orgId: string): Promise<KbRagResult> {
+  async execute(rawQuery: string, orgId: string): Promise<KbRagResult> {
+    // Sanitize query before using it in AI prompt and DB search
+    const query = sanitizePromptInput(rawQuery, 500);
+    if (!query) return { answer: '', sources: [], confidence: 0 };
+
     // Step 1: Search for relevant KB articles
     const articles = await this.prisma.kbArticle.findMany({
       where: {
@@ -47,7 +52,7 @@ export class KbRagSearchUseCase {
 
     // Step 2: Build context from articles
     const context = articles
-      .map((a, i) => `[Article ${i + 1}: "${a.title}"]\n${a.body.slice(0, 1500)}`)
+      .map((a, i) => `[Article ${i + 1}: "${sanitizePromptInput(a.title, 200)}"]\n${a.body.slice(0, 1500)}`)
       .join('\n\n---\n\n');
 
     // Step 3: Generate answer using AI with article context
@@ -113,7 +118,7 @@ Return ONLY valid JSON:
 
     const query = messages
       .reverse()
-      .map((m) => m.body || '')
+      .map((m) => sanitizePromptInput(m.body || '', 200))
       .filter(Boolean)
       .join(' ')
       .slice(0, 500);

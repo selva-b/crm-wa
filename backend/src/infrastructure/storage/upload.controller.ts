@@ -6,13 +6,16 @@ import {
   BadRequestException,
   UseGuards,
   Req,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { randomUUID } from 'crypto';
+import { unlink } from 'fs/promises';
 import { Request } from 'express';
 import { JwtAuthGuard } from '@/modules/auth/interfaces/guards/jwt-auth.guard';
+import { validateMagicBytes } from '@/common/utils/magic-bytes.util';
 
 const ALLOWED_MIME_TYPES = [
   // Images
@@ -46,6 +49,7 @@ const MAX_FILE_SIZE = 16 * 1024 * 1024; // 16 MB
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
 export class UploadController {
+  private readonly logger = new Logger(UploadController.name);
   @Post()
   @UseInterceptors(
     FileInterceptor('file', {
@@ -77,6 +81,16 @@ export class UploadController {
   ) {
     if (!file) {
       throw new BadRequestException('No file provided');
+    }
+
+    // Magic bytes validation — verify actual file content matches claimed MIME type.
+    // Multer's fileFilter only checks the client-supplied Content-Type header.
+    const isValidContent = await validateMagicBytes(file.path, file.mimetype);
+    if (!isValidContent) {
+      await unlink(file.path).catch((err: Error) =>
+        this.logger.warn(`Failed to delete rejected upload ${file.filename}: ${err.message}`),
+      );
+      throw new BadRequestException('File content does not match declared type.');
     }
 
     // Build the authenticated file URL (served via FileServeController)

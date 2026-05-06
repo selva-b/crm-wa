@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
+import { sanitizeContextInput } from '@/common/utils/prompt-sanitizer.util';
 
 /**
  * Lightweight service that reads the org's AI memory and returns a
@@ -48,12 +49,12 @@ export class OrgContextService {
 
     if (mem.kbSummary) {
       parts.push(`\n## Knowledge Base Summary`);
-      parts.push(mem.kbSummary);
+      parts.push(sanitizeContextInput(mem.kbSummary));
     }
 
     if (mem.customContext) {
       parts.push(`\n## Additional Context`);
-      parts.push(mem.customContext);
+      parts.push(sanitizeContextInput(mem.customContext));
     }
 
     return parts.join('\n');

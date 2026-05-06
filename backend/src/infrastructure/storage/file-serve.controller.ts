@@ -9,7 +9,7 @@ import {
 import { Response } from 'express';
 import { JwtAuthGuard } from '@/modules/auth/interfaces/guards/jwt-auth.guard';
 import { Public } from '@/common/decorators';
-import { join, extname } from 'path';
+import { join, extname, resolve, sep } from 'path';
 import { existsSync, createReadStream } from 'fs';
 
 const MIME_MAP: Record<string, string> = {
@@ -41,7 +41,7 @@ const SAFE_FILENAME = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 @Controller('files')
 @UseGuards(JwtAuthGuard)
 export class FileServeController {
-  private readonly uploadsDir = join(process.cwd(), 'uploads');
+  private readonly uploadsDir = resolve(process.cwd(), 'uploads');
 
   @Public()
   @Get(':filename')
@@ -54,10 +54,10 @@ export class FileServeController {
       throw new NotFoundException('File not found');
     }
 
-    const filePath = join(this.uploadsDir, filename);
-
-    // Prevent path traversal — resolved path must be within uploads dir
-    if (!filePath.startsWith(this.uploadsDir)) {
+    // Use resolve() to normalize all separators and '..' segments before comparison.
+    // startsWith() alone is not sufficient on Windows due to mixed path separators.
+    const filePath = resolve(this.uploadsDir, filename);
+    if (!filePath.startsWith(this.uploadsDir + sep)) {
       throw new NotFoundException('File not found');
     }
 

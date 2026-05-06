@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { AiProviderService } from '../../domain/services/ai-provider.service';
 import { OrgContextService } from '../../domain/services/org-context.service';
+import { sanitizePromptInput } from '@/common/utils/prompt-sanitizer.util';
 
 @Injectable()
 export class GetSmartRepliesUseCase {
@@ -32,11 +33,15 @@ export class GetSmartRepliesUseCase {
       return { replies: ['Hello! How can I help you today?', 'Hi, thanks for reaching out!', 'Welcome! What can I do for you?'] };
     }
 
-    // Build conversation context
+    // Build conversation context — sanitize each message body before injecting into prompt
     const conversationContext = messages
       .reverse()
-      .map((m) => `${m.direction === 'INBOUND' ? 'Customer' : 'Agent'}: ${m.body || `[${m.type}]`}`)
-      .join('\n');
+      .map((m) => {
+        const body = m.body ? sanitizePromptInput(m.body) : `[${m.type}]`;
+        return `${m.direction === 'INBOUND' ? 'Customer' : 'Agent'}: ${body}`;
+      })
+      .join('\n')
+      .slice(0, 8000);
 
     const orgContextStr = await this.orgContext.getContext(orgId);
     const BASE_SYSTEM_PROMPT = `You are a helpful customer support assistant. Based on the conversation below, suggest exactly 3 short reply options for the agent. Each reply should be professional, helpful, and contextually appropriate. Return ONLY a JSON array of 3 strings, no other text.`;

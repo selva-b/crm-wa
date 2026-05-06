@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { AiProviderService } from '../../domain/services/ai-provider.service';
+import { sanitizePromptInput } from '@/common/utils/prompt-sanitizer.util';
 
 export type SentimentLabel = 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'URGENT';
 
@@ -37,7 +38,7 @@ export class AnalyzeSentimentUseCase {
 
     const customerMessages = messages
       .reverse()
-      .map((m) => m.body || '')
+      .map((m) => sanitizePromptInput(m.body || ''))
       .filter(Boolean)
       .join('\n');
 
@@ -78,7 +79,7 @@ export class AnalyzeSentimentUseCase {
 
     const result = await this.aiProvider.complete({
       systemPrompt: `Classify the customer message sentiment as exactly one of: POSITIVE, NEUTRAL, NEGATIVE, URGENT. Return ONLY the label, nothing else.`,
-      userPrompt: messageBody,
+      userPrompt: sanitizePromptInput(messageBody),
       maxTokens: 10,
     });
 
