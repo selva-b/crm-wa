@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // ─── Responsive hook ─────────────────────────────────────────────────────────
 function useBreakpoint() {
@@ -19,16 +19,19 @@ function useBreakpoint() {
 }
 
 // ─── Scroll animation hook ───────────────────────────────────────────────────
-function useInView(threshold = 0.15) {
+function useInView(threshold = 0.05, rootMargin = "0px 0px -5% 0px") {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold });
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setInView(true); },
+      { threshold, rootMargin }
+    );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [threshold]);
+  }, [threshold, rootMargin]);
   return { ref, inView };
 }
 
@@ -65,7 +68,7 @@ const features = [
   { icon: "group", title: "Contacts CRM", desc: "Tag, segment, and manage all your leads and customers.", href: "/features/contacts" },
   { icon: "smart_toy", title: "Chatbot Builder", desc: "Build no-code WhatsApp chatbots in minutes.", href: "/features/chatbot" },
   { icon: "trending_up", title: "Deals Pipeline", desc: "Track every deal through stages. See your revenue forecast at a glance.", href: "/features/deals" },
-  { icon: "low_priority", title: "Sequences", desc: "Automated drip campaigns on WhatsApp. Set it, forget it, close more.", href: "/features/sequences" },
+  { icon: "low_priority", title: "Auto Follow-Ups", desc: "Automated drip campaigns on WhatsApp. Set it, forget it, close more.", href: "/features/sequences" },
   { icon: "star_rate", title: "CSAT Surveys", desc: "Auto-send satisfaction surveys after every resolved conversation.", href: "/features/csat" },
   { icon: "query_stats", title: "Lead Scoring", desc: "Automatically score and qualify leads based on engagement and profile data.", href: "/features/lead-scoring" },
   { icon: "devices", title: "Multi-Channel", desc: "Instagram, Facebook Messenger, and Email — alongside WhatsApp.", href: "/features/multi-channel" },
@@ -129,11 +132,28 @@ const plans = [
 ];
 
 
+const enterprisePlan = {
+  name: "Enterprise", monthlyPrice: 3999, yearlyPrice: 39990,
+  subtitle: "200 users · 200 WA sessions · Unlimited msgs & campaigns",
+  features: [
+    "Everything in Pro",
+    "Dedicated account manager",
+    "Custom SLA & uptime guarantee",
+    "White-label options",
+    "Priority 24/7 phone support",
+  ],
+  popular: false,
+};
+
 const partnerLogos = [
-  { name: "Meta Business", abbr: "META" },
-  { name: "Razorpay", abbr: "RZRPAY" },
-  { name: "Shopify", abbr: "SHOPIFY" },
-  { name: "Stripe", abbr: "STRIPE" },
+  { name: "Meta Business",  abbr: "META",   color: "#1877f2" },
+  { name: "Razorpay",       abbr: "RZP",    color: "#3395ff" },
+  { name: "Shopify",        abbr: "SHPFY",  color: "#96bf48" },
+  { name: "Stripe",         abbr: "STR",    color: "#635bff" },
+  { name: "WooCommerce",    abbr: "WOO",    color: "#7f54b3" },
+  { name: "Zoho CRM",       abbr: "ZOHO",   color: "#e42527" },
+  { name: "Google Sheets",  abbr: "GS",     color: "#34a853" },
+  { name: "Zapier",         abbr: "ZAP",    color: "#ff4a00" },
 ];
 
 // ─── SVG Divider ─────────────────────────────────────────────────────────────
@@ -154,7 +174,7 @@ function SvgDivider({ inView }: { inView: boolean }) {
 
 // ─── Section Divider ─────────────────────────────────────────────────────────
 function SectionDivider({ bg = "#0e0e0e", label }: { bg?: string; label?: string }) {
-  const { ref, inView } = useInView(0.4);
+  const { ref, inView } = useInView(0.4, "0px");
   const W = 600;
   return (
     <div ref={ref} style={{ background: bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "10px 0 8px", gap: 5, overflow: "hidden", width: "100%" }}>
@@ -404,6 +424,7 @@ function Navbar() {
 function HeroSection() {
   const [started, setStarted] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [heroMenuOpen, setHeroMenuOpen] = useState(false);
   const { mobile, tablet } = useBreakpoint();
 
   useEffect(() => { const t = setTimeout(() => setStarted(true), 80); return () => clearTimeout(t); }, []);
@@ -422,36 +443,73 @@ function HeroSection() {
       {/* Square grid overlay */}
       <SquareGrid scrollY={scrollY} mobile={mobile} tablet={tablet} />
 
+      {/* Gradient overlay for text legibility */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none", background: "linear-gradient(to right, rgba(13,13,13,0.75) 0%, rgba(13,13,13,0.35) 55%, transparent 100%)" }} />
+
       {/* Floating liquid-glass pill navbar */}
-      <div style={{ position: "relative", zIndex: 40, width: "100%", padding: mobile ? "16px 16px 0" : "24px 48px 0", display: "flex", justifyContent: "center" }}>
-        <nav className="liquid-glass" style={{
-          display: "inline-flex", alignItems: "center", gap: mobile ? 20 : 48,
-          padding: mobile ? "8px 16px 8px 20px" : "10px 20px 10px 24px", borderRadius: 100,
-          border: "1px solid rgba(255,255,255,0.06)",
-          boxShadow: "0 20px 50px rgba(217,119,6,0.05)",
-          width: mobile ? "100%" : "auto", justifyContent: mobile ? "space-between" : "flex-start",
-        }}>
-          <span style={{ fontSize: mobile ? 16 : 18, fontWeight: 900, letterSpacing: "-0.04em", color: "#e5e2e1", whiteSpace: "nowrap", fontFamily: "'Inter', sans-serif" }}>
-            Wazelo
-          </span>
-          {!mobile && (
-            <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
-              {[["Features", "#features"], ["Use Cases", "/use-cases"], ["Pricing", "#pricing"], ["About", "/about"]].map(([label, href]) => (
-                <a key={label} href={href} style={{ fontSize: 13, fontWeight: 500, color: "rgba(229,226,225,0.7)", textDecoration: "none", letterSpacing: "0.01em", fontFamily: "'Inter', sans-serif", transition: "color 0.2s" }}
-                  onMouseEnter={e => ((e.target as HTMLAnchorElement).style.color = "#fff")}
-                  onMouseLeave={e => ((e.target as HTMLAnchorElement).style.color = "rgba(229,226,225,0.7)")}
-                >{label}</a>
-              ))}
-            </div>
-          )}
-          <a href={APP_REGISTER_URL} style={{
-            fontSize: 13, fontWeight: 700, padding: mobile ? "8px 18px" : "9px 22px", borderRadius: 100,
-            background: "#fff", color: "#131313", border: "none", cursor: "pointer",
-            fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap", textDecoration: "none",
+      <div style={{ position: "relative", zIndex: 40, width: "100%", padding: mobile ? "16px 16px 0" : "24px 48px 0" }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <nav className="liquid-glass" style={{
+            display: "inline-flex", alignItems: "center", gap: mobile ? 20 : 48,
+            padding: mobile ? "8px 16px 8px 20px" : "10px 20px 10px 24px", borderRadius: 100,
+            border: "1px solid rgba(255,255,255,0.06)",
+            boxShadow: "0 20px 50px rgba(217,119,6,0.05)",
+            width: mobile ? "100%" : "auto", justifyContent: mobile ? "space-between" : "flex-start",
           }}>
-            Get Started Free
-          </a>
-        </nav>
+            <span style={{ fontSize: mobile ? 16 : 18, fontWeight: 900, letterSpacing: "-0.04em", color: "#e5e2e1", whiteSpace: "nowrap", fontFamily: "'Inter', sans-serif" }}>
+              Wazelo
+            </span>
+            {!mobile && (
+              <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
+                {[["Features", "#features"], ["Use Cases", "/use-cases"], ["Pricing", "#pricing"], ["About", "/about"]].map(([label, href]) => (
+                  <a key={label} href={href} style={{ fontSize: 13, fontWeight: 500, color: "rgba(229,226,225,0.7)", textDecoration: "none", letterSpacing: "0.01em", fontFamily: "'Inter', sans-serif", transition: "color 0.2s" }}
+                    onMouseEnter={e => ((e.target as HTMLAnchorElement).style.color = "#fff")}
+                    onMouseLeave={e => ((e.target as HTMLAnchorElement).style.color = "rgba(229,226,225,0.7)")}
+                  >{label}</a>
+                ))}
+              </div>
+            )}
+            {!mobile ? (
+              <a href={APP_REGISTER_URL} style={{
+                fontSize: 13, fontWeight: 700, padding: "9px 22px", borderRadius: 100,
+                background: "#fff", color: "#131313", border: "none", cursor: "pointer",
+                fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap", textDecoration: "none",
+              }}>
+                Get Started Free
+              </a>
+            ) : (
+              <button
+                onClick={() => setHeroMenuOpen(o => !o)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 4, display: "flex", flexDirection: "column", gap: 5 }}
+                aria-label="Menu"
+              >
+                <span style={{ display: "block", width: 22, height: 2, background: heroMenuOpen ? "#ffb77d" : "#e5e2e1", transition: "all 0.3s ease", transform: heroMenuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
+                <span style={{ display: "block", width: 22, height: 2, background: heroMenuOpen ? "#ffb77d" : "#e5e2e1", transition: "all 0.3s ease", opacity: heroMenuOpen ? 0 : 1 }} />
+                <span style={{ display: "block", width: 22, height: 2, background: heroMenuOpen ? "#ffb77d" : "#e5e2e1", transition: "all 0.3s ease", transform: heroMenuOpen ? "rotate(-45deg) translate(5px, -5px)" : "none" }} />
+              </button>
+            )}
+          </nav>
+        </div>
+        {mobile && (
+          <div style={{
+            maxHeight: heroMenuOpen ? 320 : 0, overflow: "hidden",
+            transition: "max-height 0.35s ease",
+            background: "rgba(13,13,13,0.96)",
+            borderRadius: "0 0 16px 16px",
+            borderTop: heroMenuOpen ? "1px solid rgba(255,183,125,0.08)" : "none",
+            marginTop: 4,
+          }}>
+            <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 0 }}>
+              {[["Features", "#features"], ["Use Cases", "/use-cases"], ["Pricing", "#pricing"], ["About", "/about"]].map(([label, href]) => (
+                <a key={label} href={href} onClick={() => setHeroMenuOpen(false)} style={{ padding: "14px 0", fontSize: 16, fontWeight: 500, color: "rgba(219,194,176,0.8)", textDecoration: "none", fontFamily: "'Inter', sans-serif", borderBottom: "1px solid rgba(255,183,125,0.06)" }}>{label}</a>
+              ))}
+              <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
+                <a href={APP_LOGIN_URL} style={{ flex: 1, fontSize: 14, fontWeight: 500, padding: "12px", borderRadius: 8, background: "none", border: "1px solid rgba(255,183,125,0.2)", color: "#dbc2b0", cursor: "pointer", fontFamily: "'Inter', sans-serif", textDecoration: "none", textAlign: "center" }}>Sign In</a>
+                <a href={APP_REGISTER_URL} style={{ flex: 1, fontSize: 14, fontWeight: 700, padding: "12px", borderRadius: 8, background: "#fff", color: "#131313", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", textDecoration: "none", textAlign: "center" }}>Get Started Free</a>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Hero content */}
@@ -461,17 +519,17 @@ function HeroSection() {
           display: "grid",
           gridTemplateColumns: mobile ? "1fr" : "1fr 1fr",
           gap: mobile ? 32 : 48,
-          alignItems: "flex-end",
+          alignItems: "center",
         }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             <AnimatedHeading
-              lines={["Close every deal", "with Wazelo."]}
-              highlightWord="Wazelo."
+              lines={["WhatsApp CRM for", "growing teams."]}
+              highlightWord="teams."
               started={started}
             />
             <FadeIn delay={1400} duration={800}>
               <p style={{ fontSize: mobile ? 16 : 18, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, margin: 0, fontFamily: "'Inter', sans-serif" }}>
-                The WhatsApp CRM built for teams that never stop closing.
+                Shared inbox, campaigns, automation &amp; AI chatbot — on official WhatsApp Business API. From ₹499/mo.
               </p>
             </FadeIn>
             <FadeIn delay={1700} duration={800}>
@@ -486,21 +544,51 @@ function HeroSection() {
                 }}>
                   Start Free Trial
                 </a>
-                <a href={APP_LOGIN_URL} className="liquid-glass" style={{ fontSize: 14, fontWeight: 500, padding: "14px 32px", borderRadius: 8, color: "#e5e2e1", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", textDecoration: "none", display: "inline-block" }}>
-                  Sign In
+                <a href="/contact#demo" className="liquid-glass" style={{ fontSize: 14, fontWeight: 500, padding: "14px 32px", borderRadius: 8, color: "#e5e2e1", border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif", textDecoration: "none", display: "inline-block" }}>
+                  Book a Demo
                 </a>
+              </div>
+            </FadeIn>
+            <FadeIn delay={1800} duration={600}>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: 0, fontFamily: "'Inter', sans-serif", letterSpacing: "0.01em" }}>
+                <span style={{ color: "#25D366", fontWeight: 700 }}>●</span>{" "}
+                Setup takes 5 minutes — go live today
+              </p>
+            </FadeIn>
+            <FadeIn delay={2000} duration={600}>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", margin: 0, fontFamily: "'Inter', sans-serif" }}>
+                Already a customer?{" "}
+                <a href={APP_LOGIN_URL} style={{ color: "rgba(255,183,125,0.6)", textDecoration: "underline" }}>Sign in here</a>
+              </p>
+            </FadeIn>
+            <FadeIn delay={2200} duration={700}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#25D366", display: "inline-block", flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: 400, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>
+                  Trusted by 1,200+ businesses worldwide
+                </span>
               </div>
             </FadeIn>
           </div>
 
-          {/* Right tag card — hide on mobile */}
+          {/* Right column — product mockup preview, hide on mobile */}
           {!mobile && (
-            <div style={{ display: "flex", justifyContent: "flex-end", paddingBottom: 4 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
               <FadeIn delay={1200} duration={1000}>
-                <div className="liquid-glass" style={{ borderRadius: 16, padding: "20px 32px", display: "inline-block" }}>
-                  <p style={{ fontSize: 22, fontWeight: 300, color: "#e5e2e1", letterSpacing: "-0.02em", margin: 0, fontFamily: "'Inter', sans-serif" }}>
-                    Inbox. Campaigns. Automation.
-                  </p>
+                <div style={{
+                  width: 340, borderRadius: 16, overflow: "hidden",
+                  border: "1px solid rgba(255,183,125,0.15)",
+                  boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 40px rgba(255,183,125,0.08)",
+                  transform: "rotate(-1.5deg)",
+                  background: "#0d0d0d",
+                }}>
+                  <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 6, background: "#111" }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#ff5f57" }} />
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#febc2e" }} />
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#28c840" }} />
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: "'Inter', sans-serif", marginLeft: 8 }}>Wazelo Inbox</span>
+                  </div>
+                  <SharedInboxMockup inView={started} />
                 </div>
               </FadeIn>
             </div>
@@ -529,7 +617,7 @@ function HeroSection() {
 
 // ─── Marquee ──────────────────────────────────────────────────────────────────
 function MarqueeTicker() {
-  const items = ["SHARED INBOX", "CAMPAIGNS", "AUTOMATION", "ANALYTICS", "CONTACTS CRM", "CHATBOT BUILDER", "DEALS PIPELINE", "SEQUENCES", "CSAT SURVEYS", "LEAD SCORING", "MULTI-CHANNEL", "DEVELOPER API", "KNOWLEDGE BASE", "SLA TRACKING", "LEAD ADS", "CUSTOM FIELDS"];
+  const items = ["SHARED INBOX", "CAMPAIGNS", "AUTOMATION", "ANALYTICS", "CONTACTS CRM", "CHATBOT BUILDER", "DEALS PIPELINE", "FOLLOW-UP DRIPS", "CSAT SURVEYS", "LEAD SCORING", "MULTI-CHANNEL", "DEVELOPER API", "AI KNOWLEDGE BASE", "RESPONSE TRACKING", "LEAD ADS", "CUSTOM FIELDS"];
   const text = items.map(i => `${i}  ·  `).join("") + items.map(i => `${i}  ·  `).join("");
   return (
     <div style={{ width: "100%", background: "#0e0e0e", overflow: "hidden", padding: "13px 0", borderTop: "1px solid rgba(85,67,54,0.1)", borderBottom: "1px solid rgba(85,67,54,0.1)" }}>
@@ -540,32 +628,125 @@ function MarqueeTicker() {
   );
 }
 
-// ─── Partners / Integrations Carousel ────────────────────────────────────────
+// ─── Customer Logo Strip ─────────────────────────────────────────────────────
+function CustomerLogoStrip() {
+  const { ref, inView } = useInView(0.2);
+  const { mobile } = useBreakpoint();
+
+  const logos = [
+    { name: "PropEdge Realty", initials: "PE",  color: "#ffb77d" },
+    { name: "ZopNow",          initials: "ZN",  color: "#a3defe" },
+    { name: "HealthFirst",     initials: "HF",  color: "#4ade80" },
+    { name: "LearnEdge",       initials: "LE",  color: "#c084fc" },
+    { name: "QuickLoans",      initials: "QL",  color: "#fb923c" },
+    { name: "StyleHub",        initials: "SH",  color: "#f472b6" },
+  ];
+
+  return (
+    <section style={{ background: "#0e0e0e", padding: mobile ? "40px 20px" : "52px 48px" }}>
+      <div ref={ref} style={{ maxWidth: 1300, margin: "0 auto" }}>
+        <p className="font-body" style={{
+          textAlign: "center", fontSize: 11, fontWeight: 700, letterSpacing: "0.2em",
+          textTransform: "uppercase", color: "rgba(163,140,124,0.45)", marginBottom: 32,
+          opacity: inView ? 1 : 0, transition: "opacity 0.7s ease",
+        }}>
+          Trusted by 1,200+ businesses worldwide
+        </p>
+        <div style={{
+          display: "flex", justifyContent: "center", alignItems: "center",
+          gap: mobile ? 20 : 48, flexWrap: "wrap",
+          opacity: inView ? 1 : 0, transition: "opacity 0.8s 0.15s ease",
+        }}>
+          {logos.map((logo, i) => (
+            <div key={logo.name} style={{
+              display: "flex", alignItems: "center", gap: 8,
+              opacity: inView ? 1 : 0,
+              transition: `opacity 0.6s ${0.1 + i * 0.08}s ease`,
+            }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: `${logo.color}18`,
+                border: `1px solid ${logo.color}30`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 800, color: logo.color, fontFamily: "'Inter', sans-serif" }}>
+                  {logo.initials}
+                </span>
+              </div>
+              {!mobile && (
+                <span className="font-body" style={{
+                  fontSize: 13, fontWeight: 600, color: "rgba(219,194,176,0.4)",
+                  whiteSpace: "nowrap",
+                }}>
+                  {logo.name}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Partners / Integrations Grid ────────────────────────────────────────────
 function PartnersSection() {
   const { ref, inView } = useInView(0.1);
   const { mobile } = useBreakpoint();
-  const logoText = [...partnerLogos, ...partnerLogos].map(l => `${l.name}  ·  `).join("");
 
   return (
-    <section style={{ background: "#0e0e0e", padding: mobile ? "56px 0" : "80px 0", overflow: "hidden" }}>
-      <div ref={ref} style={{ maxWidth: 1300, margin: "0 auto", padding: mobile ? "0 20px" : "0 48px", marginBottom: 40 }}>
+    <section style={{ background: "#0e0e0e", padding: mobile ? "56px 20px" : "72px 48px" }}>
+      <div ref={ref} style={{ maxWidth: 1300, margin: "0 auto" }}>
         <p className="font-body" style={{
-          textAlign: "center", fontSize: 11, fontWeight: 700, letterSpacing: mobile ? "0.08em" : "0.2em",
-          textTransform: "uppercase", color: "rgba(163,140,124,0.5)", marginBottom: 0,
-          opacity: inView ? 1 : 0, transition: "all 0.7s ease",
+          textAlign: "center", fontSize: 11, fontWeight: 700, letterSpacing: "0.2em",
+          textTransform: "uppercase", color: "rgba(163,140,124,0.45)", marginBottom: 36,
+          opacity: inView ? 1 : 0, transition: "opacity 0.7s ease",
         }}>
           Works with the tools you already use
         </p>
-      </div>
-      {/* Scrolling logo strip */}
-      <div style={{ width: "100%", overflow: "hidden", padding: "24px 0", borderTop: "1px solid rgba(85,67,54,0.1)", borderBottom: "1px solid rgba(85,67,54,0.1)" }}>
-        <span className="font-headline animate-marquee" style={{
-          display: "inline-block", fontSize: 13, fontWeight: 700,
-          letterSpacing: "0.25em", textTransform: "uppercase",
-          color: "rgba(163,140,124,0.35)", whiteSpace: "nowrap",
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: mobile ? "repeat(4, 1fr)" : "repeat(8, 1fr)",
+          gap: mobile ? 12 : 16,
         }}>
-          {logoText}{logoText}
-        </span>
+          {partnerLogos.map((logo, i) => (
+            <div key={logo.name} style={{
+              background: "#1c1b1b",
+              border: "1px solid rgba(85,67,54,0.2)",
+              borderRadius: 8,
+              padding: mobile ? "12px 8px" : "16px 12px",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+              opacity: inView ? 1 : 0,
+              transform: inView ? "translateY(0)" : "translateY(16px)",
+              transition: `opacity 0.5s ${i * 0.06}s ease, transform 0.5s ${i * 0.06}s ease`,
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 8,
+                background: `${logo.color}18`,
+                border: `1px solid ${logo.color}30`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <span style={{
+                  fontSize: logo.abbr.length > 4 ? 7 : 9,
+                  fontWeight: 800, color: logo.color,
+                  fontFamily: "'Inter', sans-serif",
+                  letterSpacing: "-0.03em",
+                }}>
+                  {logo.abbr}
+                </span>
+              </div>
+              {!mobile && (
+                <span className="font-body" style={{
+                  fontSize: 10, fontWeight: 600, color: "rgba(163,140,124,0.5)",
+                  textAlign: "center", lineHeight: 1.2,
+                }}>
+                  {logo.name}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -842,7 +1023,7 @@ const MOCKUP_COMPONENTS: Record<string, (props: { inView: boolean }) => ReturnTy
   "Contacts CRM":    (_) => <ContactsMockup />,
   "Chatbot Builder": (_) => <ChatbotMockup />,
   "Deals Pipeline":  (_) => <DealsMockup />,
-  "Sequences":       (_) => <SequencesMockup />,
+  "Auto Follow-Ups": (_) => <SequencesMockup />,
   "CSAT Surveys":    (_) => <CsatMockup />,
   "Lead Scoring":    (_) => <LeadScoringMockup />,
   "Multi-Channel":   (_) => <MultiChannelMockup />,
@@ -859,7 +1040,7 @@ function FeatureCard({ f, i, meta, mobile, tablet }: {
 }) {
   const { ref, inView } = useInView(0.12);
   const { size, stat, tags } = meta;
-  const delay = Math.min(i, 5) * 0.07;
+  const delay = Math.min(i, 4) * 0.06;
 
   const isHero = size === "hero";
   const isWide = size === "wide";
@@ -991,11 +1172,11 @@ function AiChatSection() {
             <h2 className="font-headline" style={{
               fontSize: mobile ? "clamp(36px,10vw,56px)" : "clamp(44px,5vw,80px)",
               fontWeight: 900, lineHeight: 0.9, letterSpacing: "-0.045em",
-              textTransform: "uppercase", color: "#e5e2e1", margin: 0,
+              color: "#e5e2e1", margin: 0,
               opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(28px)",
               transition: "all 0.8s 0.1s ease",
             }}>
-              CHAT SMARTER.{"\n"}<span style={{ background: "linear-gradient(135deg,#ffb77d,#d97707)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>CLOSE FASTER.</span>
+              Chat Smarter.{"\n"}<span style={{ background: "linear-gradient(135deg,#ffb77d,#d97707)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Close Faster.</span>
             </h2>
           </div>
           <div style={{ maxWidth: 380, opacity: inView ? 1 : 0, transition: "all 0.8s 0.25s ease" }}>
@@ -1109,7 +1290,7 @@ function FeaturesSection() {
 
   // Show 6 by default on desktop/tablet (2 hero + 4 standard = 2 full visual rows)
   // Show 3 on mobile (single column, too long otherwise)
-  const defaultCount = mobile ? 3 : 6;
+  const defaultCount = mobile ? 3 : 9;
   const visibleFeatures = showAll ? features : features.slice(0, defaultCount);
   const remaining = features.length - defaultCount;
 
@@ -1182,11 +1363,11 @@ function FeaturesSection() {
         {/* Load more */}
         {remaining > 0 && (
           <div style={{ marginTop: mobile ? 32 : 48, display: "flex", justifyContent: "center" }}>
-            <button className="bento-load-btn" onClick={() => setShowAll(v => !v)}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                {showAll ? "expand_less" : "expand_more"}
-              </span>
+            <button className="bento-load-btn bento-load-btn--prominent" onClick={() => setShowAll(v => !v)}>
               {showAll ? "Show less" : `Show all ${remaining} more features`}
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                {showAll ? "expand_less" : "arrow_forward"}
+              </span>
             </button>
           </div>
         )}
@@ -1196,208 +1377,159 @@ function FeaturesSection() {
   );
 }
 
-// ─── Scroll Sequence Section ──────────────────────────────────────────────────
-// Frame filenames in order (gaps 008–011 are missing)
-const SEQUENCE_FRAMES = [
-  ...Array.from({ length: 7 }, (_, i) => `ezgif-frame-${String(i + 1).padStart(3, "0")}.jpg`),
-  ...Array.from({ length: 29 }, (_, i) => `ezgif-frame-${String(i + 12).padStart(3, "0")}.jpg`),
+// ─── Platform Walkthrough Section ────────────────────────────────────────────
+
+const WALKTHROUGH_TABS = [
+  { id: 1, label: "Shared Inbox",   frame: "ezgif-frame-001.jpg", desc: "Your whole team in one WhatsApp inbox. Assign conversations, reply faster, resolve sooner." },
+  { id: 2, label: "Bulk Campaigns", frame: "ezgif-frame-002.jpg", desc: "Broadcast personalised messages to thousands. Track delivery and opens in real-time." },
+  { id: 3, label: "Automation",     frame: "ezgif-frame-003.jpg", desc: "Set up auto-replies and workflow rules. Runs 24/7 without you lifting a finger." },
+  { id: 4, label: "AI Insights",    frame: "ezgif-frame-004.jpg", desc: "Sentiment, intent, and smart reply suggestions — live inside every conversation." },
+  { id: 5, label: "Deals Pipeline", frame: "ezgif-frame-005.jpg", desc: "Track every deal through stages. See your revenue forecast at a glance." },
+  { id: 6, label: "Analytics",      frame: "ezgif-frame-006.jpg", desc: "Delivery rates, CSAT scores, team performance — one dashboard." },
 ];
-const FRAME_COUNT = SEQUENCE_FRAMES.length; // 36
 
 function ScrollSequenceSection() {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imagesRef = useRef<HTMLImageElement[]>([]);
-  const frameRef = useRef(0);
-  const rafRef = useRef<number>(0);
-  const [progress, setProgress] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+  const { ref, inView } = useInView(0.1);
+  const { mobile } = useBreakpoint();
+  const [active, setActive] = useState(0);
+  const [tabProgress, setTabProgress] = useState(0);
+  const pauseRef = useRef(false);
+  const tabStartRef = useRef(Date.now());
 
   useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", onResize, { passive: true });
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  // Preload all frames
-  useEffect(() => {
-    let done = 0;
-    const onDone = () => { done++; if (done === FRAME_COUNT) setLoaded(true); };
-    const imgs: HTMLImageElement[] = SEQUENCE_FRAMES.map((name) => {
-      const img = new window.Image();
-      // Set handlers BEFORE src to avoid missing cached-image load events
-      img.onload = onDone;
-      img.onerror = onDone;
-      img.src = `/scroll-sequence/${name}`;
-      // If already cached and complete, count it immediately
-      if (img.complete) { img.onload = null; img.onerror = null; onDone(); }
-      return img;
-    });
-    imagesRef.current = imgs;
-  }, []);
-
-  // Draw frame to canvas
-  const drawFrame = useCallback((index: number) => {
-    const canvas = canvasRef.current;
-    const img = imagesRef.current[index];
-    if (!canvas || !img || !img.complete || img.naturalWidth === 0) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    // Fit image to canvas preserving aspect ratio (cover)
-    const cw = canvas.width;
-    const ch = canvas.height;
-    const iw = img.naturalWidth;
-    const ih = img.naturalHeight;
-    const scale = Math.max(cw / iw, ch / ih);
-    const dw = iw * scale;
-    const dh = ih * scale;
-    const dx = (cw - dw) / 2;
-    const dy = (ch - dh) / 2;
-    ctx.clearRect(0, 0, cw, ch);
-    ctx.drawImage(img, dx, dy, dw, dh);
-  }, []);
-
-  // Scroll-driven progress: tracks window.scrollY relative to section entry point
-  // Uses a virtual scroll budget of 1.5x window height (no extra DOM space needed)
-  useEffect(() => {
-    const SCROLL_BUDGET = window.innerHeight * 1.5;
-    const tick = () => {
-      const outer = outerRef.current;
-      if (outer) {
-        const rect = outer.getBoundingClientRect();
-        // Start counting when section top hits the top of viewport
-        const scrolled = Math.max(0, -rect.top);
-        if (SCROLL_BUDGET <= 0) { rafRef.current = requestAnimationFrame(tick); return; }
-        const p = Math.min(1, Math.max(0, scrolled / SCROLL_BUDGET));
-        setProgress(p);
-        const newFrame = Math.min(FRAME_COUNT - 1, Math.round(p * (FRAME_COUNT - 1)));
-        if (newFrame !== frameRef.current || p === 0) {
-          frameRef.current = newFrame;
-          drawFrame(newFrame);
-        }
+    if (!inView) return;
+    const id = setInterval(() => {
+      if (!pauseRef.current) {
+        setActive(i => (i + 1) % WALKTHROUGH_TABS.length);
+        tabStartRef.current = Date.now();
+        setTabProgress(0);
       }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [drawFrame]);
+    }, 4000);
+    return () => clearInterval(id);
+  }, [inView]);
 
-  // Redraw when images finish loading
   useEffect(() => {
-    if (loaded) drawFrame(frameRef.current);
-  }, [loaded, drawFrame]);
+    if (!inView) return;
+    tabStartRef.current = Date.now();
+    setTabProgress(0);
+    let rafId: number;
+    const tick = () => {
+      setTabProgress(Math.min((Date.now() - tabStartRef.current) / 4000, 1));
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [inView, active]);
 
-  // null = not yet determined (client hasn't run yet) → render nothing
-  if (isMobile === null) return null;
+  const tab = WALKTHROUGH_TABS[active];
 
-  // Mobile fallback — just show first frame as img
-  if (isMobile) {
-    return (
-      <section style={{ background: "#0d0d0d", padding: "64px 20px 0", textAlign: "center" }}>
-        <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#ffb77d", display: "block", marginBottom: 16 }}>PLATFORM WALKTHROUGH</span>
-        <h2 className="font-headline" style={{ fontSize: "clamp(32px,9vw,52px)", fontWeight: 900, lineHeight: 0.92, letterSpacing: "-0.045em", textTransform: "uppercase", color: "#e5e2e1", marginBottom: 32 }}>
-          SEE IT IN ACTION.
-        </h2>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`/scroll-sequence/${SEQUENCE_FRAMES[0]}`} alt="Wazelo CRM walkthrough" style={{ width: "100%", height: "auto", display: "block", borderRadius: 8, border: "1px solid rgba(85,67,54,0.2)" }} />
-      </section>
-    );
-  }
-
-  // Desktop — sticky canvas scroll sequence
   return (
-    <div
-      ref={outerRef}
-      style={{ height: "100vh", position: "relative" }}
-    >
-      <div style={{
-        position: "sticky", top: 0, height: "100vh",
-        overflow: "hidden", background: "#0d0d0d",
-        opacity: progress > 0.92 ? 1 - (progress - 0.92) / 0.08 : 1,
-        pointerEvents: progress >= 1 ? "none" : "auto",
-      }}>
-        {/* Header — slides out as you scroll past 60% */}
-        <div style={{
-          position: "absolute", top: "8%", left: "5%", zIndex: 30,
-          opacity: progress < 0.7 ? 1 - progress / 0.7 : 0,
-          transform: `translateX(${-progress * 120}px)`,
-          transition: "none",
-          pointerEvents: "none",
-        }}>
-          <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#ffb77d", display: "block", marginBottom: 14 }}>
-            PLATFORM WALKTHROUGH
-          </span>
+    <section style={{ background: "#0d0d0d", padding: mobile ? "72px 20px 80px" : "112px 48px 128px" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+        <div ref={ref} style={{ marginBottom: mobile ? 40 : 64 }}>
+          <span className="font-body" style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase",
+            color: "#ffb77d", display: "block", marginBottom: 14,
+            opacity: inView ? 1 : 0, transition: "opacity 0.6s ease",
+          }}>PLATFORM WALKTHROUGH</span>
           <h2 className="font-headline" style={{
-            fontSize: "clamp(36px,4.5vw,64px)", fontWeight: 900, lineHeight: 0.9,
-            letterSpacing: "-0.045em", textTransform: "uppercase", color: "#e5e2e1",
-            maxWidth: 520,
+            fontSize: mobile ? "clamp(32px,9vw,52px)" : "clamp(40px,4.5vw,64px)",
+            fontWeight: 900, lineHeight: 0.92, letterSpacing: "-0.045em",
+            color: "#e5e2e1",
+            opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(24px)",
+            transition: "opacity 0.8s 0.1s ease, transform 0.8s 0.1s ease",
           }}>
-            SEE WAZELO<br />
-            <span style={{ color: "#ffb77d" }}>IN ACTION.</span>
+            See Wazelo<br />
+            <span style={{ color: "#ffb77d" }}>in Action.</span>
           </h2>
         </div>
 
-        {/* Canvas — full bleed, cover fit */}
-        <canvas
-          ref={canvasRef}
-          width={1920}
-          height={1080}
-          aria-label="Wazelo CRM platform walkthrough animation"
-          style={{
-            position: "absolute", inset: 0,
-            width: "100%", height: "100%",
-            objectFit: "cover",
-            opacity: loaded ? (progress > 0.85 ? 1 - (progress - 0.85) / 0.15 : 1) : 0,
-            transition: progress > 0.85 ? "none" : "opacity 0.6s ease",
-          }}
-        />
-
-        {/* Dark overlay gradient — top and bottom */}
+        {/* Tab pills */}
         <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 20,
-          background: "linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, transparent 25%, transparent 75%, rgba(13,13,13,0.7) 100%)",
-        }} />
-
-        {/* Loading skeleton */}
-        {!loaded && (
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 25 }}>
-            <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(163,140,124,0.4)" }}>
-              LOADING...
-            </span>
-          </div>
-        )}
-
-        {/* Bottom progress bar */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, width: "100%", height: 2, background: "rgba(85,67,54,0.15)", zIndex: 30 }}>
-          <div style={{
-            height: "100%",
-            width: `${progress * 100}%`,
-            background: "linear-gradient(90deg, #ffb77d, #d97707)",
-          }} />
+          display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20,
+          opacity: inView ? 1 : 0, transition: "opacity 0.7s 0.2s ease",
+        }}>
+          {WALKTHROUGH_TABS.map((t, i) => (
+            <div key={t.id} style={{ position: "relative" }}>
+              <button
+                onClick={() => {
+                  setActive(i);
+                  tabStartRef.current = Date.now();
+                  setTabProgress(0);
+                  pauseRef.current = true;
+                  setTimeout(() => { pauseRef.current = false; }, 15000);
+                }}
+                className="font-body"
+                style={{
+                  fontSize: 12, fontWeight: 700, padding: "8px 18px 10px", borderRadius: 100,
+                  border: `1px solid ${i === active ? "rgba(255,183,125,0.4)" : "rgba(85,67,54,0.25)"}`,
+                  background: i === active ? "rgba(255,183,125,0.1)" : "transparent",
+                  color: i === active ? "#ffb77d" : "rgba(163,140,124,0.6)",
+                  cursor: "pointer", transition: "all 0.2s ease",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {String(i + 1).padStart(2, "0")}  {t.label}
+              </button>
+              {i === active && (
+                <div style={{ position: "absolute", bottom: 3, left: "10%", right: "10%", height: 2, borderRadius: 2, background: "rgba(255,183,125,0.15)", overflow: "hidden", pointerEvents: "none" }}>
+                  <div style={{ height: "100%", width: `${tabProgress * 100}%`, background: "#ffb77d", borderRadius: 2, transition: "none" }} />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* Frame counter — bottom right */}
-        <div style={{ position: "absolute", bottom: 20, right: 48, zIndex: 30 }}>
-          <span className="font-body" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(163,140,124,0.45)" }}>
-            {String(Math.min(FRAME_COUNT - 1, Math.round(progress * (FRAME_COUNT - 1))) + 1).padStart(2, "0")} / {String(FRAME_COUNT).padStart(2, "0")}
+        {/* Tab description */}
+        <p className="font-body" style={{
+          fontSize: 15, color: "#dbc2b0", fontWeight: 300, marginBottom: 24, lineHeight: 1.6,
+          opacity: inView ? 1 : 0, transition: "opacity 0.6s 0.25s ease",
+          minHeight: 28,
+        }}>
+          {tab.desc}
+        </p>
+
+        {/* Frame image */}
+        <div style={{
+          position: "relative", borderRadius: 12, overflow: "hidden",
+          border: "1px solid rgba(85,67,54,0.2)",
+          boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
+          opacity: inView ? 1 : 0, transition: "opacity 0.9s 0.3s ease",
+        }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/scroll-sequence/${tab.frame}`}
+            alt={`Wazelo CRM — ${tab.label}`}
+            style={{ width: "100%", height: "auto", display: "block" }}
+          />
+          {/* Dot progress indicators */}
+          <div style={{
+            position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
+            display: "flex", gap: 6,
+          }}>
+            {WALKTHROUGH_TABS.map((_, i) => (
+              <div
+                key={i}
+                onClick={() => { setActive(i); tabStartRef.current = Date.now(); setTabProgress(0); pauseRef.current = true; setTimeout(() => { pauseRef.current = false; }, 15000); }}
+                style={{
+                  width: i === active ? 20 : 6, height: 6, borderRadius: 100,
+                  background: i === active ? "#ffb77d" : "rgba(255,255,255,0.25)",
+                  transition: "width 0.3s ease, background 0.3s ease",
+                  cursor: "pointer",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Frame counter */}
+        <div style={{ textAlign: "right", marginTop: 10 }}>
+          <span className="font-body" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(163,140,124,0.4)" }}>
+            {String(active + 1).padStart(2, "0")} / {String(WALKTHROUGH_TABS.length).padStart(2, "0")}
           </span>
         </div>
-
-        {/* Scroll hint — bottom center, fades out */}
-        <div style={{
-          position: "absolute", bottom: 36, left: "50%", transform: "translateX(-50%)",
-          zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-          opacity: progress < 0.08 ? 1 : 0,
-          transition: "opacity 0.4s ease",
-          pointerEvents: "none",
-        }}>
-          <span className="font-body" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(255,183,125,0.6)" }}>SCROLL</span>
-          <div style={{ width: 1, height: 32, background: "linear-gradient(to bottom, rgba(255,183,125,0.6), transparent)" }} />
-        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -1739,19 +1871,19 @@ function AiFeaturesSection() {
             <h2 className="font-headline" style={{
               fontSize: mobile ? "clamp(36px,10vw,60px)" : "clamp(48px,5vw,80px)",
               fontWeight: 900, lineHeight: 0.9, letterSpacing: "-0.045em",
-              textTransform: "uppercase", color: "#e5e2e1", marginTop: 12,
+              color: "#e5e2e1", marginTop: 12,
               opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(28px)",
               transition: "all 0.8s 0.1s ease",
             }}>
-              YOUR INBOX.<br />
-              <span style={{ background: "linear-gradient(135deg,#ffb77d,#d97707)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>NOW THINKS.</span>
+              Your Inbox.<br />
+              <span style={{ background: "linear-gradient(135deg,#ffb77d,#d97707)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Now Thinks.</span>
             </h2>
             <p className="font-body" style={{
               fontSize: 15, lineHeight: 1.75, color: "#dbc2b0", fontWeight: 300,
               maxWidth: 380, flexShrink: 0,
               opacity: inView ? 1 : 0, transition: "all 0.8s 0.2s ease",
             }}>
-              AI runs silently on every conversation — detecting intent, scoring sentiment, suggesting replies, and pulling KB answers — so your agents close faster without thinking harder.
+              AI runs silently on every conversation — detecting intent, scoring sentiment, suggesting replies, and pulling KB answers — so your agents reply faster and resolve issues sooner.
             </p>
           </div>
         </div>
@@ -1870,13 +2002,13 @@ function StatsSection() {
   const r1 = useCounter(1200, 1600, inView, n => `${n}+`);
   const r2 = useCounter(94, 1400, inView, n => `${n}%`);
   const r3 = useCounter(48, 1200, inView, n => `${(n / 10).toFixed(1)} min`);
-  const r4 = useCounter(48500, 1800, inView, n => n.toLocaleString());
+  const r4 = useCounter(48500, 1800, inView, n => `${n.toLocaleString()}+`);
 
   const metrics = [
-    { label: "Active Businesses", elRef: r1, initial: "0+", micro: "↑ Growing fast" },
-    { label: "Message Delivery Rate", elRef: r2, initial: "0%", micro: "Industry avg: 65%" },
-    { label: "Average Response Time", elRef: r3, initial: "0.0 min", micro: "↓ Down from 45 min" },
-    { label: "Conversations Handled", elRef: r4, initial: "0", micro: "This month" },
+    { label: "Active Businesses", elRef: r1, initial: "1,200+", micro: "↑ Growing fast" },
+    { label: "Message Delivery Rate", elRef: r2, initial: "94%", micro: "Industry avg: 65%" },
+    { label: "Average Response Time", elRef: r3, initial: "4.8 min", micro: "↓ Down from 45 min" },
+    { label: "Conversations Handled", elRef: r4, initial: "48,500+", micro: "This month" },
   ];
 
   return (
@@ -1896,11 +2028,11 @@ function StatsSection() {
             }}>BY THE NUMBERS</span>
             <h2 className="font-headline" style={{
               fontSize: mobile ? "clamp(40px,10vw,64px)" : "clamp(48px,6vw,88px)", fontWeight: 900, lineHeight: 0.9,
-              letterSpacing: "-0.045em", textTransform: "uppercase", color: "#e5e2e1",
+              letterSpacing: "-0.045em", color: "#e5e2e1",
               opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(24px)", transition: "all 0.8s 0.1s ease",
             }}>
-              NUMBERS THAT{" "}
-              <span style={{ background: "linear-gradient(135deg,#ffb77d,#d97707)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>SPEAK.</span>
+              Numbers That{" "}
+              <span style={{ background: "linear-gradient(135deg,#ffb77d,#d97707)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Speak.</span>
             </h2>
           </div>
 
@@ -1927,58 +2059,81 @@ function StatsSection() {
         </div>
       </div>
 
-      {/* Testimonial */}
+      {/* Testimonials — 3 cards */}
       <div style={{ background: "#131313", padding: mobile ? "56px 20px 72px" : "80px 48px 112px" }}>
-        <div style={{ maxWidth: 1300, margin: "0 auto", display: "grid", gridTemplateColumns: mobile ? "1fr" : tablet ? "1fr" : "7fr 5fr", gap: mobile ? 40 : 80, alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 28 }}>
-            <div style={{ width: 3, background: "linear-gradient(to bottom,#ffb77d,#d97707,transparent)", flexShrink: 0, borderRadius: 4 }} />
-            <div>
-              <span className="material-symbols-outlined" style={{ fontSize: 48, color: "rgba(255,183,125,0.18)", display: "block", marginBottom: 16 }}>format_quote</span>
-              <blockquote className="font-headline" style={{ fontStyle: "italic", fontWeight: 300, fontSize: mobile ? "clamp(18px,5vw,28px)" : "clamp(22px,2.5vw,40px)", lineHeight: 1.3, letterSpacing: "-0.02em", color: "rgba(229,226,225,0.88)", marginBottom: 32 }}>
-                "We went from missing 40% of leads to a 94% response rate in 3 weeks. Wazelo CRM is the only tool that actually works for WhatsApp sales."
-              </blockquote>
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ width: 48, height: 48, borderRadius: "50%", border: "2px solid rgba(85,67,54,0.4)", overflow: "hidden", background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="material-symbols-outlined" style={{ color: "#a38c7c", fontSize: 24 }}>person</span>
-                </div>
-                <div>
-                  <div className="font-body" style={{ fontSize: 16, fontWeight: 700, color: "#e5e2e1", marginBottom: 2 }}>Rajesh M.</div>
-                  <div className="font-body" style={{ fontSize: 12, fontWeight: 500, color: "#ffb77d", textTransform: "uppercase", letterSpacing: "0.1em" }}>Head of Sales, PropEdge Realty</div>
-                </div>
+        <div style={{ maxWidth: 1300, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: mobile ? 40 : 52 }}>
+            <span className="font-body" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "#ffb77d", display: "block", marginBottom: 12, opacity: inView ? 1 : 0, transition: "opacity 0.6s ease" }}>
+              WHAT OUR CUSTOMERS SAY
+            </span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4, opacity: inView ? 1 : 0, transition: "opacity 0.7s 0.1s ease" }}>
+              <div style={{ display: "flex", gap: 3 }}>
+                {[1,2,3,4,5].map(n => <span key={n} className="material-symbols-outlined" style={{ fontSize: 18, color: "#ffb77d" }}>star</span>)}
               </div>
+              <span className="font-body" style={{ fontSize: 13, color: "rgba(219,194,176,0.6)", fontWeight: 500 }}>4.8/5 · 127 reviews</span>
             </div>
           </div>
-
-          {/* Case study card */}
-          <div style={{ position: "relative" }}>
-            <div className="animate-glow" style={{ position: "absolute", inset: 0, background: "rgba(217,119,6,0.08)", filter: "blur(60px)", borderRadius: 12, transform: "translateY(16px)" }} />
-            <div style={{ position: "relative", background: "#1c1b1b", borderTop: "2px solid #ffb77d", borderRadius: 8, padding: mobile ? 28 : 40, boxShadow: "0 32px 80px rgba(0,0,0,0.5)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#0e0e0e", border: "1px solid rgba(85,67,54,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#ffb77d,#d97707)" }} />
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: mobile ? "1fr" : tablet ? "1fr" : "repeat(3, 1fr)",
+            gap: 20,
+          }}>
+            {[
+              {
+                quote: "We went from missing 40% of leads to a 94% response rate in 3 weeks. Wazelo CRM is the only tool that actually works for WhatsApp sales.",
+                name: "Rajesh M.", role: "Head of Sales", company: "PropEdge Realty",
+                metric: "3× leads converted in 30 days",
+                caseStudy: "/case-study/propedge-realty",
+              },
+              {
+                quote: "Our support team used to juggle 3 different WhatsApp numbers. Now it's one inbox, zero chaos. Response times dropped from 2 hours to under 5 minutes.",
+                name: "Sneha K.", role: "Customer Success Lead", company: "ZopNow",
+                metric: "↓ 96% drop in response time",
+                caseStudy: null,
+              },
+              {
+                quote: "The bulk campaign feature alone paid for a year of Wazelo CRM in the first month. We hit ₹12L in recovered abandoned carts.",
+                name: "Arjun T.", role: "Growth Manager", company: "StyleHub",
+                metric: "₹12L recovered in month 1",
+                caseStudy: null,
+              },
+            ].map((t, i) => (
+              <div key={t.name} style={{
+                background: "#1c1b1b", borderTop: "2px solid rgba(255,183,125,0.3)",
+                borderRadius: 8, padding: mobile ? 24 : 32,
+                display: "flex", flexDirection: "column", gap: 20,
+                opacity: inView ? 1 : 0,
+                transform: inView ? "translateY(0)" : "translateY(32px)",
+                transition: `all 0.8s ${i * 0.08}s ease`,
+              }}>
+                <div style={{ display: "flex", gap: 3 }}>
+                  {[1,2,3,4,5].map(n => <span key={n} className="material-symbols-outlined" style={{ fontSize: 14, color: "#ffb77d" }}>star</span>)}
                 </div>
-                <span className="font-headline" style={{ fontSize: 16, fontWeight: 700, color: "#e5e2e1" }}>PropEdge Realty</span>
-              </div>
-              <h3 className="font-headline" style={{ fontSize: mobile ? "clamp(20px,5vw,28px)" : "clamp(24px,2.5vw,34px)", fontWeight: 900, letterSpacing: "-0.03em", color: "#e5e2e1", lineHeight: 1.15, marginBottom: 28 }}>
-                3x lead conversion<br />in 30 days
-              </h3>
-              <div style={{ borderLeft: "1px solid rgba(85,67,54,0.3)", paddingLeft: 16, marginBottom: 28, display: "flex", flexDirection: "column", gap: 14 }}>
-                {[
-                  { label: "Leads responded", val: "↑ 340%", color: "#ffb77d" },
-                  { label: "Response time", val: "↓ 87%", color: "#a3defe" },
-                  { label: "Revenue attributed", val: "₹24L", color: "#e5e2e1" },
-                ].map(row => (
-                  <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span className="font-body" style={{ fontSize: 13, color: "#dbc2b0" }}>{row.label}</span>
-                    <span className="font-headline" style={{ fontSize: 16, fontWeight: 700, color: row.color }}>{row.val}</span>
+                <blockquote className="font-body" style={{
+                  fontSize: 14, lineHeight: 1.75, color: "rgba(229,226,225,0.8)",
+                  fontStyle: "italic", fontWeight: 300, flex: 1, margin: 0,
+                }}>
+                  &ldquo;{t.quote}&rdquo;
+                </blockquote>
+                <div style={{ background: "rgba(255,183,125,0.06)", borderRadius: 6, padding: "8px 12px" }}>
+                  <span className="font-body" style={{ fontSize: 12, fontWeight: 700, color: "#ffb77d" }}>{t.metric}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#2a2a2a", border: "1px solid rgba(85,67,54,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <span className="material-symbols-outlined" style={{ color: "#a38c7c", fontSize: 18 }}>person</span>
                   </div>
-                ))}
+                  <div>
+                    <div className="font-body" style={{ fontSize: 14, fontWeight: 700, color: "#e5e2e1" }}>{t.name}</div>
+                    <div className="font-body" style={{ fontSize: 11, color: "#ffb77d", letterSpacing: "0.06em" }}>{t.role}, {t.company}</div>
+                  </div>
+                  {t.caseStudy && (
+                    <a href={t.caseStudy} style={{ marginLeft: "auto", fontSize: 11, color: "rgba(255,183,125,0.6)", textDecoration: "underline", whiteSpace: "nowrap", fontFamily: "'Inter', sans-serif" }}>
+                      Case study →
+                    </a>
+                  )}
+                </div>
               </div>
-              <a href="/case-study/propedge-realty" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#ffb77d", fontWeight: 700, fontSize: 12, textDecoration: "none", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                <span className="font-body">Read case study</span>
-                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>arrow_right_alt</span>
-              </a>
-            </div>
+            ))}
           </div>
         </div>
       </div>
@@ -2010,9 +2165,25 @@ function PricingSection() {
           }}>
             Simple Pricing.<br />Serious Results.
           </h2>
-          <p className="font-body" style={{ fontSize: 16, color: "#dbc2b0", fontWeight: 300, marginBottom: 32, opacity: inView ? 1 : 0, transition: "all 0.8s 0.2s ease" }}>
+          <p className="font-body" style={{ fontSize: 16, color: "#dbc2b0", fontWeight: 300, marginBottom: 20, opacity: inView ? 1 : 0, transition: "all 0.8s 0.2s ease" }}>
             All plans include a 14-day free trial. No credit card required.
           </p>
+          <div style={{
+            display: "flex", justifyContent: "center", gap: mobile ? 14 : 24, flexWrap: "wrap",
+            marginBottom: 28, opacity: inView ? 1 : 0, transition: "opacity 0.7s 0.3s ease",
+          }}>
+            {[
+              { icon: "verified", label: "GST Invoice" },
+              { icon: "payments", label: "UPI & Razorpay" },
+              { icon: "event_available", label: "14-Day Free Trial" },
+              { icon: "lock", label: "Meta BSP Certified" },
+            ].map(t => (
+              <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#ffb77d" }}>{t.icon}</span>
+                <span className="font-body" style={{ fontSize: 11, color: "rgba(163,140,124,0.65)", fontWeight: 600, letterSpacing: "0.03em" }}>{t.label}</span>
+              </div>
+            ))}
+          </div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 14 }}>
             <span className="font-body" style={{ fontSize: 14, color: yearly ? "#a38c7c" : "#e5e2e1" }}>Monthly</span>
             <button onClick={() => setYearly(!yearly)} style={{ width: 52, height: 28, borderRadius: 100, background: "#2a2a2a", border: "1px solid rgba(85,67,54,0.3)", cursor: "pointer", position: "relative", padding: 0 }}>
@@ -2025,13 +2196,13 @@ function PricingSection() {
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: mobile ? "1fr" : tablet ? "1fr" : "repeat(3,1fr)",
+          gridTemplateColumns: mobile ? "1fr" : tablet ? "repeat(2,1fr)" : "repeat(4,1fr)",
           gap: 20, alignItems: "start", marginBottom: 16,
         }}>
-          {plans.map((plan, i) => (
+          {[...plans, enterprisePlan].map((plan, i) => (
             <div key={plan.name} style={{
-              background: plan.popular ? "rgba(217,119,6,0.05)" : "#1c1b1b",
-              border: `1px solid ${plan.popular ? "rgba(255,183,125,0.35)" : "rgba(85,67,54,0.2)"}`,
+              background: plan.name === "Enterprise" ? "#0e0e0e" : plan.popular ? "rgba(217,119,6,0.05)" : "#1c1b1b",
+              border: `1px solid ${plan.name === "Enterprise" ? "rgba(255,255,255,0.1)" : plan.popular ? "rgba(255,183,125,0.35)" : "rgba(85,67,54,0.2)"}`,
               borderRadius: 8, padding: mobile ? 28 : 36, position: "relative", display: "flex", flexDirection: "column",
               transform: (!mobile && !tablet && plan.popular) ? "translateY(-16px)" : "none",
               boxShadow: plan.popular ? "0 0 60px 8px rgba(217,119,6,0.1)" : "none",
@@ -2043,11 +2214,22 @@ function PricingSection() {
                   Most Popular
                 </div>
               )}
+              {plan.name === "Enterprise" && (
+                <div style={{ position: "absolute", top: 0, right: 0, background: "rgba(255,255,255,0.06)", color: "#e5e2e1", fontSize: 10, fontWeight: 900, padding: "5px 14px", borderRadius: "0 8px 0 8px", letterSpacing: "0.07em", textTransform: "uppercase" }}>
+                  Custom
+                </div>
+              )}
               <h3 className="font-headline" style={{ fontSize: 20, fontWeight: 700, color: plan.popular ? "#ffb77d" : "#e5e2e1", marginBottom: 12 }}>{plan.name}</h3>
               <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 10 }}>
-                <span className="font-headline" style={{ fontSize: plan.popular ? 48 : 40, fontWeight: 900, color: plan.popular ? "#ffb77d" : "#e5e2e1", letterSpacing: "-0.045em", lineHeight: 1 }}>
-                  ₹{yearly ? Math.round(plan.yearlyPrice / 12) : plan.monthlyPrice}
-                </span>
+                {plan.name === "Enterprise" ? (
+                  <span className="font-headline" style={{ fontSize: 40, fontWeight: 900, color: "#e5e2e1", letterSpacing: "-0.045em", lineHeight: 1 }}>
+                    ₹3,999
+                  </span>
+                ) : (
+                  <span className="font-headline" style={{ fontSize: plan.popular ? 48 : 40, fontWeight: 900, color: plan.popular ? "#ffb77d" : "#e5e2e1", letterSpacing: "-0.045em", lineHeight: 1 }}>
+                    ₹{yearly ? Math.round(plan.yearlyPrice / 12) : plan.monthlyPrice}
+                  </span>
+                )}
                 <span className="font-body" style={{ fontSize: 13, color: "#dbc2b0" }}>/mo</span>
               </div>
               <p className="font-body" style={{ fontSize: 12, color: "#dbc2b0", borderBottom: "1px solid rgba(85,67,54,0.2)", paddingBottom: 18, marginBottom: 20 }}>{plan.subtitle}</p>
@@ -2059,31 +2241,122 @@ function PricingSection() {
                   </li>
                 ))}
               </ul>
-              <a href={APP_REGISTER_URL} className={plan.popular ? "btn-primary font-body" : "btn-ghost font-body"} style={{
-                width: "100%", padding: plan.popular ? "15px" : "13px", borderRadius: 6,
-                fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
-                cursor: "pointer", background: plan.popular ? undefined : "#3a3939",
-                color: plan.popular ? undefined : "#e5e2e1", border: plan.popular ? "none" : "1px solid rgba(85,67,54,0.3)",
-                textDecoration: "none", display: "block", textAlign: "center",
-              }}>
-                Start Free Trial — 14 Days
-              </a>
+              {plan.name === "Enterprise" ? (
+                <a href="mailto:sales@wazelo.in" className="font-body" style={{
+                  width: "100%", padding: "13px", borderRadius: 6,
+                  fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+                  cursor: "pointer", background: "rgba(255,255,255,0.06)",
+                  color: "#e5e2e1", border: "1px solid rgba(255,255,255,0.12)",
+                  textDecoration: "none", display: "block", textAlign: "center",
+                }}>
+                  Contact Sales →
+                </a>
+              ) : (
+                <a href={APP_REGISTER_URL} className={plan.popular ? "btn-primary font-body" : "btn-ghost font-body"} style={{
+                  width: "100%", padding: plan.popular ? "15px" : "13px", borderRadius: 6,
+                  fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+                  cursor: "pointer", background: plan.popular ? undefined : "#3a3939",
+                  color: plan.popular ? undefined : "#e5e2e1", border: plan.popular ? "none" : "1px solid rgba(85,67,54,0.3)",
+                  textDecoration: "none", display: "block", textAlign: "center",
+                }}>
+                  Start Free Trial — 14 Days
+                </a>
+              )}
             </div>
           ))}
         </div>
 
-        <div style={{ background: "#0e0e0e", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 8, padding: mobile ? "16px 20px" : "18px 28px", display: "flex", flexDirection: mobile ? "column" : "row", alignItems: mobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12 }}>
-          <div className="font-body">
-            <span style={{ fontWeight: 700, fontSize: 15, color: "#e5e2e1" }}>Enterprise</span>
-            <span style={{ color: "#dbc2b0", fontSize: 13, marginLeft: 12 }}>200 users · 200 WA sessions · Unlimited msgs & campaigns · Full API · Custom SLA</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
-            <span className="font-body" style={{ fontSize: 13, color: "#ffb77d", fontWeight: 700 }}>₹3,999<span style={{ color: "#a38c7c", fontWeight: 400 }}>/mo</span></span>
-            <a href="mailto:sales@wazelo.in" style={{ display: "flex", alignItems: "center", gap: 6, color: "#ffb77d", fontWeight: 700, fontSize: 12, textDecoration: "none", border: "1px solid rgba(255,183,125,0.3)", padding: "10px 20px", borderRadius: 6 }}>
-              <span className="font-body">Contact Sales</span>
-              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>arrow_forward</span>
-            </a>
-          </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── FAQ Section ─────────────────────────────────────────────────────────────
+const FAQ_ITEMS = [
+  { q: "What is Wazelo CRM?", a: "Wazelo CRM is a WhatsApp CRM platform for growing businesses — combining shared team inbox, bulk campaigns, automation, AI chatbot, and analytics in one tool. Trusted by 1,200+ businesses across real estate, e-commerce, healthcare, and education." },
+  { q: "How much does it cost?", a: "Plans start at ₹499/month (Starter: 5 users, 5,000 msgs/mo). Growth is ₹999/mo, Pro is ₹1,999/mo, and Enterprise starts at ₹3,999/mo. All plans include a 14-day free trial — no credit card needed." },
+  { q: "Does it work with the official WhatsApp Business API?", a: "Yes. Wazelo CRM is built on the official WhatsApp Business API (Meta BSP). It supports multiple WhatsApp sessions, official templates, and all Meta compliance requirements." },
+  { q: "Can I send bulk WhatsApp messages?", a: "Yes. Broadcast personalised messages to thousands at once with real-time delivery tracking. Growth includes 25,000 msgs/mo; Pro includes 1,00,000 msgs/mo." },
+  { q: "How is Wazelo different from Interakt, Wati, or AiSensy?", a: "Wazelo CRM combines shared inbox, campaigns, automation, chatbot, and analytics in one platform starting at ₹499/mo — more features at a competitive price with dedicated support." },
+  { q: "Can multiple team members use the same WhatsApp number?", a: "Yes. The shared inbox lets your entire team collaborate on the same WhatsApp number. Conversations are assigned to agents, tracked to resolution, and monitored with analytics." },
+  { q: "Is there a free trial?", a: "Yes — 14-day free trial on all plans. No credit card required. Access all features of your chosen plan during the trial." },
+  { q: "Which industries use Wazelo CRM?", a: "Real estate (lead management), e-commerce (order updates, cart recovery), healthcare (appointment reminders), education (admissions), and financial services (loan applications)." },
+  { q: "How does WhatsApp automation work?", a: "The no-code automation builder lets you create auto-replies, lead routing, drip sequences, and chatbot triggers — all without coding. Runs 24/7." },
+  { q: "Is Wazelo CRM secure?", a: "Yes. Built on Meta's official WhatsApp Business API with end-to-end encryption, role-based access controls, audit logs, and full compliance with Meta BSP requirements." },
+];
+
+function FaqSection() {
+  const { ref, inView } = useInView(0.1);
+  const { mobile } = useBreakpoint();
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  return (
+    <section style={{ background: "#131313", padding: mobile ? "72px 20px" : "112px 48px" }}>
+      <div style={{ maxWidth: 860, margin: "0 auto" }}>
+        <div ref={ref} style={{ textAlign: "center", marginBottom: mobile ? 48 : 64 }}>
+          <span className="font-body" style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase",
+            color: "#ffb77d", display: "block", marginBottom: 16,
+            opacity: inView ? 1 : 0, transition: "opacity 0.6s ease",
+          }}>FAQ</span>
+          <h2 className="font-headline" style={{
+            fontSize: mobile ? "clamp(32px,9vw,52px)" : "clamp(40px,4.5vw,60px)",
+            fontWeight: 900, lineHeight: 0.95, letterSpacing: "-0.04em",
+            color: "#e5e2e1",
+            opacity: inView ? 1 : 0, transform: inView ? "translateY(0)" : "translateY(24px)",
+            transition: "opacity 0.8s 0.1s ease, transform 0.8s 0.1s ease",
+          }}>
+            Common questions,<br />
+            <span style={{ background: "linear-gradient(135deg,#ffb77d,#d97707)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              answered plainly.
+            </span>
+          </h2>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {FAQ_ITEMS.map((item, i) => (
+            <div key={i} style={{
+              background: openIndex === i ? "#1c1b1b" : "transparent",
+              border: `1px solid ${openIndex === i ? "rgba(255,183,125,0.2)" : "rgba(85,67,54,0.15)"}`,
+              borderRadius: 8, overflow: "hidden",
+              opacity: inView ? 1 : 0,
+              transform: inView ? "translateY(0)" : "translateY(16px)",
+              transition: `background 0.25s ease, border-color 0.25s ease, opacity 0.6s ${0.05 + i * 0.04}s ease, transform 0.6s ${0.05 + i * 0.04}s ease`,
+            }}>
+              <button
+                onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: mobile ? "16px 18px" : "18px 24px", background: "none", border: "none",
+                  cursor: "pointer", textAlign: "left", gap: 16,
+                }}
+              >
+                <span className="font-body" style={{
+                  fontSize: mobile ? 14 : 15, fontWeight: 600,
+                  color: openIndex === i ? "#e5e2e1" : "#dbc2b0",
+                  flex: 1, transition: "color 0.2s ease",
+                }}>
+                  {item.q}
+                </span>
+                <span className="material-symbols-outlined" style={{
+                  fontSize: 20, color: "#ffb77d", flexShrink: 0,
+                  transform: openIndex === i ? "rotate(45deg)" : "rotate(0deg)",
+                  transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+                }}>add</span>
+              </button>
+              <div style={{
+                maxHeight: openIndex === i ? 400 : 0, overflow: "hidden",
+                transition: "max-height 0.35s cubic-bezier(0.4,0,0.2,1)",
+              }}>
+                <p className="font-body" style={{
+                  fontSize: 14, lineHeight: 1.75, color: "rgba(219,194,176,0.7)",
+                  fontWeight: 300, padding: mobile ? "0 18px 18px" : "0 24px 20px", margin: 0,
+                }}>
+                  {item.a}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -2112,10 +2385,20 @@ function CtaSection() {
           {"Don't Just"}<br />Message.<br />
           <span style={{ color: "#ffb77d", fontStyle: "italic", fontWeight: 300, letterSpacing: "-0.02em" }}>Close Deals.</span>
         </h2>
-        <a href={APP_REGISTER_URL} className="btn-primary font-headline" style={{ display: "inline-flex", alignItems: "center", gap: 12, fontSize: mobile ? 15 : 18, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", padding: mobile ? "16px 36px" : "20px 52px", borderRadius: 100, border: "none", cursor: "pointer", opacity: inView ? 1 : 0, transition: "all 0.8s 0.25s ease", textDecoration: "none" }}>
-          Start Your Free Trial
-          <span className="material-symbols-outlined" style={{ fontSize: mobile ? 18 : 22 }}>arrow_forward</span>
-        </a>
+        <div style={{ display: "flex", flexDirection: mobile ? "column" : "row", alignItems: "center", justifyContent: "center", gap: 16 }}>
+          <a href={APP_REGISTER_URL} className="btn-primary font-headline" style={{ display: "inline-flex", alignItems: "center", gap: 12, fontSize: mobile ? 15 : 18, fontWeight: 900, textTransform: "uppercase", letterSpacing: "-0.02em", padding: mobile ? "16px 36px" : "20px 52px", borderRadius: 100, border: "none", cursor: "pointer", opacity: inView ? 1 : 0, transition: "all 0.8s 0.25s ease", textDecoration: "none" }}>
+            Start Your Free Trial
+            <span className="material-symbols-outlined" style={{ fontSize: mobile ? 18 : 22 }}>arrow_forward</span>
+          </a>
+          <a href="/contact#demo" className="font-body" style={{
+            fontSize: 14, fontWeight: 600, color: "rgba(219,194,176,0.55)",
+            textDecoration: "underline", textDecorationColor: "rgba(219,194,176,0.2)",
+            cursor: "pointer", letterSpacing: "0.02em",
+            opacity: inView ? 1 : 0, transition: "opacity 0.8s 0.35s ease",
+          }}>
+            Or book a live demo →
+          </a>
+        </div>
         <p className="font-body" style={{ marginTop: 18, fontSize: 11, color: "rgba(219,194,176,0.4)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
           No credit card required · 14-day free trial · Cancel anytime
         </p>
@@ -2128,8 +2411,8 @@ function CtaSection() {
 function Footer() {
   const { mobile, tablet } = useBreakpoint();
   const cols = [
-    { title: "Product", links: [["Shared Inbox", "/features/shared-inbox"], ["Bulk Campaigns", "/features/campaigns"], ["Automation", "/features/automation"], ["Deals Pipeline", "/features/deals"], ["Sequences", "/features/sequences"], ["Developer API", "/features/developer-api"], ["Pricing", "#pricing"]] },
-    { title: "Resources", links: [["Documentation", "mailto:hello@wazelo.in"], ["API Reference", "mailto:hello@wazelo.in"], ["Community", "mailto:hello@wazelo.in"], ["Support", "mailto:support@wazelo.in"]] },
+    { title: "Product", links: [["Shared Inbox", "/features/shared-inbox"], ["Bulk Campaigns", "/features/campaigns"], ["Automation", "/features/automation"], ["Deals Pipeline", "/features/deals"], ["Auto Follow-Ups", "/features/sequences"], ["Developer API", "/features/developer-api"], ["Pricing", "#pricing"]] },
+    { title: "Resources", links: [["Documentation", "#"], ["API Reference", "#"], ["Community", "#"], ["Support", "mailto:support@wazelo.in"]] },
     { title: "Company", links: [["About Us", "/about"], ["Careers", "mailto:hello@wazelo.in"], ["Press", "mailto:hello@wazelo.in"], ["Contact", "/contact"]] },
   ];
 
@@ -2150,7 +2433,7 @@ function Footer() {
               </span>
             </div>
             <p className="font-body" style={{ fontSize: 13, color: "rgba(219,194,176,0.45)", lineHeight: 1.75, maxWidth: 280 }}>
-              The cinematic monolith of WhatsApp relationship management. Precision engineered for high-end deal flow.
+              The most complete WhatsApp CRM. Shared inbox, campaigns, automation, and AI — built for growing teams.
             </p>
           </div>
           {cols.map(col => (
@@ -2170,7 +2453,7 @@ function Footer() {
           ))}
         </div>
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 24, display: "flex", flexDirection: mobile ? "column" : "row", justifyContent: "space-between", alignItems: mobile ? "flex-start" : "center", gap: 12 }}>
-          <p className="font-body" style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>© 2025 Wazelo CRM. All rights reserved.</p>
+          <p className="font-body" style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>© {new Date().getFullYear()} Wazelo CRM. All rights reserved.</p>
           <div style={{ display: "flex", gap: 20 }}>
             {[["Privacy", "/privacy"], ["Terms", "/terms"]].map(([label, href]) => <a key={label} href={href} className="font-body" style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", textDecoration: "none" }}>{label}</a>)}
           </div>
@@ -2315,6 +2598,7 @@ export default function LandingPage() {
       <Navbar />
       <HeroSection />
       <MarqueeTicker />
+      <CustomerLogoStrip />
       <SectionDivider bg="#0e0e0e" label="AI Features" />
       <AiFeaturesSection />
       {/* <SectionDivider bg="#131313" label="Integrations" /> */}
@@ -2332,6 +2616,7 @@ export default function LandingPage() {
       <PricingSection />
       {/* <SectionDivider bg="#131313" label="Impact" /> */}
       <StatsSection />
+      <FaqSection />
       <SectionDivider bg="#0e0e0e" label="Get Started" />
       <CtaSection />
       <Footer />
