@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { SETTINGS_CONFIG } from '@/common/constants';
@@ -9,20 +9,24 @@ import { SETTINGS_CONFIG } from '@/common/constants';
  */
 @Injectable()
 export class EncryptionService {
-  private readonly logger = new Logger(EncryptionService.name);
   private readonly algorithm = SETTINGS_CONFIG.ENCRYPTION_ALGORITHM;
   private readonly keyBuffer: Buffer;
 
   constructor(private readonly configService: ConfigService) {
     const rawKey = this.configService.get<string>('SETTINGS_ENCRYPTION_KEY');
     if (!rawKey || rawKey.length < 32) {
-      this.logger.warn(
-        'SETTINGS_ENCRYPTION_KEY not set or too short — using fallback. DO NOT use in production.',
+      throw new Error(
+        'SETTINGS_ENCRYPTION_KEY is not set or too short (minimum 32 characters). Set it in your .env file.',
+      );
+    }
+    const salt = this.configService.get<string>('SETTINGS_ENCRYPTION_SALT');
+    if (!salt) {
+      throw new Error(
+        'SETTINGS_ENCRYPTION_SALT is not set. Set it in your .env file.',
       );
     }
     // Derive a consistent 32-byte key using PBKDF2
-    const passphrase = rawKey || 'wazelo-default-dev-key-not-for-production';
-    this.keyBuffer = crypto.pbkdf2Sync(passphrase, 'wazelo-salt', 100_000, 32, 'sha256');
+    this.keyBuffer = crypto.pbkdf2Sync(rawKey, salt, 100_000, 32, 'sha256');
   }
 
   /**
