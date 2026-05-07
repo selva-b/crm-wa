@@ -1,39 +1,63 @@
 "use client";
 
-import { useEffect } from "react";
+import { createContext, useContext, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Lenis from "@studio-freight/lenis";
 
+// ── Context ────────────────────────────────────────────────────────────────────
+export const LenisContext = createContext<React.RefObject<Lenis | null>>({ current: null });
+export function useLenis() { return useContext(LenisContext).current; }
+
+// ── Provider ───────────────────────────────────────────────────────────────────
 export default function LenisProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const lenisRef = useRef<Lenis | null>(null);
+  const rafIdRef = useRef<number>(0);
 
+  // Create Lenis once on mount, destroy on unmount
   useEffect(() => {
-    // Prevent browser from fighting Lenis on back/forward navigation
-    if (typeof window !== "undefined") {
-      window.history.scrollRestoration = "manual";
-    }
+    if (typeof window === "undefined") return;
+    window.history.scrollRestoration = "manual";
 
-    const lenis = new Lenis({
-      lerp: 0.08,
-      smoothWheel: true,
-      syncTouch: false,
-    });
+    const lenis = new Lenis({ lerp: 0.08, smoothWheel: true, syncTouch: false });
+    lenisRef.current = lenis;
 
-    let rafId: number;
     function raf(time: number) {
       lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
+      rafIdRef.current = requestAnimationFrame(raf);
     }
-    rafId = requestAnimationFrame(raf);
-
-    // Scroll to top on route change
-    lenis.scrollTo(0, { immediate: true });
+    rafIdRef.current = requestAnimationFrame(raf);
 
     return () => {
-      cancelAnimationFrame(rafId);
+      cancelAnimationFrame(rafIdRef.current);
       lenis.destroy();
+      lenisRef.current = null;
     };
+  }, []);
+
+  // On route change: reset to top, then honour hash if present
+  useEffect(() => {
+    const lenis = lenisRef.current;
+    if (!lenis) return;
+
+    const hash = window.location.hash;
+    lenis.scrollTo(0, { immediate: true });
+
+    if (hash) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const target = document.querySelector(hash);
+          if (target) {
+            lenis.scrollTo(target as HTMLElement, { offset: -72 });
+          }
+        });
+      });
+    }
   }, [pathname]);
 
-  return <>{children}</>;
+  return (
+    <LenisContext.Provider value={lenisRef}>
+      {children}
+    </LenisContext.Provider>
+  );
 }

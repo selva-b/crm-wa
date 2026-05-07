@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HeroSection } from "@/components/ui/hero-odyssey";
+import { useLenis } from "@/app/lenis-provider";
 
 // ─── Responsive hook ─────────────────────────────────────────────────────────
 function useBreakpoint() {
@@ -317,6 +318,7 @@ function Navbar() {
   const [visible, setVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { mobile } = useBreakpoint();
+  const lenis = useLenis();
 
   useEffect(() => {
     const h = () => setVisible(window.scrollY > window.innerHeight * 0.8);
@@ -325,6 +327,15 @@ function Navbar() {
   }, []);
 
   const navLinks = [["Features", "#features"], ["Use Cases", "/use-cases"], ["Pricing", "#pricing"], ["About", "/about"]];
+
+  function handleHashClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    if (!href.startsWith("#")) return;
+    e.preventDefault();
+    const target = document.querySelector(href);
+    if (target && lenis) {
+      lenis.scrollTo(target as HTMLElement, { offset: -72 });
+    }
+  }
 
   return (
     <>
@@ -355,7 +366,7 @@ function Navbar() {
           {!mobile && (
             <div style={{ display: "flex", gap: 36, alignItems: "center" }}>
               {navLinks.map(([label, href]) => (
-                <a key={label} href={href} style={{
+                <a key={label} href={href} onClick={(e) => handleHashClick(e, href)} style={{
                   fontSize: 13, fontWeight: 500, letterSpacing: "0.02em",
                   textDecoration: "none", color: "rgba(219,194,176,0.75)",
                   fontFamily: "'Inter', sans-serif", transition: "color 0.2s",
@@ -403,7 +414,7 @@ function Navbar() {
           }}>
             <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 0 }}>
               {navLinks.map(([label, href]) => (
-                <a key={label} href={href} onClick={() => setMenuOpen(false)} style={{
+                <a key={label} href={href} onClick={(e) => { handleHashClick(e, href); setMenuOpen(false); }} style={{
                   padding: "14px 0", fontSize: 16, fontWeight: 500, color: "rgba(219,194,176,0.8)",
                   textDecoration: "none", fontFamily: "'Inter', sans-serif",
                   borderBottom: "1px solid rgba(255,183,125,0.06)",

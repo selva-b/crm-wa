@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useBreakpoint, APP_REGISTER_URL, APP_LOGIN_URL } from "@/lib/wazelo";
+import { useLenis } from "@/app/lenis-provider";
 
 interface NavbarProps {
   activePage?: string;
@@ -21,6 +22,9 @@ export default function Navbar({ activePage }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { mobile } = useBreakpoint();
+  const pathname = usePathname();
+  const router = useRouter();
+  const lenis = useLenis();
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20);
@@ -29,10 +33,26 @@ export default function Navbar({ activePage }: NavbarProps) {
     return () => window.removeEventListener("scroll", h);
   }, []);
 
-  const pathname = usePathname();
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  function handleNavClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    const hashMatch = href.match(/^\/(#.+)$/);
+    if (!hashMatch) return; // let <Link> handle normal routes
+
+    e.preventDefault();
+    const hash = hashMatch[1]; // "#features" or "#pricing"
+
+    if (pathname === "/") {
+      const target = document.querySelector(hash);
+      if (target && lenis) {
+        lenis.scrollTo(target as HTMLElement, { offset: -72 });
+      }
+    } else {
+      router.push(href);
+    }
+  }
 
   return (
     <nav style={{
@@ -70,6 +90,7 @@ export default function Navbar({ activePage }: NavbarProps) {
                 <Link
                   key={label}
                   href={href}
+                  onClick={(e) => handleNavClick(e, href)}
                   style={{
                     fontSize: 13, fontWeight: 500, letterSpacing: "0.02em",
                     textDecoration: "none",
@@ -147,6 +168,10 @@ export default function Navbar({ activePage }: NavbarProps) {
                 <Link
                   key={label}
                   href={href}
+                  onClick={(e) => {
+                    handleNavClick(e, href);
+                    setMenuOpen(false);
+                  }}
                   style={{
                     padding: "14px 0", fontSize: 16, fontWeight: 500,
                     color: isActive ? "#ffb77d" : "rgba(219,194,176,0.8)",
