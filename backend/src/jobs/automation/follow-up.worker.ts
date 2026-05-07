@@ -1,12 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { AutomationTriggerType, AutomationRuleStatus } from '@prisma/client';
-import { Cron } from '@nestjs/schedule';
+import { AutomationRuleStatus } from '@prisma/client';
 import { QueueService } from '@/infrastructure/queue/queue.service';
 import { PrismaService } from '@/infrastructure/database/prisma.service';
 import { AutomationRepository } from '@/modules/automation/infrastructure/repositories/automation.repository';
-import { EvaluateTriggerUseCase } from '@/modules/automation/application/use-cases/evaluate-trigger.use-case';
-import { QUEUE_NAMES, EVENT_NAMES, AUTOMATION_CONFIG } from '@/common/constants';
+import { OutboundMessageService } from '@/modules/messages/application/services/outbound-message.service';
+import { QUEUE_NAMES, EVENT_NAMES } from '@/common/constants';
 
 export interface FollowUpCheckJobData {
   ruleId: string;
@@ -27,6 +26,7 @@ export class FollowUpWorker implements OnModuleInit {
     private readonly queueService: QueueService,
     private readonly prisma: PrismaService,
     private readonly automationRepo: AutomationRepository,
+    private readonly outboundMessage: OutboundMessageService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -140,28 +140,20 @@ export class FollowUpWorker implements OnModuleInit {
       }
 
       // 5. All checks passed — execute the follow-up actions
-      // Queue the message via the messaging engine
       for (const action of rule.actions) {
         if (action.actionType === 'SEND_MESSAGE') {
           const config = action.actionConfig as Record<string, unknown>;
           const idempotencyKey = `follow-up-${data.ruleId}-${data.contactId}-${Date.now()}`;
 
-          await this.queueService.publishOnce(
-            QUEUE_NAMES.SEND_WHATSAPP_MESSAGE,
-            {
-              orgId: data.orgId,
-              sessionId: data.sessionId,
-              contactPhone: data.contactPhone,
-              type: config.messageType || 'TEXT',
-              body: config.messageBody,
-              metadata: {
-                automationRuleId: data.ruleId,
-                followUp: true,
-              },
-              idempotencyKey,
-            },
+          await this.outboundMessage.send({
+            orgId: data.orgId,
+            sessionId: data.sessionId,
+            conversationId: data.conversationId,
+            contactPhone: data.contactPhone,
+            body: String(config.messageBody ?? ''),
             idempotencyKey,
-          );
+            metadata: { automationRuleId: data.ruleId, followUp: true },
+          });
         }
       }
 

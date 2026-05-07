@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wazelo CRM - Every Deal. One Platform.</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@700;800;900&amp;family=Manrope:ital,wght@0,400;0,500;0,600;1,400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#131313",
+                        "background": "#131313",
+                        "secondary-fixed": "#ffdcc3",
+                        "surface-variant": "#353534",
+                        "primary-fixed": "#ffdcc3",
+                        "outline-variant": "#554336",
+                        "inverse-on-surface": "#313030",
+                        "on-secondary-container": "#e4a97a",
+                        "on-surface-variant": "#dbc2b0",
+                        "on-secondary-fixed-variant": "#673d17",
+                        "on-tertiary-fixed-variant": "#004a75",
+                        "on-error": "#690005",
+                        "on-surface": "#e5e2e1",
+                        "surface-container": "#201f1f",
+                        "surface-container-highest": "#353534",
+                        "tertiary-fixed": "#cee5ff",
+                        "inverse-surface": "#e5e2e1",
+                        "on-background": "#e5e2e1",
+                        "on-secondary": "#4c2703",
+                        "error-container": "#93000a",
+                        "inverse-primary": "#904d00",
+                        "on-tertiary-fixed": "#001d32",
+                        "on-primary-fixed": "#2f1500",
+                        "surface-tint": "#ffb77d",
+                        "on-error-container": "#ffdad6",
+                        "secondary-container": "#673d17",
+                        "surface-bright": "#3a3939",
+                        "error": "#ffb4ab",
+                        "on-primary": "#4d2600",
+                        "outline": "#a38c7c",
+                        "tertiary-fixed-dim": "#96ccff",
+                        "tertiary": "#96ccff",
+                        "surface-dim": "#131313",
+                        "primary": "#ffb77d",
+                        "primary-container": "#d97707",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "primary-fixed-dim": "#ffb77d",
+                        "surface-container-low": "#1c1b1b",
+                        "secondary-fixed-dim": "#f7ba8a",
+                        "surface-container-high": "#2a2a2a",
+                        "on-tertiary": "#003353",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-secondary-fixed": "#2f1500",
+                        "on-tertiary-container": "#002c48",
+                        "secondary": "#f7ba8a",
+                        "on-primary-container": "#432100",
+                        "tertiary-container": "#0297e8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Epilogue", "sans-serif"],
+                        "body": ["Manrope", "sans-serif"],
+                        "label": ["Manrope", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .text-watermark {
+            font-size: 20vw;
+            color: rgba(255, 255, 255, 0.03);
+            line-height: 0.8;
+            pointer-events: none;
+            user-select: none;
+        }
+        .hero-title {
+            font-size: clamp(3rem, 7vw, 8rem);
+            letter-spacing: -0.03em;
+            line-height: 0.9;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body antialiased min-h-screen selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 bg-zinc-950/40 backdrop-blur-2xl transition-all duration-500">
+<div class="grid grid-cols-3 items-center w-full px-6 md:px-12 py-6 max-w-screen-2xl mx-auto">
+<!-- Brand -->
+<div class="flex items-center justify-start">
+<a class="font-headline text-2xl font-black tracking-tighter text-zinc-100 uppercase" href="#">
+                    wazelo CRM
+                </a>
+</div>
+<!-- Navigation Links -->
+<div class="hidden md:flex items-center justify-center gap-8">
+<a class="text-amber-500 font-bold border-b-2 border-amber-500/80 pb-1 hover:text-amber-400 transition-all duration-500 ease-in-out text-sm tracking-wide font-label" href="#">Platform</a>
+<a class="text-zinc-400 font-medium hover:text-amber-400 transition-all duration-500 ease-in-out text-sm tracking-wide font-label" href="#">Features</a>
+<a class="text-zinc-400 font-medium hover:text-amber-400 transition-all duration-500 ease-in-out text-sm tracking-wide font-label" href="#">Pricing</a>
+</div>
+<!-- Actions -->
+<div class="flex items-center justify-end gap-6">
+<a class="hidden lg:block text-zinc-400 font-medium hover:text-amber-400 transition-all duration-500 ease-in-out text-sm tracking-wide font-label" href="#">Login</a>
+<a class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-2.5 rounded-full font-label font-bold text-sm tracking-wide hover:scale-105 hover:shadow-[0_0_40px_rgba(255,183,125,0.4)] transition-all duration-500 ease-in-out" href="#">
+                    Start Free Trial
+                </a>
+</div>
+</div>
+</nav>
+<!-- Hero Section -->
+<main class="relative w-full h-screen min-h-[800px] overflow-hidden flex items-end">
+<!-- Background Image -->
+<div class="absolute inset-0 z-0 bg-surface-container-lowest">
+<img alt="Cinematic aerial view of a sprawling metropolis at night, moody atmosphere, glowing city lights, deep shadows, premium automotive style." class="w-full h-full object-cover object-center opacity-80 mix-blend-luminosity" data-alt="Cinematic aerial view of a sprawling metropolis at night, moody atmosphere, glowing city lights, deep shadows, premium automotive style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAprGeyk_aMtWXZjpU-C4C0jlp6bxVDtm6q0UqGAx76bUY72jXSsMIuTEOjtasRAE0Qc97l7Mxo2xYVNXCAoJGvJuyjP1oiKQRGnNDXGRBDmHpbXlvYRhkV6pGrLvlKx7ikWTMqElCwFTEeE9Jkc6vm9dklypo86c3ebB2mY7plpc46G4G487GCMlkDstSb3r0zL1g0U9_TSKuj5F_wO5aR0lW6EwCqPCYwdTS8ZRn1VFruVibcXhY8tyYhkkO8NNYBtftpaTfnRR0"/>
+</div>
+<!-- Gradient Overlays -->
+<div class="absolute inset-0 z-10 bg-gradient-to-b from-black/60 via-black/10 to-black/85"></div>
+<div class="absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent opacity-60"></div>
+<!-- Giant Watermark -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 font-headline font-black uppercase text-watermark text-center w-full">
+            WAZELO
+        </div>
+<!-- Top Right Pill -->
+<div class="absolute top-32 right-6 md:right-12 z-30">
+<div class="flex items-center gap-2 bg-surface-container/30 backdrop-blur-md border border-outline-variant/15 px-4 py-2 rounded-full">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label text-xs tracking-wider text-on-surface-variant font-medium">500+ Businesses · 94% Delivery</span>
+</div>
+</div>
+<!-- Main Content -->
+<div class="relative z-20 w-full max-w-screen-2xl mx-auto px-6 md:px-12 pb-[102px] lg:w-[45%] lg:ml-[5%]">
+<!-- Badge -->
+<div class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-surface-container-highest/50 backdrop-blur-sm border border-outline-variant/30 mb-8">
+<span class="font-label text-xs font-semibold tracking-widest text-primary uppercase">No. 01 / 500+ Businesses</span>
+</div>
+<!-- Headline -->
+<h1 class="font-headline hero-title font-black text-on-surface uppercase mb-6 drop-shadow-2xl">
+<span class="block">EVERY DEAL.</span>
+<span class="block text-primary-container drop-shadow-[0_0_30px_rgba(217,119,7,0.3)]">ONE PLATFORM.</span>
+</h1>
+<!-- Tagline -->
+<p class="font-body italic text-on-surface-variant text-lg md:text-xl max-w-lg mb-10 opacity-90 border-l-2 border-outline-variant/30 pl-4">
+                The WhatsApp CRM built for teams that close.
+            </p>
+<!-- Actions -->
+<div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+<a class="inline-flex items-center justify-center px-8 py-4 rounded-full bg-gradient-to-br from-primary to-primary-container text-on-primary font-label font-bold tracking-wide hover:scale-105 hover:shadow-[0_0_40px_rgba(255,183,125,0.4)] transition-all duration-500 group" href="#">
+<span>Explore Platform</span>
+<span class="material-symbols-outlined ml-2 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+<span class="font-label text-sm text-on-surface-variant/60 tracking-wider">
+                    Wazelo CRM · Est. 2024
+                </span>
+</div>
+</div>
+<!-- Scroll Indicator -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 opacity-50">
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface">Scroll</span>
+<div class="w-[1px] h-12 bg-gradient-to-b from-on-surface to-transparent"></div>
+</div>
+</main>
+</body></html>

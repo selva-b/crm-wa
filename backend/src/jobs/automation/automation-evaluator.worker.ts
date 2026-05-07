@@ -83,7 +83,11 @@ export class AutomationEvaluatorWorker implements OnModuleInit {
         return;
       }
 
-      // 4. Execute actions in order
+      // 4. Load trigger payload for variable interpolation in actions
+      const triggerPayload = await this.automationRepo.findExecutionTriggerPayload(data.executionId);
+      const eventPayload = triggerPayload ?? undefined;
+
+      // 5. Execute actions in order
       const actionResults: Record<string, unknown>[] = [];
 
       for (const action of rule.actions) {
@@ -100,6 +104,7 @@ export class AutomationEvaluatorWorker implements OnModuleInit {
               actionType: action.actionType,
               actionConfig: action.actionConfig,
               depth: data.depth,
+              eventPayload,
             },
             action.delaySeconds,
           );
@@ -122,6 +127,7 @@ export class AutomationEvaluatorWorker implements OnModuleInit {
           actionConfig: action.actionConfig as Record<string, unknown>,
           executionId: data.executionId,
           ruleId: data.ruleId,
+          eventPayload,
         });
 
         actionResults.push(result as any);

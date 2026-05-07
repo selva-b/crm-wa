@@ -47,11 +47,34 @@ export class SendMessageUseCase {
       }
     }
 
-    // 2. Validate active session exists and is connected
-    const session = await this.sessionRepo.findActiveByUserId(userId, orgId);
+    // 2. Resolve which WhatsApp session to use for sending
+    //    Priority: conversationId (use conversation's session) > viaSessionUserId > caller's own session
+    let session: Awaited<ReturnType<typeof this.sessionRepo.findActiveByUserId>> = null;
+
+    if (dto.conversationId) {
+      // Sending within an existing conversation — use that conversation's session
+      const conv = await this.conversationRepo.findByIdAndOrg(dto.conversationId, orgId);
+      if (conv) {
+        session = conv.sessionId ? await this.sessionRepo.findById(conv.sessionId) : null;
+        if (session && session.status !== 'CONNECTED') {
+          session = null; // Session exists but isn't connected
+        }
+      }
+    }
+
+    if (!session && dto.viaSessionUserId) {
+      // Admin/Manager explicitly specifying which user's session to use
+      session = await this.sessionRepo.findActiveByUserId(dto.viaSessionUserId, orgId);
+    }
+
+    if (!session) {
+      // Default: use caller's own session
+      session = await this.sessionRepo.findActiveByUserId(userId, orgId);
+    }
+
     if (!session || session.status !== 'CONNECTED') {
       throw new BadRequestException(
-        'No connected WhatsApp session. Connect via QR first.',
+        'No connected WhatsApp session available to send this message.',
       );
     }
 
@@ -61,6 +84,28 @@ export class SendMessageUseCase {
     }
     if (['IMAGE', 'VIDEO', 'DOCUMENT', 'AUDIO'].includes(dto.type) && !dto.mediaUrl) {
       throw new BadRequestException(`${dto.type} messages require a mediaUrl`);
+    }
+    if (dto.type === 'INTERACTIVE') {
+      if (!dto.interactive) {
+        throw new BadRequestException('INTERACTIVE messages require an interactive payload');
+      }
+      if (dto.interactive.type === 'button') {
+        if (!dto.interactive.buttons || dto.interactive.buttons.length === 0) {
+          throw new BadRequestException('Button interactive messages require at least one button');
+        }
+        if (dto.interactive.buttons.length > 3) {
+          throw new BadRequestException('Button interactive messages allow a maximum of 3 buttons');
+        }
+      }
+      if (dto.interactive.type === 'list') {
+        if (!dto.interactive.sections || dto.interactive.sections.length === 0) {
+          throw new BadRequestException('List interactive messages require at least one section');
+        }
+        const totalRows = dto.interactive.sections.reduce((sum, s) => sum + s.rows.length, 0);
+        if (totalRows > 10) {
+          throw new BadRequestException('List interactive messages allow a maximum of 10 rows total');
+        }
+      }
     }
 
     // 4. Rate limit check
@@ -86,11 +131,25 @@ export class SendMessageUseCase {
     }
 
     // 5. Find or create conversation thread
-    const conversation = await this.conversationRepo.findOrCreate({
-      orgId,
-      sessionId: session.id,
-      contactPhone: dto.contactPhone,
-    });
+    //    If conversationId is provided (replying in existing thread), reuse it
+    //    Otherwise find/create by sessionId + contactPhone
+    let conversation;
+    if (dto.conversationId) {
+      conversation = await this.conversationRepo.findById(dto.conversationId);
+      if (!conversation || conversation.orgId !== orgId) {
+        conversation = await this.conversationRepo.findOrCreate({
+          orgId,
+          sessionId: session.id,
+          contactPhone: dto.contactPhone,
+        });
+      }
+    } else {
+      conversation = await this.conversationRepo.findOrCreate({
+        orgId,
+        sessionId: session.id,
+        contactPhone: dto.contactPhone,
+      });
+    }
 
     // 6. Persist message in DB with QUEUED status
     const message = await this.messageRepo.create({
@@ -101,9 +160,10 @@ export class SendMessageUseCase {
       type: dto.type as MessageType,
       contactPhone: dto.contactPhone,
       contactName: dto.contactName,
-      body: dto.body,
+      body: dto.type === 'INTERACTIVE' ? (dto.interactive?.body ?? dto.body) : dto.body,
       mediaUrl: dto.mediaUrl,
       mediaMimeType: dto.mediaMimeType,
+      metadata: dto.interactive ? { interactive: dto.interactive } as any : undefined,
       idempotencyKey: dto.idempotencyKey,
       priority: dto.priority,
       maxRetries: MESSAGING_CONFIG.MAX_RETRY_COUNT,

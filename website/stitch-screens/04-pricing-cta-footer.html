@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wazelo CRM - Pricing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,700..900;1,700..900&amp;family=Manrope:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#673d17",
+                    "on-background": "#e5e2e1",
+                    "on-secondary-container": "#e4a97a",
+                    "on-error-container": "#ffdad6",
+                    "primary": "#ffb77d",
+                    "on-primary-container": "#432100",
+                    "surface-container-high": "#2a2a2a",
+                    "surface-bright": "#3a3939",
+                    "secondary": "#f7ba8a",
+                    "tertiary-fixed-dim": "#96ccff",
+                    "on-error": "#690005",
+                    "secondary-fixed-dim": "#f7ba8a",
+                    "on-secondary": "#4c2703",
+                    "secondary-fixed": "#ffdcc3",
+                    "on-secondary-fixed": "#2f1500",
+                    "background": "#131313",
+                    "tertiary-fixed": "#cee5ff",
+                    "primary-fixed": "#ffdcc3",
+                    "inverse-on-surface": "#313030",
+                    "tertiary-container": "#0297e8",
+                    "surface-container": "#201f1f",
+                    "on-tertiary": "#003353",
+                    "inverse-primary": "#904d00",
+                    "on-surface": "#e5e2e1",
+                    "surface": "#131313",
+                    "outline-variant": "#554336",
+                    "outline": "#a38c7c",
+                    "on-primary-fixed-variant": "#6e3900",
+                    "error-container": "#93000a",
+                    "primary-fixed-dim": "#ffb77d",
+                    "on-tertiary-container": "#002c48",
+                    "surface-container-lowest": "#0e0e0e",
+                    "error": "#ffb4ab",
+                    "on-surface-variant": "#dbc2b0",
+                    "on-primary": "#4d2600",
+                    "on-primary-fixed": "#2f1500",
+                    "inverse-surface": "#e5e2e1",
+                    "tertiary": "#96ccff",
+                    "surface-tint": "#ffb77d",
+                    "surface-container-highest": "#353534",
+                    "surface-variant": "#353534",
+                    "on-tertiary-fixed-variant": "#004a75",
+                    "on-tertiary-fixed": "#001d32",
+                    "primary-container": "#d97707",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-dim": "#131313",
+                    "secondary-container": "#673d17"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": [
+                            "Epilogue"
+                    ],
+                    "body": [
+                            "Manrope"
+                    ],
+                    "label": [
+                            "Manrope"
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; background-color: #131313; color: #e5e2e1; }
+        h1, h2, h3, h4, h5, h6, .font-headline { font-family: 'Epilogue', sans-serif; }
+        .glass-nav { background: rgba(19, 19, 19, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .amber-glow { box-shadow: 0 0 60px 4px rgba(255, 183, 125, 0.04); }
+        .amber-glow-strong { box-shadow: 0 0 80px 10px rgba(255, 183, 125, 0.08); }
+        .gradient-text { background: linear-gradient(135deg, #ffb77d 0%, #d97707 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn-primary-gradient { background: linear-gradient(135deg, #ffb77d 0%, #d97707 100%); color: #4d2600; }
+        .ghost-border { border: 1px solid rgba(85, 67, 54, 0.15); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar Component -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-xl transition-all duration-300 border-b border-white/5">
+<div class="flex justify-between items-center px-12 py-6 max-w-[1440px] mx-auto">
+<div class="flex items-center gap-12">
+<a class="text-2xl font-black tracking-tighter text-amber-600 dark:text-amber-500 uppercase font-headline" href="#">Wazelo CRM</a>
+<div class="hidden md:flex items-center gap-8 font-body">
+<a class="text-neutral-400 hover:text-white transition-colors" href="#">Platform</a>
+<a class="text-neutral-400 hover:text-white transition-colors" href="#">Solutions</a>
+<a class="text-amber-500 font-bold border-b-2 border-amber-600 pb-1" href="#">Pricing</a>
+<a class="text-neutral-400 hover:text-white transition-colors" href="#">Resources</a>
+</div>
+</div>
+<div class="hidden md:flex items-center gap-6 font-body">
+<a class="text-neutral-400 hover:text-white transition-colors" href="#">Login</a>
+<a class="btn-primary-gradient px-6 py-2 rounded-md font-bold hover:scale-[0.98] transition-all duration-200" href="#">Get Started</a>
+</div>
+</div>
+</nav>
+<main class="pt-32">
+<!-- Pricing Section -->
+<section class="py-24 px-6 md:px-12 max-w-[1440px] mx-auto relative z-10">
+<div class="text-center mb-16 space-y-6">
+<p class="text-primary font-body tracking-[0.2em] text-sm uppercase font-bold">Pricing</p>
+<h1 class="text-5xl md:text-7xl font-headline font-black tracking-[-0.04em] uppercase text-on-surface">
+                    Simple Pricing.<br/>Serious Results.
+                </h1>
+<p class="text-on-surface-variant font-body text-lg md:text-xl max-w-2xl mx-auto font-light">
+                    All plans include a 14-day free trial. No credit card required.
+                </p>
+<!-- Toggle -->
+<div class="flex items-center justify-center gap-4 mt-8 font-body">
+<span class="text-on-surface-variant">Monthly</span>
+<button class="w-14 h-8 bg-surface-container-high rounded-full relative p-1 ghost-border transition-colors">
+<div class="w-6 h-6 bg-primary rounded-full absolute right-1 top-1 transition-transform"></div>
+</button>
+<span class="text-on-surface">Yearly</span>
+<span class="bg-primary-container/20 text-primary text-xs font-bold px-2 py-1 rounded-full ml-2">SAVE 17%</span>
+</div>
+</div>
+<!-- Pricing Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+<!-- Starter -->
+<div class="bg-surface-container-low rounded-xl p-8 ghost-border flex flex-col h-full relative overflow-hidden group hover:bg-surface-container-high transition-colors duration-500">
+<div class="mb-8">
+<h3 class="text-2xl font-headline font-bold text-on-surface mb-2">Starter</h3>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-headline font-black text-on-surface">₹499</span>
+<span class="text-on-surface-variant font-body text-sm">/mo</span>
+</div>
+<p class="text-on-surface-variant font-body text-sm mt-4 pb-6 border-b border-outline-variant/20">
+                            5 users · 5,000 msgs · 10 campaigns
+                        </p>
+</div>
+<ul class="space-y-4 font-body text-sm text-on-surface flex-grow mb-8">
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> Basic CRM features</li>
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> Email support</li>
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> Standard templates</li>
+</ul>
+<button class="w-full py-3 rounded-md font-body font-bold text-on-surface border border-outline-variant/30 hover:bg-surface-bright transition-colors">Start Free Trial</button>
+</div>
+<!-- Growth (Featured) -->
+<div class="bg-surface-container-high rounded-xl p-8 border border-primary/30 flex flex-col h-full relative overflow-hidden transform md:-translate-y-4 amber-glow-strong">
+<div class="absolute top-0 right-0 bg-primary text-on-primary text-xs font-bold px-4 py-1 rounded-bl-lg font-body uppercase tracking-wider">
+                        Most Popular
+                    </div>
+<div class="mb-8">
+<h3 class="text-2xl font-headline font-bold text-primary mb-2">Growth</h3>
+<div class="flex items-baseline gap-1">
+<span class="text-5xl font-headline font-black text-primary">₹999</span>
+<span class="text-on-surface-variant font-body text-sm">/mo</span>
+</div>
+<p class="text-on-surface-variant font-body text-sm mt-4 pb-6 border-b border-outline-variant/20">
+                            15 users · 25,000 msgs · 50 campaigns
+                        </p>
+</div>
+<ul class="space-y-4 font-body text-sm text-on-surface flex-grow mb-8">
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> Advanced automations</li>
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> Priority support</li>
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> Custom reporting</li>
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> API access</li>
+</ul>
+<button class="w-full py-4 rounded-md font-body font-bold btn-primary-gradient shadow-lg shadow-primary/20 hover:scale-[0.98] transition-transform">Start Free Trial</button>
+</div>
+<!-- Pro -->
+<div class="bg-surface-container-low rounded-xl p-8 ghost-border flex flex-col h-full relative overflow-hidden group hover:bg-surface-container-high transition-colors duration-500">
+<div class="mb-8">
+<h3 class="text-2xl font-headline font-bold text-on-surface mb-2">Pro</h3>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-headline font-black text-on-surface">₹1,999</span>
+<span class="text-on-surface-variant font-body text-sm">/mo</span>
+</div>
+<p class="text-on-surface-variant font-body text-sm mt-4 pb-6 border-b border-outline-variant/20">
+                            50 users · 100,000 msgs · 200 campaigns
+                        </p>
+</div>
+<ul class="space-y-4 font-body text-sm text-on-surface flex-grow mb-8">
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> Dedicated account manager</li>
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> 24/7 phone support</li>
+<li class="flex items-start gap-3"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="check_circle">check_circle</span> Unlimited integrations</li>
+</ul>
+<button class="w-full py-3 rounded-md font-body font-bold text-on-surface border border-outline-variant/30 hover:bg-surface-bright transition-colors">Start Free Trial</button>
+</div>
+</div>
+<!-- Enterprise Strip -->
+<div class="mt-16 max-w-4xl mx-auto bg-surface-container-lowest rounded-xl p-6 ghost-border flex flex-col md:flex-row items-center justify-between gap-6 border border-white/5">
+<div class="font-body text-on-surface text-center md:text-left">
+<span class="font-bold text-lg">Enterprise</span>
+<span class="text-on-surface-variant mx-2 hidden md:inline">—</span>
+<span class="text-on-surface-variant block md:inline mt-1 md:mt-0 text-sm">200+ users · Unlimited messages · Custom pricing</span>
+</div>
+<a class="text-primary font-body font-bold hover:text-primary-container transition-colors flex items-center gap-2" href="#">
+                    Contact Sales <span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+</section>
+<!-- Final CTA Section -->
+<section class="h-[1024px] min-h-[800px] relative flex flex-col items-center justify-center overflow-hidden bg-surface-dim">
+<!-- Ambient Lighting & Watermark -->
+<div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(217,119,7,0.15)_0%,transparent_60%)] pointer-events-none"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[20vw] font-headline font-black text-white/[0.02] tracking-tighter whitespace-nowrap select-none pointer-events-none">
+                WAZELO
+            </div>
+<div class="relative z-10 text-center px-6 max-w-5xl mx-auto space-y-12">
+<p class="text-primary font-body tracking-[0.3em] text-sm uppercase font-bold">Get Started Today</p>
+<h2 class="text-6xl md:text-8xl lg:text-[120px] font-headline font-black leading-[0.9] tracking-[-0.04em] uppercase text-on-surface flex flex-col gap-2">
+<span>Don't Just</span>
+<span>Message.</span>
+<span class="text-primary italic opacity-90 drop-shadow-lg font-light tracking-tight">Close Deals.</span>
+</h2>
+<div class="pt-8 flex flex-col items-center gap-6">
+<button class="btn-primary-gradient px-12 py-5 rounded-full font-headline font-bold text-xl md:text-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center gap-3">
+                        Start Your Free Trial <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<p class="text-on-surface-variant/60 font-body text-xs uppercase tracking-wider">
+                        No credit card required. 14-day free trial. Cancel anytime.
+                    </p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Component -->
+<footer class="w-full pt-24 pb-12 bg-[#0e0e0e] relative z-20 border-t border-primary/20">
+<div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 max-w-7xl mx-auto border-t border-white/5 pt-16">
+<div class="space-y-6">
+<div class="text-xl font-black text-amber-500 tracking-tight font-headline uppercase">Wazelo CRM</div>
+<p class="text-on-surface-variant/60 font-body text-sm font-light leading-relaxed">
+                    The cinematic monolith of relationship management. Precision engineered for high-end deal flow.
+                </p>
+</div>
+<div class="space-y-6">
+<h4 class="font-headline font-bold text-on-surface text-sm uppercase tracking-wider">Product</h4>
+<ul class="space-y-3 font-body text-neutral-500 font-light">
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Features</a></li>
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Security</a></li>
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Enterprise</a></li>
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Updates</a></li>
+</ul>
+</div>
+<div class="space-y-6">
+<h4 class="font-headline font-bold text-on-surface text-sm uppercase tracking-wider">Resources</h4>
+<ul class="space-y-3 font-body text-neutral-500 font-light">
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Documentation</a></li>
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">API Reference</a></li>
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Community</a></li>
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Support</a></li>
+</ul>
+</div>
+<div class="space-y-6">
+<h4 class="font-headline font-bold text-on-surface text-sm uppercase tracking-wider">Company</h4>
+<ul class="space-y-3 font-body text-neutral-500 font-light">
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">About Us</a></li>
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Careers</a></li>
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Press</a></li>
+<li><a class="hover:text-neutral-200 hover:translate-x-1 transition-transform duration-300 inline-block" href="#">Contact</a></li>
+</ul>
+</div>
+</div>
+<div class="mt-24 border-t border-white/5 pt-8 px-12 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="font-body text-[rgba(255,255,255,0.55)] font-[300] text-sm">
+                © 2024 Wazelo CRM. All rights reserved.
+            </p>
+<div class="flex gap-6 font-body text-[rgba(255,255,255,0.55)] font-[300] text-sm">
+<a class="hover:text-white transition-colors" href="#">Privacy</a>
+<a class="hover:text-white transition-colors" href="#">Terms</a>
+</div>
+</div>
+</footer>
+</body></html>

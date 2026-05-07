@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Knowledge Base | CRM-WA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#240f00",
+                        "on-tertiary-fixed": "#000000",
+                        "on-secondary-fixed": "#383f4e",
+                        "on-background": "#e2e5f6",
+                        "secondary-dim": "#b2b9ca",
+                        "on-primary-container": "#230e00",
+                        "surface-variant": "#212532",
+                        "inverse-surface": "#faf8ff",
+                        "surface-container-highest": "#212532",
+                        "secondary-container": "#343c4a",
+                        "on-surface": "#e2e5f6",
+                        "on-error-container": "#ff9b82",
+                        "on-secondary-fixed-variant": "#545c6b",
+                        "inverse-on-surface": "#53555c",
+                        "inverse-primary": "#914d00",
+                        "outline-variant": "#434855",
+                        "tertiary": "#b299ff",
+                        "surface": "#0c0e14",
+                        "tertiary-dim": "#a88cfb",
+                        "error-dim": "#c44f34",
+                        "surface-container-high": "#1c1f2a",
+                        "error": "#f97758",
+                        "secondary-fixed-dim": "#cdd4e6",
+                        "secondary-fixed": "#dce2f5",
+                        "on-secondary-container": "#b8bfd1",
+                        "on-primary": "#643400",
+                        "tertiary-container": "#a589f8",
+                        "primary-fixed": "#fe932c",
+                        "surface-dim": "#0c0e14",
+                        "error-container": "#85230a",
+                        "background": "#0c0e14",
+                        "on-tertiary": "#31067e",
+                        "on-error": "#450900",
+                        "on-tertiary-fixed-variant": "#2e007c",
+                        "surface-container": "#161923",
+                        "on-surface-variant": "#a7aaba",
+                        "tertiary-fixed-dim": "#987cea",
+                        "primary-fixed-dim": "#ed871e",
+                        "surface-bright": "#282c38",
+                        "tertiary-fixed": "#a589f8",
+                        "surface-container-low": "#10131b",
+                        "surface-container-lowest": "#000000",
+                        "primary": "#ffb77d",
+                        "outline": "#717584",
+                        "secondary": "#c0c6d8",
+                        "primary-container": "#dd7a0c",
+                        "surface-tint": "#ffb77d",
+                        "primary-dim": "#fe932c",
+                        "on-secondary": "#39404f",
+                        "on-primary-fixed-variant": "#572c00",
+                        "on-tertiary-container": "#230062"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0c0e14; }
+        ::-webkit-scrollbar-thumb { background: #2d3044; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #434855; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased overflow-hidden">
+<!-- SideNavBar Anchor -->
+<aside class="docked fixed left-0 top-0 h-full w-60 border-r border-slate-800 bg-slate-950 flex flex-col h-full py-4 z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dataset</span>
+</div>
+<div>
+<h1 class="text-lg font-black text-amber-600 leading-none">CRM-WA</h1>
+<p class="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Enterprise Management</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-900 mx-2 transition-all active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-slate-100">dashboard</span>
+<span class="font-inter text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-900 mx-2 transition-all active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-slate-100">group</span>
+<span class="font-inter text-sm">Leads</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-900 mx-2 transition-all active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-slate-100">person</span>
+<span class="font-inter text-sm">Contacts</span>
+</a>
+<!-- Active Navigation Mapping: Knowledge Base -->
+<a class="flex items-center gap-3 px-4 py-3 bg-slate-900 text-amber-600 rounded-lg mx-2 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">book</span>
+<span class="font-inter text-sm font-semibold">Knowledge Base</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-900 mx-2 transition-all active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-slate-100">leaderboard</span>
+<span class="font-inter text-sm">Analytics</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-slate-900 hover:bg-slate-800 text-amber-600 py-3 rounded-lg text-sm font-semibold mb-6 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">upgrade</span>
+                Upgrade Plan
+            </button>
+<div class="space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-100 transition-all text-xs" href="#">
+<span class="material-symbols-outlined text-sm">help</span>
+                    Support
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-100 transition-all text-xs" href="#">
+<span class="material-symbols-outlined text-sm">logout</span>
+                    Logout
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Shell -->
+<main class="ml-60 flex flex-col h-screen">
+<!-- TopAppBar Anchor -->
+<header class="flex justify-between items-center px-6 w-full fixed top-0 z-40 h-16 bg-slate-950 border-b border-slate-800 ml-0 left-60 right-0" style="width: calc(100% - 15rem);">
+<div class="flex items-center gap-4">
+<h2 class="font-inter text-sm font-bold text-slate-50 uppercase tracking-widest">Knowledge Base</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-500 text-sm">search</span>
+</span>
+<input class="bg-slate-900 border-none text-slate-200 text-xs rounded-lg pl-10 pr-4 py-2 w-64 focus:ring-1 focus:ring-amber-600 transition-all" placeholder="Search Knowledge Base..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-slate-400 hover:text-slate-200 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-slate-400 hover:text-slate-200 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Close-up portrait of a professional male editor in a dark studio setting with soft amber rim lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWbcNMZ3VMgooE4SeKnsyBagqfcliKEUrtvCp4wjNbo-zsDpb3MwbOsBBjqvAikB3pHWmPEB4X8aAdRmO2WbXOxgI6DzwtXtqQXOBDVZdQYaGFMN3yAeOvrFOZn6vs_EfE9ErdTE2Jz5mWesNWN4Qf49QDCi-t9BjFaYSi_x7C0iAxbLPuf4E2d2F7Soj6_t8fuUu3ZeyssezMgjMIV54lWirEm_is-4Bwg0N7lPfe2bZUZGM9N3WVUVoKV1idr03S_Bw6KM3KfQ"/>
+</div>
+</div>
+<button class="bg-amber-600 hover:bg-amber-700 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                    New Article
+                </button>
+</div>
+</header>
+<!-- Content Area -->
+<div class="mt-16 flex flex-1 overflow-hidden">
+<!-- Left Panel: Categories Tree -->
+<aside class="w-[260px] bg-surface-container-low border-r border-outline-variant p-4 overflow-y-auto">
+<h3 class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-4 px-2">Categories</h3>
+<div class="space-y-1">
+<!-- Support -->
+<details class="group" open="">
+<summary class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-variant cursor-pointer text-sm font-medium transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-600 text-sm group-open:rotate-90 transition-transform">chevron_right</span>
+<span class="material-symbols-outlined text-sm">contact_support</span>
+<span>Support</span>
+</div>
+<span class="bg-slate-800 text-[10px] px-1.5 py-0.5 rounded text-on-surface-variant">5</span>
+</summary>
+<div class="ml-8 mt-1 space-y-1">
+<a class="block p-1.5 text-xs text-on-surface-variant hover:text-amber-500 transition-colors" href="#">Contacting Agents</a>
+<a class="block p-1.5 text-xs text-on-surface-variant hover:text-amber-500 transition-colors" href="#">Service Levels</a>
+<a class="block p-1.5 text-xs text-on-surface-variant hover:text-amber-500 transition-colors" href="#">Ticket Priority</a>
+</div>
+</details>
+<!-- Getting Started -->
+<details class="group">
+<summary class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-variant cursor-pointer text-sm font-medium transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-600 text-sm group-open:rotate-90 transition-transform">chevron_right</span>
+<span class="material-symbols-outlined text-sm">rocket_launch</span>
+<span>Getting Started</span>
+</div>
+<span class="bg-slate-800 text-[10px] px-1.5 py-0.5 rounded text-on-surface-variant">3</span>
+</summary>
+</details>
+<!-- WhatsApp Setup -->
+<details class="group">
+<summary class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-variant cursor-pointer text-sm font-medium transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-600 text-sm group-open:rotate-90 transition-transform">chevron_right</span>
+<span class="material-symbols-outlined text-sm">chat</span>
+<span>WhatsApp Setup</span>
+</div>
+<span class="bg-slate-800 text-[10px] px-1.5 py-0.5 rounded text-on-surface-variant">4</span>
+</summary>
+</details>
+<!-- Billing -->
+<details class="group">
+<summary class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-variant cursor-pointer text-sm font-medium transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-600 text-sm group-open:rotate-90 transition-transform">chevron_right</span>
+<span class="material-symbols-outlined text-sm">payments</span>
+<span>Billing</span>
+</div>
+<span class="bg-slate-800 text-[10px] px-1.5 py-0.5 rounded text-on-surface-variant">2</span>
+</summary>
+</details>
+<!-- API Docs -->
+<details class="group">
+<summary class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-variant cursor-pointer text-sm font-medium transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-600 text-sm group-open:rotate-90 transition-transform">chevron_right</span>
+<span class="material-symbols-outlined text-sm">code</span>
+<span>API Docs</span>
+</div>
+<span class="bg-slate-800 text-[10px] px-1.5 py-0.5 rounded text-on-surface-variant">6</span>
+</summary>
+</details>
+</div>
+</aside>
+<!-- Right Main Area -->
+<section class="flex-1 overflow-y-auto bg-surface-container p-6 space-y-6">
+<!-- Table View -->
+<div class="bg-surface-container-high border border-outline-variant rounded-xl overflow-hidden shadow-2xl">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-highest/50 text-on-surface-variant text-[11px] uppercase tracking-widest border-b border-outline-variant">
+<th class="px-4 py-4 font-bold">Title</th>
+<th class="px-4 py-4 font-bold">Category</th>
+<th class="px-4 py-4 font-bold">Status</th>
+<th class="px-4 py-4 font-bold">Views</th>
+<th class="px-4 py-4 font-bold">Last Updated</th>
+<th class="px-4 py-4 font-bold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="text-sm divide-y divide-outline-variant">
+<tr class="hover:bg-surface-variant/30 transition-colors group">
+<td class="px-4 py-4 font-medium">Connecting WhatsApp Business API</td>
+<td class="px-4 py-4 text-on-surface-variant">WhatsApp Setup</td>
+<td class="px-4 py-4">
+<span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">PUBLISHED</span>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">1,242</td>
+<td class="px-4 py-4 text-on-surface-variant">Oct 12, 2023</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:text-amber-500 transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">delete</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant/30 transition-colors bg-surface-container-high/50">
+<td class="px-4 py-4 font-medium text-amber-500">Configuring Webhook Endpoints</td>
+<td class="px-4 py-4 text-on-surface-variant">API Docs</td>
+<td class="px-4 py-4">
+<span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">PUBLISHED</span>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">891</td>
+<td class="px-4 py-4 text-on-surface-variant">Oct 10, 2023</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 text-amber-500 transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">delete</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant/30 transition-colors">
+<td class="px-4 py-4 font-medium">User Role Permissions Matrix</td>
+<td class="px-4 py-4 text-on-surface-variant">Getting Started</td>
+<td class="px-4 py-4">
+<span class="bg-slate-700/50 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-600/50">DRAFT</span>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">0</td>
+<td class="px-4 py-4 text-on-surface-variant">Oct 09, 2023</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:text-amber-500 transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">delete</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant/30 transition-colors">
+<td class="px-4 py-4 font-medium">Troubleshooting Message Delivery</td>
+<td class="px-4 py-4 text-on-surface-variant">Support</td>
+<td class="px-4 py-4">
+<span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">PUBLISHED</span>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">2,455</td>
+<td class="px-4 py-4 text-on-surface-variant">Oct 05, 2023</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:text-amber-500 transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">delete</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant/30 transition-colors">
+<td class="px-4 py-4 font-medium">Refund Policy Guidelines</td>
+<td class="px-4 py-4 text-on-surface-variant">Billing</td>
+<td class="px-4 py-4">
+<span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">PUBLISHED</span>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">412</td>
+<td class="px-4 py-4 text-on-surface-variant">Sep 28, 2023</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:text-amber-500 transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">delete</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant/30 transition-colors">
+<td class="px-4 py-4 font-medium">Exporting Leads to CSV</td>
+<td class="px-4 py-4 text-on-surface-variant">Getting Started</td>
+<td class="px-4 py-4">
+<span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">PUBLISHED</span>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">1,029</td>
+<td class="px-4 py-4 text-on-surface-variant">Sep 22, 2023</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:text-amber-500 transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">delete</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant/30 transition-colors">
+<td class="px-4 py-4 font-medium">OAuth2 Flow Overview</td>
+<td class="px-4 py-4 text-on-surface-variant">API Docs</td>
+<td class="px-4 py-4">
+<span class="bg-slate-700/50 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-600/50">DRAFT</span>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">0</td>
+<td class="px-4 py-4 text-on-surface-variant">Sep 15, 2023</td>
+<td class="px-4 py-4 text-right">
+<button class="p-1 hover:text-amber-500 transition-colors"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="p-1 hover:text-error transition-colors"><span class="material-symbols-outlined text-lg">delete</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Article Preview Card -->
+<div class="bg-surface-container-highest border border-outline-variant rounded-xl p-6 shadow-xl relative overflow-hidden">
+<div class="absolute top-0 right-0 p-6 flex gap-3">
+<div class="flex items-center gap-2 px-3 py-1.5 bg-slate-900 rounded-lg border border-outline-variant">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Published</span>
+<div class="w-8 h-4 bg-emerald-500/20 rounded-full relative">
+<div class="absolute right-0.5 top-0.5 w-3 h-3 bg-emerald-400 rounded-full shadow-sm"></div>
+</div>
+</div>
+<button class="bg-amber-600 text-slate-950 px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-amber-700 transition-colors">
+<span class="material-symbols-outlined text-sm">edit</span>
+                            Edit
+                        </button>
+</div>
+<div class="max-w-2xl">
+<div class="flex items-center gap-2 text-xs text-amber-500 font-semibold mb-2">
+<span class="material-symbols-outlined text-sm">code</span>
+                            API Docs / Authentication
+                        </div>
+<h2 class="text-2xl font-bold text-on-surface mb-6">Configuring Webhook Endpoints</h2>
+<div class="prose prose-invert prose-sm max-w-none space-y-4 text-on-surface-variant leading-relaxed">
+<p>To receive real-time updates for WhatsApp messages, you must configure a <strong>Webhook Endpoint</strong>. This allows our servers to push data to your application as soon as an event occurs.</p>
+<h4 class="text-on-surface font-bold text-sm">Prerequisites</h4>
+<ul class="list-disc ml-5 space-y-2">
+<li>A publicly accessible HTTPS URL.</li>
+<li>Verification Token (defined in your CRM settings).</li>
+<li>The ability to handle a GET request for validation.</li>
+</ul>
+<div class="bg-slate-950 p-4 rounded-lg font-mono text-xs border border-outline-variant">
+<span class="text-emerald-400">POST</span> /webhooks/callback<br/>
+<span class="text-slate-500">Content-Type: application/json</span><br/><br/>
+                                {<br/>
+                                  "object": "whatsapp_business_account",<br/>
+                                  "entry": [...]<br/>
+                                }
+                            </div>
+<p>Once you've set up your listener, go to <strong>Settings &gt; API &gt; Webhooks</strong> to enter your endpoint URL and save changes.</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Contextual FAB (Suppressed on Details/Knowledge Base by default, but here as a secondary "Ask AI" helper if needed - following rule: only if aligns) -->
+<!-- Suppressed based on "Suppressed on Settings, Profile, Details, and Transactional screens" - Knowledge Base acts as documentation/details -->
+</body></html>

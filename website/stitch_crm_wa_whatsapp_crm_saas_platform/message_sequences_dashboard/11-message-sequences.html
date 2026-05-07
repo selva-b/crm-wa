@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sequences | CRM-WA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "tertiary": "#b299ff",
+                "on-tertiary-container": "#230062",
+                "error": "#f97758",
+                "primary-fixed": "#fe932c",
+                "outline": "#717584",
+                "surface-container": "#161923",
+                "secondary-fixed": "#dce2f5",
+                "on-primary-container": "#230e00",
+                "on-secondary-fixed": "#383f4e",
+                "surface-container-low": "#10131b",
+                "tertiary-container": "#a589f8",
+                "on-primary": "#643400",
+                "on-surface-variant": "#a7aaba",
+                "on-primary-fixed-variant": "#572c00",
+                "surface-bright": "#282c38",
+                "surface-tint": "#ffb77d",
+                "secondary-dim": "#b2b9ca",
+                "on-error-container": "#ff9b82",
+                "tertiary-fixed-dim": "#987cea",
+                "outline-variant": "#434855",
+                "surface-dim": "#0c0e14",
+                "primary-container": "#dd7a0c",
+                "secondary": "#c0c6d8",
+                "on-tertiary": "#31067e",
+                "on-secondary-fixed-variant": "#545c6b",
+                "on-tertiary-fixed": "#000000",
+                "surface-container-highest": "#212532",
+                "on-tertiary-fixed-variant": "#2e007c",
+                "on-primary-fixed": "#240f00",
+                "surface-container-high": "#1c1f2a",
+                "background": "#0c0e14",
+                "error-container": "#85230a",
+                "surface-variant": "#212532",
+                "on-error": "#450900",
+                "surface-container-lowest": "#000000",
+                "tertiary-dim": "#a88cfb",
+                "primary-dim": "#fe932c",
+                "inverse-on-surface": "#53555c",
+                "tertiary-fixed": "#a589f8",
+                "primary-fixed-dim": "#ed871e",
+                "on-background": "#e2e5f6",
+                "on-secondary": "#39404f",
+                "on-surface": "#e2e5f6",
+                "surface": "#0c0e14",
+                "on-secondary-container": "#b8bfd1",
+                "inverse-primary": "#914d00",
+                "primary": "#ffb77d",
+                "secondary-container": "#343c4a",
+                "secondary-fixed-dim": "#cdd4e6",
+                "inverse-surface": "#faf8ff",
+                "error-dim": "#c44f34"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "fontFamily": {
+                "headline": ["Inter"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased flex overflow-hidden">
+<!-- SideNavBar (Authority: JSON) -->
+<aside class="bg-slate-950 flex flex-col h-full py-4 fixed left-0 top-0 w-60 border-r border-slate-800 font-inter text-sm font-medium z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 bg-amber-600 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-background" style="font-variation-settings: 'FILL' 1;">fireplace</span>
+</div>
+<div>
+<div class="text-lg font-black text-on-surface">Midnight Ember</div>
+<div class="text-[10px] uppercase tracking-widest text-slate-500">CRM Workspace</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+                Leads
+            </a>
+<!-- ACTIVE TAB: Sequences -->
+<a class="flex items-center gap-3 px-6 py-3 bg-amber-600/10 text-amber-500 border-r-2 border-amber-600 font-semibold transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="alt_route" style="font-variation-settings: 'FILL' 1;">alt_route</span>
+                Sequences
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Contacts
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+                Analytics
+            </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all scale-95 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+                Automation
+            </a>
+</nav>
+<div class="px-4 mb-4">
+<button class="w-full bg-primary-container text-on-primary-container py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Sequence
+            </button>
+</div>
+<div class="pt-4 border-t border-slate-800 space-y-1">
+<a class="flex items-center gap-3 px-6 py-2 text-slate-400 hover:bg-slate-900 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="headset_mic">headset_mic</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 px-6 py-2 text-slate-400 hover:bg-slate-900 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<div class="flex-1 ml-60 flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar (Authority: JSON) -->
+<header class="bg-slate-950 text-amber-600 font-inter text-sm antialiased docked full-width top-0 h-16 border-b border-slate-800 flex justify-between items-center px-6 w-full z-40">
+<div class="flex items-center gap-8">
+<h1 class="text-xl font-bold text-amber-600">Message Sequences</h1>
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
+<input class="bg-surface-container-low border-slate-800 rounded-lg pl-10 pr-4 py-1.5 w-64 focus:ring-1 focus:ring-amber-600 focus:border-amber-600 text-on-surface" placeholder="Search sequences..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-400 hover:bg-slate-900 hover:text-amber-500 transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-slate-900 hover:text-amber-500 transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-slate-900 hover:text-amber-500 transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-slate-700 ml-2">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="professional portrait of a project manager with soft lighting against a dark neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsO2duQ-E_dDC9GXvLdDW2vUf6jps6BtsnpTnxXEoc9fWoSy3uCqGwztZzJDzj9iIR7fB3gNWiUBOwoGLttraC1fEHLSO6pK4E1tH1Za-AhHQvr4AxQ24_jo2OSPk5kLCwU2IVySFlBtqfbZS4sPJMcCswtaUrMBy6pZXU5X4ziMojyQdHAa9Avn8x3B7CCscl6BvSTNLnA7Sx36Qj9X_KY4h8zdtWWy52Mxg3YdFC3IbGD50SSQOmVAHCLH01pi130Dw6-K5maQ"/>
+</div>
+</div>
+</header>
+<!-- Scrollable Canvas -->
+<main class="flex-1 overflow-y-auto p-8 space-y-8 bg-surface-dim">
+<!-- Header & Explanation -->
+<section class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2 text-amber-500 text-xs font-bold uppercase tracking-widest">
+<span class="material-symbols-outlined text-sm">auto_mode</span>
+                        Automation Engine
+                    </div>
+<p class="text-on-surface-variant max-w-2xl text-sm leading-relaxed">
+                        Sequences are automated multi-step message flows sent to contacts over time. Configure triggers and delays to create consistent high-touch communication.
+                    </p>
+</div>
+<button class="bg-amber-600 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 hover:bg-amber-700 transition-all shadow-lg shadow-amber-950/20 whitespace-nowrap">
+<span class="material-symbols-outlined">add_circle</span>
+                    New Sequence
+                </button>
+</section>
+<!-- Main Layout Grid -->
+<div class="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+<!-- Table Column -->
+<div class="xl:col-span-7 space-y-6">
+<div class="bg-surface-container border border-outline-variant rounded-xl overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-high">
+<h3 class="font-semibold text-on-surface">Active Sequences</h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm">
+<thead>
+<tr class="text-on-surface-variant border-b border-outline-variant">
+<th class="px-6 py-4 font-medium">Sequence Name</th>
+<th class="px-4 py-4 font-medium">Steps</th>
+<th class="px-4 py-4 font-medium">Recipients</th>
+<th class="px-4 py-4 font-medium text-center">Status</th>
+<th class="px-6 py-4 font-medium text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-highest/50 transition-colors bg-amber-600/5 group">
+<td class="px-6 py-4">
+<div class="font-semibold text-on-surface">7-Day Onboarding</div>
+<div class="text-[10px] text-on-surface-variant">Created Oct 1</div>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">7 steps</td>
+<td class="px-4 py-4">
+<span class="text-on-surface font-medium">234</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex justify-center">
+<div class="w-10 h-5 bg-emerald-500/20 border border-emerald-500/30 rounded-full relative p-1 cursor-pointer">
+<div class="w-3 h-3 bg-emerald-500 rounded-full absolute right-1"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2 text-on-surface-variant">
+<button class="hover:text-primary"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="hover:text-primary"><span class="material-symbols-outlined text-lg">visibility</span></button>
+<button class="hover:text-error"><span class="material-symbols-outlined text-lg">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-highest/50 transition-colors">
+<td class="px-6 py-4">
+<div class="font-semibold text-on-surface">Product Demo Follow-up</div>
+<div class="text-[10px] text-on-surface-variant">Created Oct 5</div>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">3 steps</td>
+<td class="px-4 py-4">
+<span class="text-on-surface font-medium">45</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex justify-center">
+<div class="w-10 h-5 bg-emerald-500/20 border border-emerald-500/30 rounded-full relative p-1">
+<div class="w-3 h-3 bg-emerald-500 rounded-full absolute right-1"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2 text-on-surface-variant">
+<button class="hover:text-primary"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="hover:text-primary"><span class="material-symbols-outlined text-lg">visibility</span></button>
+<button class="hover:text-error"><span class="material-symbols-outlined text-lg">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-highest/50 transition-colors">
+<td class="px-6 py-4">
+<div class="font-semibold text-on-surface">Re-engagement</div>
+<div class="text-[10px] text-on-surface-variant">Created Oct 10</div>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">5 steps</td>
+<td class="px-4 py-4">
+<span class="text-on-surface font-medium">89</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex justify-center">
+<div class="w-10 h-5 bg-slate-800 border border-slate-700 rounded-full relative p-1">
+<div class="w-3 h-3 bg-slate-600 rounded-full absolute left-1"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2 text-on-surface-variant">
+<button class="hover:text-primary"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="hover:text-primary"><span class="material-symbols-outlined text-lg">visibility</span></button>
+<button class="hover:text-error"><span class="material-symbols-outlined text-lg">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-highest/50 transition-colors">
+<td class="px-6 py-4">
+<div class="font-semibold text-on-surface">Trial Conversion</div>
+<div class="text-[10px] text-on-surface-variant">Created Nov 1</div>
+</td>
+<td class="px-4 py-4 text-on-surface-variant">4 steps</td>
+<td class="px-4 py-4">
+<span class="text-on-surface font-medium">0</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex justify-center">
+<div class="w-10 h-5 bg-emerald-500/20 border border-emerald-500/30 rounded-full relative p-1">
+<div class="w-3 h-3 bg-emerald-500 rounded-full absolute right-1"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2 text-on-surface-variant">
+<button class="hover:text-primary"><span class="material-symbols-outlined text-lg">edit</span></button>
+<button class="hover:text-primary"><span class="material-symbols-outlined text-lg">visibility</span></button>
+<button class="hover:text-error"><span class="material-symbols-outlined text-lg">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Detail Panel Column -->
+<div class="xl:col-span-5">
+<div class="bg-surface-container-high border border-outline-variant rounded-xl overflow-hidden shadow-2xl">
+<div class="p-6 border-b border-outline-variant bg-gradient-to-br from-surface-container-highest to-surface-container-high">
+<div class="flex justify-between items-start mb-4">
+<span class="bg-amber-600/20 text-amber-500 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-600/30">CURRENT VIEW</span>
+<button class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-xl">close</span></button>
+</div>
+<h2 class="text-lg font-bold text-on-surface">7-Day Onboarding Sequence</h2>
+<div class="flex items-center gap-4 mt-2 text-xs text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">rebase_edit</span> 7 steps</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">group</span> 234 active recipients</span>
+</div>
+</div>
+<div class="p-6">
+<div class="relative space-y-8 before:absolute before:left-5 before:top-4 before:bottom-4 before:w-px before:bg-outline-variant">
+<!-- Step 1 -->
+<div class="relative flex items-start gap-6 group">
+<div class="z-10 w-10 h-10 rounded-full bg-amber-600 flex items-center justify-center border-4 border-surface-container-high text-white font-bold text-xs">
+                                        1
+                                    </div>
+<div class="flex-1 bg-surface-container p-4 rounded-lg border border-outline-variant group-hover:border-amber-600/50 transition-all">
+<div class="flex justify-between items-center mb-1">
+<div class="text-[10px] text-amber-500 font-bold uppercase tracking-tighter">Day 0 • Immediate</div>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-sm">edit</span></button>
+</div>
+<h4 class="font-semibold text-sm text-on-surface">Welcome Message</h4>
+<div class="mt-2 flex items-center justify-between">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] px-2 py-0.5 rounded font-medium">Text badge</span>
+<span class="text-xs text-on-surface-variant">Sent to 234</span>
+</div>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="relative flex items-start gap-6 group">
+<div class="z-10 w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border-4 border-surface-container-high text-on-surface-variant font-bold text-xs group-hover:bg-amber-950 transition-colors">
+                                        2
+                                    </div>
+<div class="flex-1 bg-surface-container p-4 rounded-lg border border-outline-variant group-hover:border-amber-600/50 transition-all">
+<div class="flex justify-between items-center mb-1">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">Day 2 • 48h Delay</div>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-sm">edit</span></button>
+</div>
+<h4 class="font-semibold text-sm text-on-surface">Product Features</h4>
+<div class="mt-2 flex items-center justify-between">
+<span class="bg-tertiary-container/20 text-tertiary-dim text-[10px] px-2 py-0.5 rounded font-medium border border-tertiary-dim/20">Template badge</span>
+<span class="text-xs text-on-surface-variant">Sent to 198</span>
+</div>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="relative flex items-start gap-6 group">
+<div class="z-10 w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border-4 border-surface-container-high text-on-surface-variant font-bold text-xs group-hover:bg-amber-950 transition-colors">
+                                        3
+                                    </div>
+<div class="flex-1 bg-surface-container p-4 rounded-lg border border-outline-variant group-hover:border-amber-600/50 transition-all">
+<div class="flex justify-between items-center mb-1">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">Day 4 • 96h Delay</div>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-sm">edit</span></button>
+</div>
+<h4 class="font-semibold text-sm text-on-surface">Case Study</h4>
+<div class="mt-2 flex items-center justify-between">
+<span class="bg-tertiary-container/20 text-tertiary-dim text-[10px] px-2 py-0.5 rounded font-medium border border-tertiary-dim/20">Template badge</span>
+<span class="text-xs text-on-surface-variant">Sent to 167</span>
+</div>
+</div>
+</div>
+<!-- Step 4 -->
+<div class="relative flex items-start gap-6 group">
+<div class="z-10 w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border-4 border-surface-container-high text-on-surface-variant font-bold text-xs group-hover:bg-amber-950 transition-colors">
+                                        4
+                                    </div>
+<div class="flex-1 bg-surface-container p-4 rounded-lg border border-outline-variant group-hover:border-amber-600/50 transition-all">
+<div class="flex justify-between items-center mb-1">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">Day 7 • 168h Delay</div>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-sm">edit</span></button>
+</div>
+<h4 class="font-semibold text-sm text-on-surface">Demo Offer</h4>
+<div class="mt-2 flex items-center justify-between">
+<span class="bg-tertiary-container/20 text-tertiary-dim text-[10px] px-2 py-0.5 rounded font-medium border border-tertiary-dim/20">Template badge</span>
+<span class="text-xs text-on-surface-variant">Sent to 89</span>
+</div>
+</div>
+</div>
+<!-- Step 5 -->
+<div class="relative flex items-start gap-6 group">
+<div class="z-10 w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border-4 border-surface-container-high text-on-surface-variant font-bold text-xs group-hover:bg-amber-950 transition-colors">
+                                        5
+                                    </div>
+<div class="flex-1 bg-surface-container p-4 rounded-lg border border-outline-variant group-hover:border-amber-600/50 transition-all">
+<div class="flex justify-between items-center mb-1">
+<div class="text-[10px] text-on-surface-variant font-bold uppercase tracking-tighter">Day 7 (+2h) • Follow-up</div>
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-sm">edit</span></button>
+</div>
+<h4 class="font-semibold text-sm text-on-surface">Follow-up</h4>
+<div class="mt-2 flex items-center justify-between">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] px-2 py-0.5 rounded font-medium">Text badge</span>
+<span class="text-xs text-on-surface-variant">Sent to 45</span>
+</div>
+</div>
+</div>
+</div>
+<button class="mt-8 w-full py-4 border-2 border-dashed border-outline-variant rounded-xl text-on-surface-variant hover:border-amber-600/50 hover:text-amber-500 transition-all flex items-center justify-center gap-2 font-medium">
+<span class="material-symbols-outlined">add</span>
+                                Add Next Step
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

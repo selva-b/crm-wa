@@ -42,7 +42,7 @@ export function useCampaignSocket() {
           if (!old) return old;
           return {
             ...old,
-            campaigns: old.campaigns.map((c) =>
+            data: old.data.map((c) =>
               c.id === campaignId ? { ...c, ...patch } : c,
             ),
           };

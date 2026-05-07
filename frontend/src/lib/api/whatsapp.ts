@@ -7,6 +7,7 @@ export interface WhatsAppSession {
   lastActiveAt: string | null;
   createdAt: string;
   userId: string;
+  hasCreds?: boolean;
   user?: {
     id: string;
     firstName: string;
@@ -70,6 +71,13 @@ export const whatsappApi = {
   refreshQr: async (sessionId: string) => {
     const r = await apiClient.post<{ sessionId: string; message: string }>(
       `/whatsapp/sessions/${sessionId}/refresh-qr`,
+    );
+    return r.data;
+  },
+
+  reconnectSession: async (sessionId: string) => {
+    const r = await apiClient.post<{ sessionId: string; message: string }>(
+      `/whatsapp/sessions/${sessionId}/reconnect`,
     );
     return r.data;
   },

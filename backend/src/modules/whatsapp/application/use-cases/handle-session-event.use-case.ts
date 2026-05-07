@@ -118,8 +118,8 @@ export class HandleSessionEventUseCase {
       return;
     }
 
-    // Max retries exceeded → fully disconnect
-    await this.sessionRepo.disconnectSession(session.id);
+    // Max retries exceeded — preserve creds so user can reconnect without re-scanning QR
+    await this.sessionRepo.markAsDisconnected(session.id);
 
     await this.auditService.log({
       orgId: session.orgId,

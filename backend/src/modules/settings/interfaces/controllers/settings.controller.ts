@@ -17,6 +17,7 @@ import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
 import { ManageSettingsUseCase } from '../../application/use-cases/manage-settings.use-case';
+import { SettingsRepository } from '../../infrastructure/repositories/settings.repository';
 import { ManageFeatureFlagsUseCase } from '../../application/use-cases/manage-feature-flags.use-case';
 import { ManageIntegrationsUseCase } from '../../application/use-cases/manage-integrations.use-case';
 import { ManageWebhooksUseCase } from '../../application/use-cases/manage-webhooks.use-case';
@@ -55,7 +56,98 @@ export class SettingsController {
     private readonly manageFeatureFlags: ManageFeatureFlagsUseCase,
     private readonly manageIntegrations: ManageIntegrationsUseCase,
     private readonly manageWebhooks: ManageWebhooksUseCase,
+    private readonly settingsRepo: SettingsRepository,
   ) {}
+
+  // ═══════════════════════════════════════════════
+  // WHATSAPP CONFIG
+  // ═══════════════════════════════════════════════
+
+  private readonly WA_DEFAULTS = {
+    messageDelay: 1000,
+    retryLimit: 3,
+    autoReconnect: true,
+    sessionTimeout: 3600,
+  };
+
+  private readonly WH_DEFAULTS = {
+    enabled: true,
+    startHour: '09:00',
+    endHour: '18:00',
+    workDays: [true, true, true, true, true, false, false],
+    autoReplyEnabled: false,
+    autoReplyMessage: "Thanks for reaching out! We're currently outside business hours. We'll get back to you as soon as we're open.",
+  };
+
+  @Get('whatsapp-config')
+  @Permissions(PERMISSIONS.SETTINGS_READ)
+  async getWhatsAppConfig(@CurrentUser() user: JwtPayload) {
+    const rows = await this.settingsRepo.findByKey('whatsapp', 'config', user.orgId);
+    const org = rows.find((r) => r.orgId === user.orgId) ?? rows[0];
+    return org ? (org.value as object) : this.WA_DEFAULTS;
+  }
+
+  @Patch('whatsapp-config')
+  @Permissions(PERMISSIONS.SETTINGS_MANAGE)
+  @HttpCode(HttpStatus.OK)
+  async updateWhatsAppConfig(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const rows = await this.settingsRepo.findByKey('whatsapp', 'config', user.orgId);
+    const existing = rows.find((r) => r.orgId === user.orgId);
+    const merged = { ...this.WA_DEFAULTS, ...(existing ? (existing.value as object) : {}), ...body };
+    if (existing) {
+      await this.settingsRepo.updateSetting(existing.id, { value: merged as any }, existing.version);
+    } else {
+      await this.settingsRepo.createSetting({
+        orgId: user.orgId,
+        scope: 'ORG' as any,
+        category: 'whatsapp',
+        key: 'config',
+        value: merged as any,
+        valueType: 'json',
+      });
+    }
+    return merged;
+  }
+
+  // ═══════════════════════════════════════════════
+  // WORKING HOURS
+  // ═══════════════════════════════════════════════
+
+  @Get('working-hours')
+  @Permissions(PERMISSIONS.SETTINGS_READ)
+  async getWorkingHours(@CurrentUser() user: JwtPayload) {
+    const rows = await this.settingsRepo.findByKey('messaging', 'working_hours', user.orgId);
+    const org = rows.find((r) => r.orgId === user.orgId) ?? rows[0];
+    return org ? (org.value as object) : this.WH_DEFAULTS;
+  }
+
+  @Patch('working-hours')
+  @Permissions(PERMISSIONS.SETTINGS_MANAGE)
+  @HttpCode(HttpStatus.OK)
+  async updateWorkingHours(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const rows = await this.settingsRepo.findByKey('messaging', 'working_hours', user.orgId);
+    const existing = rows.find((r) => r.orgId === user.orgId);
+    const merged = { ...this.WH_DEFAULTS, ...(existing ? (existing.value as object) : {}), ...body };
+    if (existing) {
+      await this.settingsRepo.updateSetting(existing.id, { value: merged as any }, existing.version);
+    } else {
+      await this.settingsRepo.createSetting({
+        orgId: user.orgId,
+        scope: 'ORG' as any,
+        category: 'messaging',
+        key: 'working_hours',
+        value: merged as any,
+        valueType: 'json',
+      });
+    }
+    return merged;
+  }
 
   // ═══════════════════════════════════════════════
   // SETTINGS (Key-Value Configuration)
@@ -134,13 +226,52 @@ export class SettingsController {
   // FEATURE FLAGS
   // ═══════════════════════════════════════════════
 
+  private readonly FF_DEFAULTS = {
+    campaigns: true,
+    automation: true,
+    analytics: true,
+    scheduler: true,
+    billing: true,
+  };
+
   @Get('feature-flags')
   @Permissions(PERMISSIONS.FEATURE_FLAGS_READ)
   async listFeatureFlags(
     @CurrentUser() user: JwtPayload,
     @Query() query: ListFeatureFlagsQueryDto,
   ) {
+    // If no query params, return the simple flags object the UI expects
+    if (!query.scope) {
+      const rows = await this.settingsRepo.findByKey('feature_flags', 'config', user.orgId);
+      const org = rows.find((r) => r.orgId === user.orgId) ?? rows[0];
+      return org ? (org.value as object) : this.FF_DEFAULTS;
+    }
     return this.manageFeatureFlags.list(user.orgId, query);
+  }
+
+  @Patch('feature-flags')
+  @Permissions(PERMISSIONS.FEATURE_FLAGS_MANAGE)
+  @HttpCode(HttpStatus.OK)
+  async updateFeatureFlags(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: Record<string, boolean>,
+  ) {
+    const rows = await this.settingsRepo.findByKey('feature_flags', 'config', user.orgId);
+    const existing = rows.find((r) => r.orgId === user.orgId);
+    const merged = { ...this.FF_DEFAULTS, ...(existing ? (existing.value as object) : {}), ...body };
+    if (existing) {
+      await this.settingsRepo.updateSetting(existing.id, { value: merged as any }, existing.version);
+    } else {
+      await this.settingsRepo.createSetting({
+        orgId: user.orgId,
+        scope: 'ORG' as any,
+        category: 'feature_flags',
+        key: 'config',
+        value: merged as any,
+        valueType: 'json',
+      });
+    }
+    return merged;
   }
 
   @Get('feature-flags/resolve/:featureKey')

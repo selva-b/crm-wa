@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CRM-WA | Audit Logs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error": "#450900",
+                    "surface": "#0c0e14",
+                    "surface-dim": "#0c0e14",
+                    "inverse-surface": "#faf8ff",
+                    "surface-tint": "#ffb77d",
+                    "on-tertiary": "#31067e",
+                    "error-dim": "#c44f34",
+                    "tertiary-container": "#a589f8",
+                    "on-primary-container": "#230e00",
+                    "on-surface-variant": "#a7aaba",
+                    "secondary-fixed": "#dce2f5",
+                    "secondary-container": "#343c4a",
+                    "primary": "#ffb77d",
+                    "tertiary-fixed-dim": "#987cea",
+                    "surface-bright": "#282c38",
+                    "on-secondary-fixed": "#383f4e",
+                    "background": "#0c0e14",
+                    "secondary-fixed-dim": "#cdd4e6",
+                    "error": "#f97758",
+                    "secondary-dim": "#b2b9ca",
+                    "inverse-on-surface": "#53555c",
+                    "surface-container-low": "#10131b",
+                    "on-primary": "#643400",
+                    "on-background": "#e2e5f6",
+                    "on-tertiary-fixed": "#000000",
+                    "on-secondary": "#39404f",
+                    "surface-container-highest": "#212532",
+                    "on-primary-fixed": "#240f00",
+                    "surface-container": "#161923",
+                    "error-container": "#85230a",
+                    "inverse-primary": "#914d00",
+                    "primary-fixed-dim": "#ed871e",
+                    "primary-dim": "#fe932c",
+                    "primary-container": "#dd7a0c",
+                    "on-surface": "#e2e5f6",
+                    "surface-container-lowest": "#000000",
+                    "secondary": "#c0c6d8",
+                    "on-primary-fixed-variant": "#572c00",
+                    "surface-container-high": "#1c1f2a",
+                    "tertiary-dim": "#a88cfb",
+                    "outline-variant": "#434855",
+                    "on-tertiary-container": "#230062",
+                    "on-secondary-container": "#b8bfd1",
+                    "on-tertiary-fixed-variant": "#2e007c",
+                    "on-error-container": "#ff9b82",
+                    "tertiary": "#b299ff",
+                    "on-secondary-fixed-variant": "#545c6b",
+                    "surface-variant": "#212532",
+                    "primary-fixed": "#fe932c",
+                    "outline": "#717584",
+                    "tertiary-fixed": "#a589f8",
+                    "brand-amber": "#d97706"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface flex min-h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[240px] bg-slate-950 border-r border-slate-800 flex flex-col py-4 z-50">
+<div class="px-6 mb-8">
+<h1 class="text-lg font-bold text-on-surface">Admin Console</h1>
+<p class="text-xs text-on-surface-variant">System Management</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all duration-200 font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all duration-200 font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="analytics">analytics</span>
+                Analytics
+            </a>
+<!-- Active Tab: Audit Logs -->
+<a class="flex items-center px-6 py-3 text-brand-amber bg-amber-600/10 border-r-2 border-brand-amber transition-all duration-200 font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="receipt_long">receipt_long</span>
+                Audit Logs
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all duration-200 font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="group">group</span>
+                Users
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all duration-200 font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto space-y-1">
+<a class="flex items-center px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all duration-200 font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="help">help</span>
+                Support
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-400 hover:bg-slate-900 transition-all duration-200 font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="logout">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-[240px] flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-[240px] right-0 h-16 bg-slate-950 border-b border-slate-800 flex justify-between items-center px-8 z-40">
+<div class="flex items-center">
+<h2 class="text-xl font-bold text-on-surface tracking-tight">Audit Logs</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 px-4 py-2 rounded bg-surface-container-high border border-outline-variant text-sm font-medium hover:bg-surface-bright transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+                    Export CSV
+                </button>
+<div class="flex items-center gap-2 text-slate-400">
+<button class="p-2 hover:bg-slate-900 rounded transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 hover:bg-slate-900 rounded transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-primary-container flex items-center justify-center overflow-hidden border border-slate-700">
+<img alt="Admin profile" class="h-full w-full object-cover" data-alt="professional headshot of a mature business administrator with dark hair and spectacles against a neutral studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJjY8poHxxGN6E2Ddw2Jp7lx8O8tdjmEaKqMvSSC1G5KHkkkNvm_gNzXVGxsNuXyer4nAglQ_uwkJFU2PFA3fTpKyAjm3qBY8sAYOZeF-HhuAszgHPC74ij_-NXze2qpoiQA_cJvETYhbB5HY1KQythgUsYr5Brg3MG_QnOnIRdzXIRgnmeSL_GBIDnke5Smbnb1mqEGbpyRR9aX8u2gEBEPYxRTeOBoAvjBjER8nNqbV0uTg-eJNQgfQCy0oS4JyN5MKPMLQiJQ"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Canvas -->
+<div class="mt-16 p-8 flex-1 overflow-y-auto bg-surface-dim">
+<!-- Filters Bento Section -->
+<section class="mb-6">
+<div class="bg-surface-container border border-outline-variant p-4 rounded-xl shadow-sm">
+<div class="flex flex-wrap items-center gap-4">
+<!-- Search -->
+<div class="relative flex-1 min-w-[200px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-brand-amber focus:border-brand-amber outline-none transition-all" placeholder="Search logs..." type="text"/>
+</div>
+<!-- Date Range -->
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 gap-2 text-sm cursor-pointer hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="calendar_today">calendar_today</span>
+<span class="text-on-surface-variant">Nov 01, 2024 - Nov 05, 2024</span>
+<span class="material-symbols-outlined text-on-surface-variant text-lg ml-2" data-icon="expand_more">expand_more</span>
+</div>
+<!-- User Dropdown -->
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 gap-2 text-sm cursor-pointer hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="person">person</span>
+<span class="text-on-surface">All users</span>
+<span class="material-symbols-outlined text-on-surface-variant text-lg ml-2" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Action Type -->
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 gap-2 text-sm cursor-pointer hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="filter_list">filter_list</span>
+<span class="text-on-surface">Action Type</span>
+<span class="material-symbols-outlined text-on-surface-variant text-lg ml-2" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Resource Type -->
+<div class="flex items-center bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 gap-2 text-sm cursor-pointer hover:border-outline transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="inventory_2">inventory_2</span>
+<span class="text-on-surface">Resource</span>
+<span class="material-symbols-outlined text-on-surface-variant text-lg ml-2" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Table Section -->
+<div class="bg-surface-container border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high/50 border-b border-outline-variant">
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Timestamp</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">User</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Action</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Resource</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Details</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">IP Address</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-3 text-sm text-on-surface-variant">2024-11-05 14:32</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-3">
+<img alt="Rahul" class="h-6 w-6 rounded-full" data-alt="close up avatar of a professional indian man with short black hair and friendly expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-R_DELbCXadXVzu79_ByzfjHRdyShlauoP3x9I39mr_07tui-mufT6KybPe1I4PmeTk-ZaXG8Uq6PmDVauY2TbNWNyyTGfXgR3syFIy2eGxLX-xlv-VN1IVfu9sFz3MFFrJXlbHvG1tq_OOx1ttp57Wxt5ESiAPGpDUBfpe6Q2jfFH63DzIha-kZlo-tx1SSau65Ue4fb2tCfNHttsoiw-jimKclbqvKUOdvJEiKnVZAAygtNLnVHp-G13x6FHjj94n9GIL5pKg"/>
+<span class="text-sm font-medium text-on-surface">Rahul Mehta</span>
+</div>
+</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-600/10 text-amber-600 border border-amber-600/20">CAMPAIGN_CREATED</span>
+</td>
+<td class="px-6 py-3 text-sm text-on-surface italic">Campaign: "Diwali Offer"</td>
+<td class="px-6 py-3 text-sm text-on-surface-variant">Created broadcast campaign</td>
+<td class="px-6 py-3 text-xs font-mono text-on-surface-variant">192.168.1.1</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-3 text-sm text-on-surface-variant">2024-11-05 14:20</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-3">
+<img alt="Sarah" class="h-6 w-6 rounded-full" data-alt="close up avatar of a young south asian woman with tied hair and professional attire" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZHiON57AknRc_5M0Frlta0lSDAn7Czkr2tOOq6_Q3b95yYFSLVFU0Z3M6poPAEMNWEE_qXFR8IuXkaxiYaImAPhPHarj-jaMvuwgkx-bX8FOIybLqpne6ZPTxZkGDa5C_tX0tDOm6VAlWSJtDawhQHNRrV9OcEsXpCG8dN_38rYGAyTHO9SvLGKPTVEcq94mcmzSnWTGZ49Kga3YLJcuPhkfsxnpf4vUtDXtnjhHJuM03lN-M1D4DtlBfUNvbbl16TlyRjqaK0A"/>
+<span class="text-sm font-medium text-on-surface">Sarah Khan</span>
+</div>
+</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">CONTACT_STATUS_CHANGED</span>
+</td>
+<td class="px-6 py-3 text-sm text-on-surface italic">Contact: Priya Sharma</td>
+<td class="px-6 py-3 text-sm text-on-surface-variant">Status: NEW → INTERESTED</td>
+<td class="px-6 py-3 text-xs font-mono text-on-surface-variant">192.168.1.2</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-3 text-sm text-on-surface-variant">2024-11-05 13:55</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-3">
+<img alt="Rahul" class="h-6 w-6 rounded-full" data-alt="close up avatar of a professional indian man with short black hair and friendly expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTYhbaaRdDZbKN7JIp2KosT8EnZpbxb0fprCyQAgAXjVGZlJNpOdcdrjdv3_Swv0o_SxfmJwShwnSglffdu491YG15fPffQVtRR4L0i2k757ie2CNdUXIf6aq8mu1Q-2vsOOgoFi0XW0BLh0T7hPGgDkFlVYfMuOyHWUH14pxH7bceRv0RX7mOj1kYoe3rNGv1Yz82hDwH6LTIuC9QasD7t5OAqPGJSBsqxyIot-m0XHpBiuF79zxXhGlISLDjygEv7lalEJnM9A"/>
+<span class="text-sm font-medium text-on-surface">Rahul Mehta</span>
+</div>
+</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-gray-500/10 text-gray-400 border border-gray-500/20">USER_INVITED</span>
+</td>
+<td class="px-6 py-3 text-sm text-on-surface italic">User: amit@company.com</td>
+<td class="px-6 py-3 text-sm text-on-surface-variant">Invited as Employee</td>
+<td class="px-6 py-3 text-xs font-mono text-on-surface-variant">192.168.1.1</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-3 text-sm text-on-surface-variant">2024-11-05 13:40</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-3">
+<div class="h-6 w-6 rounded-full bg-slate-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant" data-icon="settings_suggest">settings_suggest</span>
+</div>
+<span class="text-sm font-medium text-on-surface-variant">System</span>
+</div>
+</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-600/10 text-amber-600 border border-amber-600/20">CAMPAIGN_EXECUTED</span>
+</td>
+<td class="px-6 py-3 text-sm text-on-surface italic">Campaign: "Follow-up"</td>
+<td class="px-6 py-3 text-sm text-on-surface-variant">1,200 messages queued</td>
+<td class="px-6 py-3 text-xs font-mono text-on-surface-variant">system</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-3 text-sm text-on-surface-variant">2024-11-05 12:15</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-3">
+<img alt="Priya" class="h-6 w-6 rounded-full" data-alt="close up avatar of an indian woman with long black hair and a welcoming smile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkjVdAAlh1_OnaP7g-xV10P7MgY2_3f7V7NciKdMN0yd73VOPInHJe-FnosMuferrPD6TQa155Ux1ks5fIMzVSP1NNoeD95flBGy7FLKIyhWdVRcMt_VgQqYlLs0GTwzNPOqXXWGSFPm998wtcu5itcFbdzop25d5NuNA4ayAce1-TPuFn-sS1zQYZUBz1WQU3UkLQpR_m3rWZcZ3h8lizH9oCztBxyIi_UkZCD4T2agQZT_DcNFp9JjCZ1FpWL2_8ep0sRv08uA"/>
+<span class="text-sm font-medium text-on-surface">Priya Singh</span>
+</div>
+</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">CONTACT_CREATED</span>
+</td>
+<td class="px-6 py-3 text-sm text-on-surface italic">Contact: Rohan Das</td>
+<td class="px-6 py-3 text-sm text-on-surface-variant">Created via WhatsApp</td>
+<td class="px-6 py-3 text-xs font-mono text-on-surface-variant">192.168.1.5</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-3 text-sm text-on-surface-variant">2024-11-05 11:30</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-3">
+<img alt="Rahul" class="h-6 w-6 rounded-full" data-alt="close up avatar of a professional indian man with short black hair and friendly expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv2j8Jw5ltsWf6Gna2A8oEm6riesYEN0gcGnACZ-_WLSL9Hi48JUq74dcqDK94lw8UbbANcKBxdwOKODlN28_2DvCSZ7wCOYDuNsYP5UP5fFtS4vr2ATZxPufmsgyIuuZ-5SRY0X54mWrNmsws2cSvedS8gCVYeihB5XSSotzChRIA9IZM-wFYxd4kZpqQcTRS0mnVJEGZYZo8-hwnbEh1W2qYsqYnTA2XKeTFxqCndddoodxjleU41PTKqo1q2KBHwu_0iYNhRg"/>
+<span class="text-sm font-medium text-on-surface">Rahul Mehta</span>
+</div>
+</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">BILLING_PLAN_CHANGED</span>
+</td>
+<td class="px-6 py-3 text-sm text-on-surface italic">Subscription</td>
+<td class="px-6 py-3 text-sm text-on-surface-variant">Upgraded to Professional</td>
+<td class="px-6 py-3 text-xs font-mono text-on-surface-variant">192.168.1.1</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-3 text-sm text-on-surface-variant">2024-11-05 10:00</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-3">
+<img alt="Sarah" class="h-6 w-6 rounded-full" data-alt="close up avatar of a young south asian woman with tied hair and professional attire" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQMv4oUlrLZsukRmcwtjLb6ilVNsaWJwnr7uP-DybSQpKnBxFDz9xT3weY_sNrqF7tas3VJXouKZkG6ihNCSNZezUIlmwcp1hEYYNh0R1jwDmFmhsjQACuTWEBW2G2fQjtOj6X0YXRcPm8PMbp2bsuexKXPrw8BncHvNJu0ldmm_n5bvkzPux1QVzanpKufEUUWjjdMu_Os-sNaDDDhtbkRUU6cFXGIt_9SOej368yoh090BRVXEqRg5k9QpbEHMTeg5M8GxLlkw"/>
+<span class="text-sm font-medium text-on-surface">Sarah Khan</span>
+</div>
+</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-teal-500/10 text-teal-400 border border-teal-500/20">MESSAGE_SENT</span>
+</td>
+<td class="px-6 py-3 text-sm text-on-surface italic">Conversation: #1234</td>
+<td class="px-6 py-3 text-sm text-on-surface-variant">Sent template message</td>
+<td class="px-6 py-3 text-xs font-mono text-on-surface-variant">192.168.1.2</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="px-6 py-3 text-sm text-on-surface-variant">2024-11-05 09:45</td>
+<td class="px-6 py-3">
+<div class="flex items-center gap-3">
+<img alt="Rahul" class="h-6 w-6 rounded-full" data-alt="close up avatar of a professional indian man with short black hair and friendly expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQKJwp8cnPLuK5KmqYG_NoowaeSC6BIEETGs8Tk8vHhKSmXmhlQmswQc3GSHVmzF8K8kWR1UQy2PTrMgvWUWYOfTI5pEsn8Xp4EIO9kOMxRO6VV9IF7SsKgviKEvLmoazcEQkAmjGZX0SHjyG6uJrjvSu6f6SUfhz7_GixyZjqao1hFn6pMxS7EV_ocLYJaDfEd_90JzASFCzqAQIM_Cjl14grzn5_y00Fe6yziH5Pfv3-GMv0s3eH5dT-xiexrHN07ysPCxEbXg"/>
+<span class="text-sm font-medium text-on-surface">Rahul Mehta</span>
+</div>
+</td>
+<td class="px-6 py-3">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">USER_LOGIN</span>
+</td>
+<td class="px-6 py-3 text-sm text-on-surface italic">Auth</td>
+<td class="px-6 py-3 text-sm text-on-surface-variant">Login successful</td>
+<td class="px-6 py-3 text-xs font-mono text-on-surface-variant">192.168.1.1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 flex items-center justify-between bg-surface-container-high/30 border-t border-outline-variant">
+<span class="text-sm text-on-surface-variant">Showing 1-50 of 3,421 logs</span>
+<div class="flex items-center gap-2">
+<button class="p-1 rounded hover:bg-surface-bright text-on-surface-variant disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<div class="flex items-center gap-1">
+<button class="px-3 py-1 rounded text-sm font-medium bg-brand-amber/20 text-brand-amber">1</button>
+<button class="px-3 py-1 rounded text-sm font-medium hover:bg-surface-bright">2</button>
+<button class="px-3 py-1 rounded text-sm font-medium hover:bg-surface-bright">3</button>
+<span class="px-1 text-on-surface-variant">...</span>
+<button class="px-3 py-1 rounded text-sm font-medium hover:bg-surface-bright">69</button>
+</div>
+<button class="p-1 rounded hover:bg-surface-bright text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Contextual Insight (Bento Element) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+<div class="bg-surface-container-high border border-outline-variant rounded-xl p-5 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Total Actions</span>
+<span class="material-symbols-outlined text-teal-400" data-icon="show_chart">show_chart</span>
+</div>
+<div class="text-2xl font-bold text-on-surface">32,192</div>
+<p class="text-xs text-emerald-400 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span>
+                        +12% from last week
+                    </p>
+</div>
+<div class="bg-surface-container-high border border-outline-variant rounded-xl p-5 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Security Alerts</span>
+<span class="material-symbols-outlined text-red-400" data-icon="security">security</span>
+</div>
+<div class="text-2xl font-bold text-on-surface">0</div>
+<p class="text-xs text-on-surface-variant">No failed login spikes detected</p>
+</div>
+<div class="bg-surface-container-high border border-outline-variant rounded-xl p-5 flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-on-surface-variant uppercase tracking-widest">Most Active User</span>
+<span class="material-symbols-outlined text-amber-400" data-icon="stars">stars</span>
+</div>
+<div class="flex items-center gap-2">
+<img alt="Rahul" class="h-6 w-6 rounded-full" data-alt="close up avatar of a professional indian man with short black hair and friendly expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPzpzJS4u9NMk4iJFFJdEeVc42sOxXp6oK10bGRpsC98XEvvh2wv0bqf-JpmZi7wbcGhYfz7CiTQdnLWk_qXW6FkDVSm2TL6Afs03Qj324lRGLIctnXV1SuBUlhs1MF6iWbAKR5BMJuSYoZuTDe3TRT4O1ZXgC16huQBrywTkr-Tl-lJsZ_RuUMKQi-IS7hbjtz5DrbG7Wne8BstMc_uIhymD-o63j8Vg-og1v5vOZW_LX77-AkffCKyYM1-WzVmPxrmYgRUnpzQ"/>
+<div class="text-sm font-bold text-on-surface">Rahul Mehta</div>
+</div>
+<p class="text-xs text-on-surface-variant">214 actions today</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

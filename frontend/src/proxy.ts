@@ -8,9 +8,24 @@ const publicPaths = [
   "/auth/reset-password",
 ];
 
-export function middleware(request: NextRequest) {
+const superAdminPublicPaths = ["/super-admin/login"];
+
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = request.cookies.get("hasSession")?.value === "1";
+  const hasSuperAdminSession = request.cookies.get("hasSuperAdminSession")?.value === "1";
+
+  // Super admin routes — separate session cookie
+  if (pathname.startsWith("/super-admin")) {
+    const isPublic = superAdminPublicPaths.includes(pathname);
+    if (isPublic && hasSuperAdminSession) {
+      return NextResponse.redirect(new URL("/super-admin/dashboard", request.url));
+    }
+    if (!isPublic && !hasSuperAdminSession) {
+      return NextResponse.redirect(new URL("/super-admin/login", request.url));
+    }
+    return NextResponse.next();
+  }
 
   const isPublic = publicPaths.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),

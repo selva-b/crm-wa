@@ -1,6 +1,6 @@
 import { RegisterForm } from "@/components/auth/register-form";
 
-export const metadata = { title: "Create Account — CRM-WA" };
+export const metadata = { title: "Create Account — Wazelo CRM" };
 
 export default function RegisterPage() {
   return <RegisterForm />;

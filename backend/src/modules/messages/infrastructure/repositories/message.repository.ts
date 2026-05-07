@@ -6,6 +6,7 @@ import {
   MessageType,
   Prisma,
 } from '@prisma/client';
+import { MessageEncryptionService } from '../../domain/services/message-encryption.service';
 
 export interface CreateMessageInput {
   orgId: string;
@@ -27,10 +28,21 @@ export interface CreateMessageInput {
 
 @Injectable()
 export class MessageRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly enc: MessageEncryptionService,
+  ) {}
+
+  private decryptMessage<T extends { body?: string | null; mediaUrl?: string | null }>(msg: T): T {
+    return {
+      ...msg,
+      body: this.enc.decryptIfEncrypted(msg.body),
+      mediaUrl: this.enc.decryptIfEncrypted(msg.mediaUrl),
+    };
+  }
 
   async create(input: CreateMessageInput) {
-    return this.prisma.message.create({
+    const msg = await this.prisma.message.create({
       data: {
         orgId: input.orgId,
         sessionId: input.sessionId,
@@ -43,8 +55,8 @@ export class MessageRepository {
             : MessageStatus.DELIVERED,
         contactPhone: input.contactPhone,
         contactName: input.contactName || null,
-        body: input.body || null,
-        mediaUrl: input.mediaUrl || null,
+        body: this.enc.encryptIfPresent(input.body ?? null),
+        mediaUrl: this.enc.encryptIfPresent(input.mediaUrl ?? null),
         mediaMimeType: input.mediaMimeType || null,
         mediaSize: input.mediaSize || null,
         metadata: (input.metadata as Prisma.InputJsonValue) ?? Prisma.JsonNull,
@@ -53,30 +65,35 @@ export class MessageRepository {
         maxRetries: input.maxRetries ?? 3,
       },
     });
+    return this.decryptMessage(msg);
   }
 
   async findById(id: string) {
-    return this.prisma.message.findFirst({
+    const msg = await this.prisma.message.findFirst({
       where: { id, deletedAt: null },
     });
+    return msg ? this.decryptMessage(msg) : null;
   }
 
   async findByIdAndOrg(id: string, orgId: string) {
-    return this.prisma.message.findFirst({
+    const msg = await this.prisma.message.findFirst({
       where: { id, orgId, deletedAt: null },
     });
+    return msg ? this.decryptMessage(msg) : null;
   }
 
   async findByIdempotencyKey(key: string) {
-    return this.prisma.message.findUnique({
+    const msg = await this.prisma.message.findUnique({
       where: { idempotencyKey: key },
     });
+    return msg ? this.decryptMessage(msg) : null;
   }
 
   async findByWhatsAppMessageId(whatsappMessageId: string) {
-    return this.prisma.message.findUnique({
+    const msg = await this.prisma.message.findUnique({
       where: { whatsappMessageId },
     });
+    return msg ? this.decryptMessage(msg) : null;
   }
 
   /**
@@ -188,7 +205,7 @@ export class MessageRepository {
       this.prisma.message.count({ where }),
     ]);
 
-    return { data, total, page: options.page, limit: options.limit };
+    return { data: data.map((m) => this.decryptMessage(m)), total, page: options.page, limit: options.limit };
   }
 
   async findBySessionPaginated(
@@ -208,7 +225,7 @@ export class MessageRepository {
       this.prisma.message.count({ where }),
     ]);
 
-    return { data, total, page: options.page, limit: options.limit };
+    return { data: data.map((m) => this.decryptMessage(m)), total, page: options.page, limit: options.limit };
   }
 
   async findByContactPaginated(
@@ -228,7 +245,7 @@ export class MessageRepository {
       this.prisma.message.count({ where }),
     ]);
 
-    return { data, total, page: options.page, limit: options.limit };
+    return { data: data.map((m) => this.decryptMessage(m)), total, page: options.page, limit: options.limit };
   }
 
   /**
@@ -237,7 +254,7 @@ export class MessageRepository {
    */
   async findStaleProcessingMessages(thresholdMs: number) {
     const threshold = new Date(Date.now() - thresholdMs);
-    return this.prisma.message.findMany({
+    const data = await this.prisma.message.findMany({
       where: {
         deletedAt: null,
         status: MessageStatus.PROCESSING,
@@ -247,6 +264,7 @@ export class MessageRepository {
       orderBy: { createdAt: 'asc' },
       take: 50,
     });
+    return data.map((m) => this.decryptMessage(m));
   }
 
   /**
@@ -255,7 +273,7 @@ export class MessageRepository {
    */
   async findStaleQueuedMessages(thresholdMs: number) {
     const threshold = new Date(Date.now() - thresholdMs);
-    return this.prisma.message.findMany({
+    const data = await this.prisma.message.findMany({
       where: {
         deletedAt: null,
         status: MessageStatus.QUEUED,
@@ -266,10 +284,11 @@ export class MessageRepository {
       orderBy: { createdAt: 'asc' },
       take: 50,
     });
+    return data.map((m) => this.decryptMessage(m));
   }
 
   async findRetryableMessages(maxRetries: number) {
-    return this.prisma.message.findMany({
+    const data = await this.prisma.message.findMany({
       where: {
         deletedAt: null,
         status: MessageStatus.FAILED,
@@ -279,6 +298,7 @@ export class MessageRepository {
       orderBy: { createdAt: 'asc' },
       take: 50,
     });
+    return data.map((m) => this.decryptMessage(m));
   }
 
   /**

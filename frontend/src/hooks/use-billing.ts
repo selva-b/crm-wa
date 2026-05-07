@@ -12,8 +12,10 @@ export const billingKeys = {
   subscription: () => ["billing", "subscription"] as const,
   payments: (params?: ListPaymentsParams) =>
     ["billing", "payments", params] as const,
+  payment: (id: string) => ["billing", "payment", id] as const,
   invoices: (params?: ListInvoicesParams) =>
     ["billing", "invoices", params] as const,
+  invoice: (id: string) => ["billing", "invoice", id] as const,
 };
 
 // ─── Query Hooks ───
@@ -26,10 +28,11 @@ export function usePlans() {
 }
 
 /** Returns { subscription, usage } in a single call */
-export function useSubscription() {
+export function useSubscription(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: billingKeys.subscription(),
     queryFn: () => billingApi.getSubscription(),
+    enabled: options?.enabled,
   });
 }
 
@@ -47,7 +50,45 @@ export function useInvoices(params?: ListInvoicesParams) {
   });
 }
 
+export function useInvoice(id: string | null) {
+  return useQuery({
+    queryKey: billingKeys.invoice(id ?? ""),
+    queryFn: () => billingApi.getInvoice(id!),
+    enabled: !!id,
+  });
+}
+
+export function usePayment(id: string | null) {
+  return useQuery({
+    queryKey: billingKeys.payment(id ?? ""),
+    queryFn: () => billingApi.getPayment(id!),
+    enabled: !!id,
+  });
+}
+
 // ─── Mutation Hooks ───
+
+export function useCreatePlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof billingApi.createPlan>[0]) =>
+      billingApi.createPlan(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billingKeys.plans() });
+    },
+  });
+}
+
+export function useUpdatePlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof billingApi.updatePlan>[1] }) =>
+      billingApi.updatePlan(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billingKeys.plans() });
+    },
+  });
+}
 
 export function useSubscribeToPlan() {
   const queryClient = useQueryClient();
@@ -83,6 +124,23 @@ export function useReactivateSubscription() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => billingApi.reactivateSubscription(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billingKeys.all });
+    },
+  });
+}
+
+export function useCreateOrder() {
+  return useMutation({
+    mutationFn: (planId: string) => billingApi.createOrder(planId),
+  });
+}
+
+export function useVerifyPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof billingApi.verifyPayment>[0]) =>
+      billingApi.verifyPayment(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: billingKeys.all });
     },

@@ -80,13 +80,13 @@ ALTER TYPE "AuditAction" ADD VALUE 'WEBHOOK_DELETED';
 ALTER TYPE "AuditAction" ADD VALUE 'WEBHOOK_TESTED';
 
 -- AlterTable
-ALTER TABLE "alert_events" ALTER COLUMN "id" DROP DEFAULT;
+-- ALTER TABLE "alert_events" ALTER COLUMN "id" DROP DEFAULT;
 
 -- AlterTable
-ALTER TABLE "alert_rules" ALTER COLUMN "id" DROP DEFAULT;
+-- ALTER TABLE "alert_rules" ALTER COLUMN "id" DROP DEFAULT;
 
 -- AlterTable
-ALTER TABLE "system_metric_snapshots" ALTER COLUMN "id" DROP DEFAULT;
+-- ALTER TABLE "system_metric_snapshots" ALTER COLUMN "id" DROP DEFAULT;
 
 -- CreateTable
 CREATE TABLE "plans" (

@@ -138,4 +138,13 @@ export class UsageRepository {
       },
     });
   }
+
+  /**
+   * Get total message template count for an org (live count).
+   */
+  async getTemplateCount(orgId: string): Promise<number> {
+    return this.prisma.messageTemplate.count({
+      where: { orgId, deletedAt: null },
+    });
+  }
 }

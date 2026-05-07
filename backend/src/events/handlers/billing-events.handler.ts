@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
+import { AppWebSocketGateway } from '@/infrastructure/websocket/websocket.gateway';
+import { NotificationDispatchService } from '@/modules/notifications/domain/services/notification-dispatch.service';
 import { EVENT_NAMES } from '@/common/constants';
 import {
   SubscriptionCreatedEvent,
@@ -18,13 +21,36 @@ import {
 export class BillingEventsHandler {
   private readonly logger = new Logger(BillingEventsHandler.name);
 
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wsGateway: AppWebSocketGateway,
+    private readonly notificationService: NotificationDispatchService,
+  ) {}
+
   @OnEvent(EVENT_NAMES.SUBSCRIPTION_CREATED)
   async onSubscriptionCreated(event: SubscriptionCreatedEvent) {
     this.logger.log(
       `Subscription created: ${event.subscriptionId} for org ${event.orgId} on plan ${event.planName}`,
     );
-    // TODO: Send welcome email with plan details
-    // TODO: Emit WebSocket notification to org admins
+
+    this.wsGateway.emitToOrg(event.orgId, 'billing:subscription_created', {
+      subscriptionId: event.subscriptionId,
+      planName: event.planName,
+      status: event.status,
+    });
+
+    const adminIds = await this.getOrgAdminIds(event.orgId);
+    if (adminIds.length > 0) {
+      await this.notificationService.dispatchToOrg(
+        event.orgId,
+        adminIds,
+        'SYSTEM_ALERT',
+        'NORMAL',
+        `Subscribed to ${event.planName}`,
+        `Your organization has been subscribed to the ${event.planName} plan.`,
+        { subscriptionId: event.subscriptionId, planName: event.planName },
+      );
+    }
   }
 
   @OnEvent(EVENT_NAMES.SUBSCRIPTION_UPGRADED)
@@ -32,8 +58,26 @@ export class BillingEventsHandler {
     this.logger.log(
       `Subscription ${event.subscriptionId} upgraded for org ${event.orgId}`,
     );
-    // TODO: Send upgrade confirmation email
-    // TODO: Emit WebSocket notification
+
+    this.wsGateway.emitToOrg(event.orgId, 'billing:subscription_upgraded', {
+      subscriptionId: event.subscriptionId,
+      previousPlanId: event.previousPlanId,
+      newPlanId: event.newPlanId,
+      proratedAmountInCents: event.proratedAmountInCents,
+    });
+
+    const adminIds = await this.getOrgAdminIds(event.orgId);
+    if (adminIds.length > 0) {
+      await this.notificationService.dispatchToOrg(
+        event.orgId,
+        adminIds,
+        'SYSTEM_ALERT',
+        'NORMAL',
+        'Plan Upgraded',
+        `Your subscription has been upgraded. Prorated charge: $${(event.proratedAmountInCents / 100).toFixed(2)}.`,
+        { subscriptionId: event.subscriptionId },
+      );
+    }
   }
 
   @OnEvent(EVENT_NAMES.SUBSCRIPTION_CANCELLED)
@@ -41,8 +85,24 @@ export class BillingEventsHandler {
     this.logger.log(
       `Subscription ${event.subscriptionId} cancelled for org ${event.orgId}`,
     );
-    // TODO: Send cancellation confirmation email
-    // TODO: Cancel any external payment gateway subscription
+
+    this.wsGateway.emitToOrg(event.orgId, 'billing:subscription_cancelled', {
+      subscriptionId: event.subscriptionId,
+      reason: event.reason,
+    });
+
+    const adminIds = await this.getOrgAdminIds(event.orgId);
+    if (adminIds.length > 0) {
+      await this.notificationService.dispatchToOrg(
+        event.orgId,
+        adminIds,
+        'SUBSCRIPTION_EXPIRING',
+        'HIGH',
+        'Subscription Cancelled',
+        `Your subscription has been cancelled.${event.reason ? ` Reason: ${event.reason}` : ''} You can reactivate at any time.`,
+        { subscriptionId: event.subscriptionId },
+      );
+    }
   }
 
   @OnEvent(EVENT_NAMES.SUBSCRIPTION_EXPIRED)
@@ -50,17 +110,49 @@ export class BillingEventsHandler {
     this.logger.log(
       `Subscription ${event.subscriptionId} expired for org ${event.orgId}`,
     );
-    // TODO: Send expiration notice email with reactivation link
-    // TODO: Emit WebSocket notification showing upgrade prompt
+
+    this.wsGateway.emitToOrg(event.orgId, 'billing:subscription_expired', {
+      subscriptionId: event.subscriptionId,
+      planId: event.planId,
+    });
+
+    const adminIds = await this.getOrgAdminIds(event.orgId);
+    if (adminIds.length > 0) {
+      await this.notificationService.dispatchToOrg(
+        event.orgId,
+        adminIds,
+        'SUBSCRIPTION_EXPIRING',
+        'HIGH',
+        'Subscription Expired',
+        'Your subscription has expired. Reactivate now to restore access to all features.',
+        { subscriptionId: event.subscriptionId },
+      );
+    }
   }
 
   @OnEvent(EVENT_NAMES.SUBSCRIPTION_GRACE_PERIOD)
   async onSubscriptionGracePeriod(event: SubscriptionGracePeriodEvent) {
     this.logger.log(
-      `Subscription ${event.subscriptionId} entered grace period for org ${event.orgId}, ` +
-      `ends at ${event.graceEndsAt}`,
+      `Subscription ${event.subscriptionId} entered grace period for org ${event.orgId}, ends at ${event.graceEndsAt}`,
     );
-    // TODO: Send grace period warning email
+
+    this.wsGateway.emitToOrg(event.orgId, 'billing:grace_period', {
+      subscriptionId: event.subscriptionId,
+      graceEndsAt: event.graceEndsAt,
+    });
+
+    const adminIds = await this.getOrgAdminIds(event.orgId);
+    if (adminIds.length > 0) {
+      await this.notificationService.dispatchToOrg(
+        event.orgId,
+        adminIds,
+        'SUBSCRIPTION_EXPIRING',
+        'HIGH',
+        'Grace Period — Action Required',
+        `Your subscription is in a grace period ending ${new Date(event.graceEndsAt).toLocaleDateString()}. Update your payment method to avoid service interruption.`,
+        { subscriptionId: event.subscriptionId, graceEndsAt: event.graceEndsAt },
+      );
+    }
   }
 
   @OnEvent(EVENT_NAMES.PAYMENT_SUCCEEDED)
@@ -68,7 +160,11 @@ export class BillingEventsHandler {
     this.logger.log(
       `Payment ${event.paymentId} succeeded for org ${event.orgId}: ${event.amountInCents} cents`,
     );
-    // TODO: Send payment receipt email
+
+    this.wsGateway.emitToOrg(event.orgId, 'billing:payment_succeeded', {
+      paymentId: event.paymentId,
+      amountInCents: event.amountInCents,
+    });
   }
 
   @OnEvent(EVENT_NAMES.PAYMENT_FAILED)
@@ -76,28 +172,79 @@ export class BillingEventsHandler {
     this.logger.warn(
       `Payment ${event.paymentId} failed for org ${event.orgId}: ${event.reason}`,
     );
-    // TODO: Send payment failure notification email
-    // TODO: Notify org admins via WebSocket
+
+    this.wsGateway.emitToOrg(event.orgId, 'billing:payment_failed', {
+      paymentId: event.paymentId,
+      reason: event.reason,
+      retryCount: event.retryCount,
+    });
+
+    const adminIds = await this.getOrgAdminIds(event.orgId);
+    if (adminIds.length > 0) {
+      await this.notificationService.dispatchToOrg(
+        event.orgId,
+        adminIds,
+        'PAYMENT_FAILED',
+        'HIGH',
+        'Payment Failed',
+        `Payment failed: ${event.reason}. We will retry automatically (attempt ${event.retryCount}). Please update your payment method if the issue persists.`,
+        { paymentId: event.paymentId, reason: event.reason, retryCount: event.retryCount },
+      );
+    }
   }
 
   @OnEvent(EVENT_NAMES.USAGE_LIMIT_REACHED)
   async onUsageLimitReached(event: UsageLimitReachedEvent) {
     this.logger.warn(
-      `Usage limit reached for org ${event.orgId}: ${event.metricType} ` +
-      `(${event.currentValue}/${event.limitValue})`,
+      `Usage limit reached for org ${event.orgId}: ${event.metricType} (${event.currentValue}/${event.limitValue})`,
     );
-    // TODO: Send upgrade prompt via WebSocket to all connected users in org
-    // TODO: Send email to org admin about limit reached
+
+    this.wsGateway.emitToOrg(event.orgId, 'billing:usage_limit_reached', {
+      metricType: event.metricType,
+      currentValue: event.currentValue,
+      limitValue: event.limitValue,
+    });
+
+    const adminIds = await this.getOrgAdminIds(event.orgId);
+    if (adminIds.length > 0) {
+      await this.notificationService.dispatchToOrg(
+        event.orgId,
+        adminIds,
+        'USAGE_LIMIT_REACHED',
+        'HIGH',
+        `Usage Limit Reached: ${event.metricType}`,
+        `You've reached your ${event.metricType} limit (${event.currentValue}/${event.limitValue}). Upgrade your plan for more capacity.`,
+        { metricType: event.metricType, currentValue: event.currentValue, limitValue: event.limitValue },
+      );
+    }
   }
 
   @OnEvent(EVENT_NAMES.USAGE_SOFT_LIMIT_WARNING)
   async onUsageSoftLimitWarning(event: UsageSoftLimitWarningEvent) {
     this.logger.log(
-      `Soft limit warning for org ${event.orgId}: ${event.metricType} ` +
-      `at ${event.percentUsed}% (${event.currentValue}/${event.limitValue})`,
+      `Soft limit warning for org ${event.orgId}: ${event.metricType} at ${event.percentUsed}% (${event.currentValue}/${event.limitValue})`,
     );
-    // TODO: Send warning notification via WebSocket
-    // TODO: Send email if first time crossing soft limit this period
+
+    this.wsGateway.emitToOrg(event.orgId, 'billing:usage_warning', {
+      metricType: event.metricType,
+      percentUsed: event.percentUsed,
+      currentValue: event.currentValue,
+      limitValue: event.limitValue,
+    });
+
+    const adminIds = await this.getOrgAdminIds(event.orgId);
+    if (adminIds.length > 0) {
+      await this.notificationService.dispatchToOrg(
+        event.orgId,
+        adminIds,
+        'USAGE_LIMIT_WARNING',
+        'NORMAL',
+        `Usage Warning: ${event.metricType} at ${event.percentUsed}%`,
+        `You've used ${event.percentUsed}% of your ${event.metricType} limit (${event.currentValue}/${event.limitValue}).`,
+        { metricType: event.metricType, percentUsed: event.percentUsed },
+        `usage-warning-${event.orgId}-${event.metricType}`,
+      );
+    }
   }
 
   @OnEvent(EVENT_NAMES.USAGE_COUNTER_RESET)
@@ -105,5 +252,18 @@ export class BillingEventsHandler {
     this.logger.log(
       `Usage counters reset for org ${event.orgId}: ${event.metricTypes.join(', ')}`,
     );
+  }
+
+  private async getOrgAdminIds(orgId: string): Promise<string[]> {
+    const admins = await this.prisma.user.findMany({
+      where: {
+        orgId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    return admins.map((a) => a.id);
   }
 }

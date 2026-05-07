@@ -1,7 +1,17 @@
 // ─── Enums (match backend Prisma enums) ───
 
 export type LeadStatus = "NEW" | "CONTACTED" | "INTERESTED" | "CONVERTED" | "CLOSED";
-export type ContactSource = "WHATSAPP" | "MANUAL" | "IMPORT" | "API";
+export type ContactSource =
+  | "WHATSAPP"
+  | "INSTAGRAM"
+  | "FACEBOOK"
+  | "EMAIL"
+  | "MANUAL"
+  | "IMPORT"
+  | "API"
+  | "FACEBOOK_LEAD_AD"
+  | "INSTAGRAM_LEAD_AD"
+  | "WHATSAPP_LEAD_AD";
 
 // ─── Tag ───
 
@@ -48,11 +58,14 @@ export interface Contact {
   ownerId: string;
   sessionId: string | null;
   metadata: Record<string, unknown> | null;
+  leadScore: number;
+  scoreUpdatedAt: string | null;
   mergedIntoId: string | null;
   createdAt: string;
   updatedAt: string;
   owner: ContactOwner;
   contactTags: ContactTag[];
+  contactProducts?: { product: { id: string; name: string; status: string } }[];
   _count: { notes: number };
 }
 
@@ -156,6 +169,7 @@ export interface ListContactsParams {
   ownerId?: string;
   source?: ContactSource;
   tagIds?: string[];
+  productIds?: string[];
   search?: string;
   sortBy?: "createdAt" | "updatedAt" | "name";
   sortOrder?: "asc" | "desc";

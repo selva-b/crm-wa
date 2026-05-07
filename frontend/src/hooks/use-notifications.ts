@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { notificationsApi } from "@/lib/api/notifications";
 import type {
   ListNotificationsParams,
@@ -58,9 +59,7 @@ export function useMarkAllAsRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => notificationsApi.markAllAsRead(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: notificationKeys.all }); toast.success("All marked as read"); },
   });
 }
 
@@ -79,9 +78,7 @@ export function useDeleteAllReadNotifications() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => notificationsApi.deleteAllRead(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: notificationKeys.all }); toast.success("Read notifications cleared"); },
   });
 }
 
@@ -91,9 +88,9 @@ export function useUpdateNotificationPreference() {
     mutationFn: (data: UpdateNotificationPreferenceRequest) =>
       notificationsApi.updatePreference(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: notificationKeys.preferences(),
-      });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.preferences() });
+      toast.success("Preference saved");
     },
+    onError: (err: Error) => toast.error(err.message || "Failed to save preference"),
   });
 }

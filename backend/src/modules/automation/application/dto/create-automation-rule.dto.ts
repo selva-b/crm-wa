@@ -6,6 +6,7 @@ import {
   IsArray,
   ValidateNested,
   IsInt,
+  IsUUID,
   Min,
   Max,
   MaxLength,
@@ -117,4 +118,8 @@ export class CreateAutomationRuleDto {
   @IsInt()
   @Min(0)
   cooldownSeconds?: number;
+
+  @IsOptional()
+  @IsUUID('4')
+  productId?: string;
 }

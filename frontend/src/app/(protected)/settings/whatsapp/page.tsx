@@ -8,6 +8,8 @@ import {
   ScanLine,
   CheckCircle2,
   ArrowRight,
+  RefreshCw,
+  WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -16,6 +18,7 @@ import {
   useInitiateSession,
   useRefreshQr,
   useDisconnectSession,
+  useReconnectSession,
   useWhatsAppSocket,
 } from "@/hooks/use-whatsapp";
 import { useWhatsAppStore } from "@/stores/whatsapp-store";
@@ -43,12 +46,23 @@ export default function WhatsAppSettingsPage() {
   const initiateSession = useInitiateSession();
   const refreshQr = useRefreshQr();
   const disconnectSession = useDisconnectSession();
+  const reconnectSession = useReconnectSession();
 
   // WebSocket for QR & status events
   useWhatsAppSocket();
 
   const handleConnect = () => {
     initiateSession.mutate(crypto.randomUUID());
+  };
+
+  const handleReconnect = () => {
+    if (session?.id) {
+      // Session record exists with preserved creds — reconnect without re-scanning QR
+      reconnectSession.mutate(session.id);
+    } else {
+      // No session record at all — need a fresh one (will show QR)
+      initiateSession.mutate(crypto.randomUUID());
+    }
   };
 
   const handleRefreshQr = () => {
@@ -183,10 +197,19 @@ export default function WhatsAppSettingsPage() {
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap justify-center">
               <Button onClick={() => router.push("/inbox")}>
                 Go to Inbox
                 <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleReconnect}
+                loading={reconnectSession.isPending}
+                title="Force reconnect the session without re-scanning QR"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Reconnect
               </Button>
               <DisconnectButton
                 onDisconnect={() => disconnectSession.mutate()}
@@ -213,21 +236,53 @@ export default function WhatsAppSettingsPage() {
         {status === "disconnected" && (
           <div className="flex flex-col items-center py-8 text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-error-container">
-              <MessageCircle className="h-8 w-8 text-error" />
+              <WifiOff className="h-8 w-8 text-error" />
             </div>
             <h3 className="text-[16px] font-medium text-on-surface mb-2">
               Session Disconnected
             </h3>
-            <p className="text-[13px] text-on-surface-variant max-w-[360px] mb-6">
-              Your WhatsApp session was disconnected. Reconnect to continue messaging.
-            </p>
-            <Button
-              onClick={handleConnect}
-              loading={initiateSession.isPending}
-            >
-              <ScanLine className="h-4 w-4" />
-              Reconnect WhatsApp
-            </Button>
+            {session?.phoneNumber && (
+              <p className="text-[14px] font-medium text-on-surface mb-1">
+                {session.phoneNumber}
+              </p>
+            )}
+            {session?.hasCreds ? (
+              <>
+                <p className="text-[13px] text-on-surface-variant max-w-[360px] mb-6">
+                  Your session was disconnected. Click Reconnect to restore it — no QR scan needed.
+                </p>
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={handleReconnect}
+                    loading={reconnectSession.isPending || initiateSession.isPending}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Reconnect
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleConnect}
+                    disabled={reconnectSession.isPending || initiateSession.isPending}
+                  >
+                    <ScanLine className="h-4 w-4" />
+                    New Session
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-[13px] text-on-surface-variant max-w-[360px] mb-6">
+                  Your session was logged out from WhatsApp. Scan a new QR code to reconnect.
+                </p>
+                <Button
+                  onClick={handleConnect}
+                  loading={initiateSession.isPending}
+                >
+                  <ScanLine className="h-4 w-4" />
+                  Connect WhatsApp
+                </Button>
+              </>
+            )}
           </div>
         )}
       </Card>

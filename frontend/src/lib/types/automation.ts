@@ -5,7 +5,12 @@ export type AutomationTriggerType =
   | "CONTACT_CREATED"
   | "LEAD_STATUS_CHANGED"
   | "TIME_BASED"
-  | "NO_REPLY";
+  | "NO_REPLY"
+  | "LEAD_AD_RECEIVED"
+  | "SHOPIFY_ORDER_CREATED"
+  | "SHOPIFY_ORDER_FULFILLED"
+  | "SHOPIFY_CART_ABANDONED"
+  | "WIDGET_MESSAGE_RECEIVED";
 
 export type AutomationConditionOperator =
   | "EQUALS"
@@ -146,6 +151,7 @@ export interface CreateAutomationRuleRequest {
   priority?: number;
   maxExecutionsPerContact?: number;
   cooldownSeconds?: number;
+  productId?: string;
 }
 
 export interface UpdateAutomationRuleRequest {
@@ -158,6 +164,30 @@ export interface UpdateAutomationRuleRequest {
   priority?: number;
   maxExecutionsPerContact?: number;
   cooldownSeconds?: number;
+}
+
+// ─── AI Generation ───
+
+export interface GeneratedRuleAction {
+  actionType: AutomationActionType;
+  actionConfig: Record<string, unknown>;
+  orderIndex: number;
+  delaySeconds?: number;
+}
+
+export interface GeneratedRule {
+  name: string;
+  description: string;
+  triggerType: AutomationTriggerType;
+  triggerConfig: TriggerConfig;
+  actions: GeneratedRuleAction[];
+  cooldownSeconds?: number;
+  maxExecutionsPerContact?: number;
+}
+
+export interface GeneratedAutomationRuleResponse {
+  rule: GeneratedRule;
+  explanation: string;
 }
 
 // ─── Query Params ───

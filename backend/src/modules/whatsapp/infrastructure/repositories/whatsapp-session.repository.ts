@@ -45,6 +45,22 @@ export class WhatsAppSessionRepository {
     });
   }
 
+  async findAnyByUserId(userId: string, orgId: string) {
+    return this.prisma.whatsAppSession.findFirst({
+      where: { userId, orgId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findAllSessionIdsByUserId(userId: string, orgId: string): Promise<string[]> {
+    const sessions = await this.prisma.whatsAppSession.findMany({
+      where: { userId, orgId },
+      select: { id: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return sessions.map((s) => s.id);
+  }
+
   async findActiveByUserId(userId: string, orgId: string) {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
@@ -57,8 +73,23 @@ export class WhatsAppSessionRepository {
           { status: WhatsAppSessionStatus.CONNECTED },
           { status: WhatsAppSessionStatus.RECONNECTING, phoneNumber: { not: null } },
           { status: WhatsAppSessionStatus.CONNECTING, createdAt: { gt: fiveMinutesAgo } },
+          // DISCONNECTED with creds intact — user should reconnect, not create a new session
+          { status: WhatsAppSessionStatus.DISCONNECTED, encryptedCreds: { not: null } },
         ],
       },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /** Fallback: find any connected session in the org (for system-triggered messages) */
+  async findAnyActiveByOrgId(orgId: string) {
+    return this.prisma.whatsAppSession.findFirst({
+      where: {
+        orgId,
+        deletedAt: null,
+        status: WhatsAppSessionStatus.CONNECTED,
+      },
+      orderBy: { lastActiveAt: 'desc' },
     });
   }
 
@@ -126,6 +157,30 @@ export class WhatsAppSessionRepository {
     });
   }
 
+  // Soft disconnect — preserves encryptedCreds so reconnect works without a new QR scan.
+  // Use this for natural disconnects (network loss, phone offline, health worker exhaustion).
+  // Only use disconnectSession() for explicit mobile logout (creds must be wiped).
+  async markAsDisconnected(id: string) {
+    return this.prisma.whatsAppSession.update({
+      where: { id },
+      data: {
+        status: WhatsAppSessionStatus.DISCONNECTED,
+        disconnectedAt: new Date(),
+      },
+    });
+  }
+
+  async resetReconnectCount(id: string) {
+    return this.prisma.whatsAppSession.update({
+      where: { id },
+      data: {
+        reconnectCount: 0,
+        status: WhatsAppSessionStatus.RECONNECTING,
+        disconnectedAt: null,
+      },
+    });
+  }
+
   async findByOrgIdPaginated(
     orgId: string,
     options: {
@@ -162,7 +217,12 @@ export class WhatsAppSessionRepository {
       this.prisma.whatsAppSession.count({ where }),
     ]);
 
-    return { data, total, page: options.page, limit: options.limit };
+    const mapped = data.map(({ encryptedCreds, ...rest }) => ({
+      ...rest,
+      hasCreds: encryptedCreds !== null,
+    }));
+
+    return { data: mapped, total, page: options.page, limit: options.limit };
   }
 
   async findStaleConnectedSessions(heartbeatThreshold: Date) {
@@ -183,6 +243,23 @@ export class WhatsAppSessionRepository {
         orgId,
         deletedAt: null,
         status: { not: WhatsAppSessionStatus.DISCONNECTED },
+      },
+    });
+  }
+
+  async findByUserIds(userIds: string[], orgId: string) {
+    return this.prisma.whatsAppSession.findMany({
+      where: {
+        userId: { in: userIds },
+        orgId,
+        deletedAt: null,
+        status: { not: WhatsAppSessionStatus.DISCONNECTED },
+      },
+      select: {
+        id: true,
+        userId: true,
+        phoneNumber: true,
+        status: true,
       },
     });
   }

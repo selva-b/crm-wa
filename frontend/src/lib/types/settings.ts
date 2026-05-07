@@ -7,6 +7,9 @@ export interface OrgSettings {
   logo?: string;
   timezone: string;
   language: string;
+  industry?: string;
+  description?: string;
+  website?: string;
   brandColors?: {
     primary?: string;
     secondary?: string;
@@ -19,10 +22,24 @@ export interface UpdateOrgSettingsRequest {
   logo?: string;
   timezone?: string;
   language?: string;
+  industry?: string;
+  description?: string;
+  website?: string;
   brandColors?: {
     primary?: string;
     secondary?: string;
   };
+}
+
+// ─── AI Memory ───
+
+export interface OrgAiMemory {
+  context: string;
+  customContext: string | null;
+  shopifyStore: string | null;
+  documentName: string | null;
+  builtAt: string | null;
+  updatedAt: string;
 }
 
 // ─── WhatsApp Configuration ───
@@ -39,6 +56,17 @@ export interface UpdateWhatsAppConfigRequest {
   retryLimit?: number;
   autoReconnect?: boolean;
   sessionTimeout?: number;
+}
+
+// ─── Working Hours ───
+
+export interface WorkingHoursConfig {
+  enabled: boolean;
+  startHour: string;
+  endHour: string;
+  workDays: boolean[];
+  autoReplyEnabled: boolean;
+  autoReplyMessage: string;
 }
 
 // ─── Feature Flags ───
@@ -66,7 +94,7 @@ export interface UpdateFeatureFlagsRequest {
 
 // ─── Integration Configurations (EPIC 12) ───
 
-export type IntegrationProvider = 'SMTP' | 'SENDGRID' | 'STRIPE' | 'RAZORPAY';
+export type IntegrationProvider = 'SMTP' | 'SENDGRID' | 'STRIPE' | 'RAZORPAY' | 'SHOPIFY';
 export type IntegrationStatus = 'ACTIVE' | 'INACTIVE' | 'ERROR';
 
 export interface IntegrationConfig {

@@ -7,6 +7,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger, UnauthorizedException } from '@nestjs/common';
 import { TokenService } from '@/modules/auth/domain/services/token.service';
+import { PrismaService } from '@/infrastructure/database/prisma.service';
 
 @WebSocketGateway({
   cors: {
@@ -27,7 +28,10 @@ export class AppWebSocketGateway
   // Map of orgId -> Set of socket IDs (for org-wide broadcasts)
   private readonly orgSockets = new Map<string, Set<string>>();
 
-  constructor(private readonly tokenService: TokenService) {}
+  constructor(
+    private readonly tokenService: TokenService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async handleConnection(client: Socket): Promise<void> {
     try {
@@ -63,6 +67,16 @@ export class AppWebSocketGateway
       }
       this.orgSockets.get(orgId)!.add(client.id);
 
+      // Persist online status + broadcast to org
+      const wasOffline = !this.userSockets.has(userId) || this.userSockets.get(userId)!.size === 1;
+      if (wasOffline) {
+        this.prisma.user.update({
+          where: { id: userId },
+          data: { isOnline: true, lastSeenAt: new Date() },
+        }).catch(() => {});
+        this.server.to(`org:${orgId}`).emit('user:online', { userId });
+      }
+
       this.logger.log(`Client connected: ${client.id} (user: ${userId})`);
     } catch (error) {
       this.logger.warn(`Client auth failed: ${client.id}`);
@@ -79,6 +93,14 @@ export class AppWebSocketGateway
       this.userSockets.get(userId)!.delete(client.id);
       if (this.userSockets.get(userId)!.size === 0) {
         this.userSockets.delete(userId);
+        // User fully offline — persist + broadcast
+        this.prisma.user.update({
+          where: { id: userId },
+          data: { isOnline: false, lastSeenAt: new Date() },
+        }).catch(() => {});
+        if (orgId) {
+          this.server.to(`org:${orgId}`).emit('user:offline', { userId });
+        }
       }
     }
 
@@ -92,12 +114,32 @@ export class AppWebSocketGateway
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
+  /**
+   * Join a session-specific room (for targeted message events).
+   * Called when a WhatsApp session is created/connected.
+   */
+  joinSessionRoom(userId: string, sessionId: string): void {
+    const socketIds = this.userSockets.get(userId);
+    if (socketIds) {
+      for (const socketId of socketIds) {
+        const socket = this.server.sockets.sockets.get(socketId);
+        if (socket) {
+          socket.join(`session:${sessionId}`);
+        }
+      }
+    }
+  }
+
   emitToUser(userId: string, event: string, data: unknown): void {
     this.server.to(`user:${userId}`).emit(event, data);
   }
 
   emitToOrg(orgId: string, event: string, data: unknown): void {
     this.server.to(`org:${orgId}`).emit(event, data);
+  }
+
+  emitToSession(sessionId: string, event: string, data: unknown): void {
+    this.server.to(`session:${sessionId}`).emit(event, data);
   }
 
   isUserOnline(userId: string): boolean {

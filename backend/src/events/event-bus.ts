@@ -281,6 +281,135 @@ export interface ContactTagRemovedEvent {
 }
 
 // ─────────────────────────────────────────────
+// Social Ads Lead Integration Events
+// ─────────────────────────────────────────────
+
+export interface LeadAdReceivedEvent {
+  leadAdEntryId: string;
+  orgId: string;
+  leadgenId: string;
+  pageId: string;
+  platform: string;
+  contactId: string;
+  contactPhone: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  adName: string | null;
+  campaignName: string | null;
+  formId: string | null;
+  leadData: Record<string, unknown>;
+}
+
+export interface LeadAdProcessedEvent {
+  leadAdEntryId: string;
+  orgId: string;
+  contactId: string;
+  leadgenId: string;
+  platform: string;
+}
+
+export interface LeadAdFailedEvent {
+  leadAdEntryId: string;
+  orgId: string;
+  leadgenId: string;
+  error: string;
+  retryCount: number;
+}
+
+// ─────────────────────────────────────────────
+// EPIC 16 — Multi-Channel Integration Events
+// ─────────────────────────────────────────────
+
+export interface ChannelCreatedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+  userId: string;
+}
+
+export interface ChannelUpdatedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+  userId: string;
+  changes: Record<string, unknown>;
+}
+
+export interface ChannelVerifiedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+}
+
+export interface ChannelSuspendedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+  reason: string;
+}
+
+export interface ChannelReactivatedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+}
+
+export interface ChannelDeletedEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+}
+
+export interface ChannelErrorEvent {
+  orgId: string;
+  channelId: string;
+  channelType: string;
+  error: string;
+}
+
+export interface ChannelMessageSentEvent {
+  orgId: string;
+  messageId: string;
+  channelId: string;
+  channelType: string;
+  conversationId: string;
+  externalMessageId: string;
+}
+
+export interface ChannelMessageReceivedEvent {
+  orgId: string;
+  messageId: string;
+  channelId: string;
+  channelType: string;
+  conversationId: string;
+  senderIdentifier: string;
+  senderName?: string;
+}
+
+export interface ChannelMessageDeliveredEvent {
+  orgId: string;
+  messageId: string;
+  channelId: string;
+  conversationId: string;
+  externalMessageId: string;
+}
+
+export interface ChannelMessageReadEvent {
+  orgId: string;
+  messageId: string;
+  channelId: string;
+  conversationId: string;
+  externalMessageId: string;
+}
+
+export interface ChannelMessageFailedEvent {
+  orgId: string;
+  messageId: string;
+  channelId?: string;
+  error: string;
+}
+
+// ─────────────────────────────────────────────
 // EPIC 5 — Messaging Engine Events
 // ─────────────────────────────────────────────
 
@@ -326,6 +455,16 @@ export interface ConversationUpdatedEvent {
   lastMessageAt: Date;
   lastMessageBody?: string;
   unreadCount: number;
+}
+
+export interface ConversationClosedEvent {
+  conversationId: string;
+  orgId: string;
+  contactPhone: string;
+  assignedToId: string | null;
+  sessionId: string;
+  status: 'CLOSED' | 'ARCHIVED';
+  closedById: string;
 }
 
 export interface RateLimitExceededEvent {
@@ -860,4 +999,100 @@ export interface WebhookDeliveryFailedEvent {
   error: string;
   retryCount: number;
   willRetry: boolean;
+}
+
+// ─────────────────────────────────────────────
+// SLA Tracking events (EPIC 15)
+// ─────────────────────────────────────────────
+
+export interface SlaPolicyCreatedEvent {
+  policyId: string;
+  orgId: string;
+  name: string;
+  metricType: string;
+  thresholdMs: number;
+  createdById: string;
+}
+
+export interface SlaPolicyUpdatedEvent {
+  policyId: string;
+  orgId: string;
+  changes: Record<string, unknown>;
+  updatedById: string;
+}
+
+export interface SlaPolicyDeletedEvent {
+  policyId: string;
+  orgId: string;
+  deletedById: string;
+}
+
+export interface SlaTrackingStartedEvent {
+  trackingId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  assignedUserId: string | null;
+  deadlineAt: string;
+}
+
+export interface SlaWarningTriggeredEvent {
+  trackingId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  assignedUserId: string | null;
+  elapsedMs: number;
+  thresholdMs: number;
+  warningThresholdMs: number;
+}
+
+export interface SlaBreachDetectedEvent {
+  breachId: string;
+  trackingId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  assignedUserId: string | null;
+  metricType: string;
+  thresholdMs: number;
+  actualMs: number;
+}
+
+export interface SlaBreachAcknowledgedEvent {
+  breachId: string;
+  orgId: string;
+  acknowledgedById: string;
+}
+
+export interface SlaBreachResolvedEvent {
+  breachId: string;
+  trackingId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  resolvedMs: number;
+}
+
+export interface SlaEscalationTriggeredEvent {
+  breachId: string;
+  orgId: string;
+  policyId: string;
+  conversationId: string;
+  escalationLevel: number;
+  notifyUserIds: string[];
+}
+
+// ─────────────────────────────────────────────
+// Chat Widget Events
+// ─────────────────────────────────────────────
+
+export interface WidgetMessageReceivedAutomationEvent {
+  orgId: string;
+  sessionId: string;
+  messageId: string;
+  visitorId: string;
+  visitorName?: string;
+  visitorPhone?: string;
+  body: string;
 }

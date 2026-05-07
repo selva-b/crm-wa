@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface TooltipProps {
@@ -10,13 +10,6 @@ interface TooltipProps {
   className?: string;
 }
 
-const sideStyles = {
-  top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
-  right: "left-full top-1/2 -translate-y-1/2 ml-2",
-  bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
-  left: "right-full top-1/2 -translate-y-1/2 mr-2",
-};
-
 export function Tooltip({
   content,
   children,
@@ -24,9 +17,38 @@ export function Tooltip({
   className,
 }: TooltipProps) {
   const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!show || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    switch (side) {
+      case "right":
+        setPos({ top: rect.top + rect.height / 2, left: rect.right + 8 });
+        break;
+      case "left":
+        setPos({ top: rect.top + rect.height / 2, left: rect.left - 8 });
+        break;
+      case "top":
+        setPos({ top: rect.top - 8, left: rect.left + rect.width / 2 });
+        break;
+      case "bottom":
+        setPos({ top: rect.bottom + 8, left: rect.left + rect.width / 2 });
+        break;
+    }
+  }, [show, side]);
+
+  const transformMap = {
+    right: "-translate-y-1/2",
+    left: "-translate-y-1/2 -translate-x-full",
+    top: "-translate-x-1/2 -translate-y-full",
+    bottom: "-translate-x-1/2",
+  };
 
   return (
     <div
+      ref={triggerRef}
       className={cn("relative inline-flex", className)}
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
@@ -36,9 +58,10 @@ export function Tooltip({
         <div
           role="tooltip"
           className={cn(
-            "absolute z-50 whitespace-nowrap rounded-lg bg-surface-container-high px-2.5 py-1.5 text-[12px] text-on-surface shadow-lg pointer-events-none",
-            sideStyles[side],
+            "fixed z-[9999] whitespace-nowrap rounded-lg bg-surface-container-high px-2.5 py-1.5 text-[12px] text-on-surface shadow-lg pointer-events-none",
+            transformMap[side],
           )}
+          style={{ top: pos.top, left: pos.left }}
         >
           {content}
         </div>

@@ -12,6 +12,7 @@ export interface EvaluationContext {
   message?: Record<string, unknown>;
   conversation?: Record<string, unknown>;
   trigger?: Record<string, unknown>;
+  widget?: Record<string, unknown>;
 }
 
 @Injectable()

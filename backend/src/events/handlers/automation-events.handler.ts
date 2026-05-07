@@ -3,10 +3,8 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { AutomationTriggerType } from '@prisma/client';
 import { AppWebSocketGateway } from '@/infrastructure/websocket/websocket.gateway';
 import { EvaluateTriggerUseCase } from '@/modules/automation/application/use-cases/evaluate-trigger.use-case';
-import { QueueService } from '@/infrastructure/queue/queue.service';
-import { EVENT_NAMES, QUEUE_NAMES } from '@/common/constants';
+import { EVENT_NAMES } from '@/common/constants';
 import {
-  WhatsAppMessageReceivedEvent,
   ContactCreatedEvent,
   ContactAutoCreatedEvent,
   ContactStatusChangedEvent,
@@ -20,6 +18,7 @@ import {
   AutomationRuleDeletedEvent,
   FollowUpCancelledEvent,
   FollowUpExecutedEvent,
+  WidgetMessageReceivedAutomationEvent,
 } from '../event-bus';
 
 @Injectable()
@@ -28,50 +27,12 @@ export class AutomationEventsHandler {
 
   constructor(
     private readonly evaluateTrigger: EvaluateTriggerUseCase,
-    private readonly queueService: QueueService,
     private readonly wsGateway: AppWebSocketGateway,
   ) {}
 
   // ─── Trigger Evaluation Handlers ──────────────────
-
-  @OnEvent(EVENT_NAMES.WHATSAPP_MESSAGE_RECEIVED)
-  async handleMessageReceived(
-    payload: WhatsAppMessageReceivedEvent,
-  ): Promise<void> {
-    this.logger.debug(
-      `Evaluating automation triggers for message: ${payload.messageId}`,
-    );
-
-    try {
-      await this.evaluateTrigger.execute({
-        orgId: payload.orgId,
-        triggerType: AutomationTriggerType.MESSAGE_RECEIVED,
-        eventPayload: {
-          messageId: payload.messageId,
-          sessionId: payload.sessionId,
-          contactPhone: payload.contactPhone,
-          type: payload.type,
-          conversationId: payload.conversationId,
-        },
-        context: {
-          message: {
-            id: payload.messageId,
-            type: payload.type,
-            contactPhone: payload.contactPhone,
-          },
-        },
-        contactId: undefined, // Will be resolved from contactPhone by the evaluator
-      });
-
-      // Also check for NO_REPLY triggers — schedule follow-up checks
-      await this.scheduleNoReplyChecks(payload);
-    } catch (error) {
-      this.logger.error(
-        `Error evaluating MESSAGE_RECEIVED trigger: ${error instanceof Error ? error.message : 'Unknown'}`,
-        error instanceof Error ? error.stack : undefined,
-      );
-    }
-  }
+  // NOTE: WHATSAPP_MESSAGE_RECEIVED is handled by MessagePipelineHandler
+  // (chatbot-first, then automation) to prevent race conditions.
 
   @OnEvent(EVENT_NAMES.CONTACT_CREATED)
   async handleContactCreated(
@@ -174,14 +135,41 @@ export class AutomationEventsHandler {
     }
   }
 
-  // ─── No-Reply Follow-Up Scheduling ──────────────
-
-  private async scheduleNoReplyChecks(
-    payload: WhatsAppMessageReceivedEvent,
+  @OnEvent(EVENT_NAMES.WIDGET_MESSAGE_RECEIVED)
+  async handleWidgetMessageReceived(
+    payload: WidgetMessageReceivedAutomationEvent,
   ): Promise<void> {
-    // When a message is received, cancel any pending follow-up checks
-    // for this contact, since they just replied
-    // The follow-up worker will also check for recent replies before executing
+    this.logger.debug(
+      `Evaluating automation triggers for widget message: ${payload.messageId}`,
+    );
+    try {
+      await this.evaluateTrigger.execute({
+        orgId: payload.orgId,
+        triggerType: AutomationTriggerType.WIDGET_MESSAGE_RECEIVED,
+        eventPayload: {
+          messageId: payload.messageId,
+          sessionId: payload.sessionId,
+          visitorId: payload.visitorId,
+          visitorName: payload.visitorName,
+          visitorPhone: payload.visitorPhone,
+          body: payload.body,
+        },
+        context: {
+          widget: {
+            sessionId: payload.sessionId,
+            visitorId: payload.visitorId,
+            visitorName: payload.visitorName,
+            visitorPhone: payload.visitorPhone,
+            body: payload.body,
+          },
+        },
+        contactId: undefined,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error evaluating WIDGET_MESSAGE_RECEIVED trigger: ${error instanceof Error ? error.message : 'Unknown'}`,
+      );
+    }
   }
 
   // ─── Automation Lifecycle WebSocket Broadcasts ──────

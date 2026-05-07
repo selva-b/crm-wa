@@ -3,6 +3,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from "axios";
+import { toast } from "sonner";
 import type { ApiResponse, ApiErrorResponse } from "@/lib/types/api";
 
 const API_BASE_URL =
@@ -10,19 +11,45 @@ const API_BASE_URL =
 
 export class ApiError extends Error {
   statusCode: number;
+  errorCode?: string;
   errors?: Record<string, string[]>;
+  details?: Record<string, unknown>;
 
-  constructor(statusCode: number, message: string, errors?: Record<string, string[]>) {
+  constructor(
+    statusCode: number,
+    message: string,
+    errors?: Record<string, string[]>,
+    errorCode?: string,
+    details?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = "ApiError";
     this.statusCode = statusCode;
     this.errors = errors;
+    this.errorCode = errorCode;
+    this.details = details;
   }
 }
 
+const METRIC_LABELS: Record<string, string> = {
+  MESSAGES_SENT: "messages",
+  CAMPAIGN_EXECUTIONS: "campaigns",
+  ACTIVE_USERS: "users",
+  WHATSAPP_SESSIONS: "WhatsApp sessions",
+  API_CALLS: "API calls",
+  AI_CREDITS: "AI credits",
+  MESSAGE_TEMPLATES: "message templates",
+};
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json",
+    // CSRF protection: custom header that browsers cannot set cross-origin without preflight
+    "x-requested-with": "XMLHttpRequest",
+  },
+  // Send httpOnly refresh token cookie on every request
+  withCredentials: true,
   timeout: 15000,
 });
 
@@ -67,22 +94,12 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // If 401 and not already retried, attempt token refresh
+    // If 401 and not already retried, attempt silent token refresh via httpOnly cookie
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       typeof window !== "undefined"
     ) {
-      const { useAuthStore } = require("@/stores/auth-store");
-      const { refreshToken } = useAuthStore.getState();
-
-      if (!refreshToken) {
-        useAuthStore.getState().clearAuth();
-        return Promise.reject(
-          new ApiError(401, "Session expired. Please log in again."),
-        );
-      }
-
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           refreshQueue.push({ resolve, reject });
@@ -96,14 +113,21 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
-        });
+        // No body needed — refresh token is sent automatically via httpOnly cookie
+        const res = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          {},
+          {
+            withCredentials: true,
+            headers: { "x-requested-with": "XMLHttpRequest" },
+          },
+        );
         const data = res.data.data || res.data;
+        const { useAuthStore } = require("@/stores/auth-store");
         useAuthStore.getState().setTokens({
           accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
           expiresIn: data.expiresIn,
+          user: data.user,
         });
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
@@ -111,6 +135,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        const { useAuthStore } = require("@/stores/auth-store");
         useAuthStore.getState().clearAuth();
         return Promise.reject(
           new ApiError(401, "Session expired. Please log in again."),
@@ -122,9 +147,26 @@ apiClient.interceptors.response.use(
 
     // Transform error to ApiError
     if (error.response?.data) {
-      const { statusCode, message, errors } = error.response.data;
+      const { statusCode, message, errors, error: errorCode, details } = error.response.data;
       const msg = Array.isArray(message) ? message[0] : message;
-      return Promise.reject(new ApiError(statusCode, msg, errors));
+
+      // Global handler: show toast for usage limit errors
+      if (errorCode === "USAGE_LIMIT_EXCEEDED" && typeof window !== "undefined") {
+        const metricType = (details as any)?.metricType as string | undefined;
+        const metricLabel = metricType ? (METRIC_LABELS[metricType] ?? metricType.toLowerCase().replace("_", " ")) : "resource";
+        const current = (details as any)?.currentValue;
+        const limit = (details as any)?.limitValue;
+        const limitText = limit != null ? ` (${current}/${limit})` : "";
+        toast.error(`Plan limit reached: ${metricLabel}${limitText}. Upgrade your plan to continue.`, {
+          duration: 6000,
+          action: {
+            label: "Upgrade",
+            onClick: () => { window.location.href = "/settings/billing"; },
+          },
+        });
+      }
+
+      return Promise.reject(new ApiError(statusCode, msg, errors, errorCode, details as Record<string, unknown>));
     }
 
     return Promise.reject(

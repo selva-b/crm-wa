@@ -4,8 +4,6 @@ import { useState } from "react";
 import {
   ShieldAlert,
   Search,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   X,
   ChevronDown,
@@ -17,9 +15,11 @@ import { useAuthStore } from "@/stores/auth-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { Pagination } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import type { AuditLog, QueryAuditLogsParams } from "@/lib/types/rbac";
+import { PAGE_SIZE } from "@/lib/constants";
 
 const ACTION_OPTIONS = [
   { value: "", label: "All Actions" },
@@ -49,11 +49,9 @@ export default function AuditLogsPage() {
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const limit = 20;
-
   const params: QueryAuditLogsParams = {
-    page,
-    limit,
+    take: PAGE_SIZE,
+    skip: (page - 1) * PAGE_SIZE,
     ...(actionFilter && { action: actionFilter }),
     ...(startDate && { startDate }),
     ...(endDate && { endDate }),
@@ -61,9 +59,9 @@ export default function AuditLogsPage() {
 
   const { data, isLoading } = useAuditLogs(params);
 
-  const logs = data?.data ?? [];
+  const logs = data?.logs ?? [];
   const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const clearFilters = () => {
     setActionFilter("");
@@ -180,21 +178,21 @@ export default function AuditLogsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-outline-variant/15">
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant w-8" />
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant w-8" />
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Timestamp
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Action
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     User
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Target
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     IP Address
                   </th>
                 </tr>
@@ -217,29 +215,12 @@ export default function AuditLogsPage() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-outline-variant/15">
-            <span className="text-[12px] text-on-surface-variant">
-              Page {page} of {totalPages} ({total} total)
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          onPageChange={setPage}
+        />
       </Card>
     </div>
   );

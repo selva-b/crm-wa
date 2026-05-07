@@ -54,6 +54,31 @@ export const QUEUE_NAMES = {
   WEBHOOK_RETRY: 'webhook-retry',
   INTEGRATION_TEST: 'integration-test',
   CONFIG_CACHE_INVALIDATE: 'config-cache-invalidate',
+  // EPIC 13 — Analytics & Reporting queues
+  ANALYTICS_DAILY_AGGREGATE: 'analytics-daily-aggregate',
+  ANALYTICS_HOURLY_AGGREGATE: 'analytics-hourly-aggregate',
+  ANALYTICS_CLEANUP: 'analytics-cleanup',
+  // EPIC 15 — SLA Tracking queues
+  SLA_EVALUATE: 'sla-evaluate',
+  SLA_BREACH_CHECK: 'sla-breach-check',
+  SLA_ESCALATION: 'sla-escalation',
+  // Social Ads Lead Integration queues
+  PROCESS_LEAD_AD: 'process-lead-ad',
+  FETCH_LEAD_AD_DATA: 'fetch-lead-ad-data',
+  // EPIC 16 — Multi-Channel Integration queues
+  SEND_CHANNEL_MESSAGE: 'send-channel-message',
+  PROCESS_CHANNEL_INBOUND: 'process-channel-inbound',
+  CHANNEL_MESSAGE_DEAD_LETTER: 'channel-message-dead-letter',
+  CHANNEL_VERIFY: 'channel-verify',
+  CHANNEL_HEALTH_CHECK: 'channel-health-check',
+  EMAIL_IMAP_POLL: 'email-imap-poll',
+  // Drip Sequence queues
+  SEQUENCE_STEP_CHECK: 'sequence-step-check',
+  SEQUENCE_SEND_STEP: 'sequence-send-step',
+  // Developer API queues
+  DEVELOPER_WEBHOOK_DELIVER: 'developer-webhook-deliver',
+  // Shopify integration queues
+  PROCESS_SHOPIFY_WEBHOOK: 'process-shopify-webhook',
 } as const;
 
 export const EVENT_NAMES = {
@@ -118,6 +143,8 @@ export const EVENT_NAMES = {
   MESSAGE_REPROCESSED: 'message.reprocessed',
   CONVERSATION_CREATED: 'conversation.created',
   CONVERSATION_UPDATED: 'conversation.updated',
+  CONVERSATION_CLOSED: 'conversation.closed',
+  CONVERSATION_ASSIGNED: 'conversation.assigned',
   RATE_LIMIT_EXCEEDED: 'message.rate_limit_exceeded',
 
   // Campaign Management events (EPIC 6)
@@ -204,13 +231,83 @@ export const EVENT_NAMES = {
   WEBHOOK_DELETED: 'settings.webhook_deleted',
   WEBHOOK_DELIVERED: 'settings.webhook_delivered',
   WEBHOOK_DELIVERY_FAILED: 'settings.webhook_delivery_failed',
+
+  // Analytics & Reporting events (EPIC 13)
+  ANALYTICS_DAILY_AGGREGATED: 'analytics.daily_aggregated',
+  ANALYTICS_HOURLY_AGGREGATED: 'analytics.hourly_aggregated',
+  ANALYTICS_BACKFILL_COMPLETED: 'analytics.backfill_completed',
+
+  // Social Ads Lead Integration events
+  LEAD_AD_RECEIVED: 'lead_ad.received',
+  LEAD_AD_PROCESSED: 'lead_ad.processed',
+  LEAD_AD_FAILED: 'lead_ad.failed',
+
+  // Multi-Channel Integration events (EPIC 16)
+  CHANNEL_CREATED: 'channel.created',
+  CHANNEL_UPDATED: 'channel.updated',
+  CHANNEL_VERIFIED: 'channel.verified',
+  CHANNEL_SUSPENDED: 'channel.suspended',
+  CHANNEL_REACTIVATED: 'channel.reactivated',
+  CHANNEL_DISCONNECTED: 'channel.disconnected',
+  CHANNEL_DELETED: 'channel.deleted',
+  CHANNEL_ERROR: 'channel.error',
+  CHANNEL_MESSAGE_SENT: 'channel.message_sent',
+  CHANNEL_MESSAGE_RECEIVED: 'channel.message_received',
+  CHANNEL_MESSAGE_DELIVERED: 'channel.message_delivered',
+  CHANNEL_MESSAGE_READ: 'channel.message_read',
+  CHANNEL_MESSAGE_FAILED: 'channel.message_failed',
+
+  // Chatbot events
+  CHATBOT_FLOW_TRIGGERED: 'chatbot.flow_triggered',
+  CHATBOT_AI_REPLY_SENT: 'chatbot.ai_reply_sent',
+  CHATBOT_SESSION_COMPLETED: 'chatbot.session_completed',
+  CHATBOT_SESSION_HANDED_OFF: 'chatbot.session_handed_off',
+
+  // Developer API events
+  DEVELOPER_MESSAGE_SENT: 'developer.message_sent',
+  DEVELOPER_WEBHOOK_TRIGGERED: 'developer.webhook_triggered',
+
+  // Chat Widget events (Phase 4)
+  WIDGET_CONFIG_UPDATED: 'widget.config_updated',
+  WIDGET_MESSAGE_RECEIVED: 'widget.message_received',
+
+  // Deal events
+  DEAL_AUTO_CREATED: 'deals.auto_created',
+  PURCHASE_INTENT_DETECTED: 'ai.purchase_intent_detected',
+
+  // Product events
+  CONTACT_PRODUCT_ASSIGNED: 'product.contact_assigned',
+  CONTACT_PRODUCT_REMOVED: 'product.contact_removed',
+  PRODUCT_CREATED: 'product.created',
+  PRODUCT_UPDATED: 'product.updated',
+  PRODUCT_DELETED: 'product.deleted',
+
+  // Knowledge Base events
+  KB_ARTICLE_PUBLISHED: 'kb.article.published',
+  KB_ARTICLE_DELETED: 'kb.article.deleted',
+
+  // Shopify events
+  SHOPIFY_ORDER_CREATED: 'shopify.order_created',
+  SHOPIFY_ORDER_FULFILLED: 'shopify.order_fulfilled',
+  SHOPIFY_CART_ABANDONED: 'shopify.cart_abandoned',
+
+  // SLA Tracking events (EPIC 15)
+  SLA_POLICY_CREATED: 'sla.policy_created',
+  SLA_POLICY_UPDATED: 'sla.policy_updated',
+  SLA_POLICY_DELETED: 'sla.policy_deleted',
+  SLA_TRACKING_STARTED: 'sla.tracking_started',
+  SLA_WARNING_TRIGGERED: 'sla.warning_triggered',
+  SLA_BREACH_DETECTED: 'sla.breach_detected',
+  SLA_BREACH_ACKNOWLEDGED: 'sla.breach_acknowledged',
+  SLA_BREACH_RESOLVED: 'sla.breach_resolved',
+  SLA_ESCALATION_TRIGGERED: 'sla.escalation_triggered',
 } as const;
 
 export const WHATSAPP_CONFIG = {
   QR_REFRESH_INTERVAL_MS: 25_000,
   HEARTBEAT_INTERVAL_MS: 30_000,
-  DISCONNECT_DETECTION_TIMEOUT_MS: 60_000,
-  MAX_RECONNECT_ATTEMPTS: 5,
+  DISCONNECT_DETECTION_TIMEOUT_MS: 120_000, // 2 min — phone must miss 4 heartbeats before stale
+  MAX_RECONNECT_ATTEMPTS: 15,               // ~46h total window with exponential backoff
   RECONNECT_DELAY_MS: 5_000,
   MAX_MESSAGE_RETRY_COUNT: 3,
   MESSAGE_RETRY_DELAY_SECONDS: 5,
@@ -404,4 +501,102 @@ export const METRIC_NAMES = {
   ACTIVE_WHATSAPP_SESSIONS: 'active_wa_sessions',
   DB_QUERY_TIME: 'db_query_time',
   ERROR_RATE: 'error_rate',
+} as const;
+
+export const SLA_CONFIG = {
+  /** How often the SLA breach checker runs (seconds) */
+  BREACH_CHECK_INTERVAL_SECONDS: 30,
+  /** Worker concurrency for SLA evaluation */
+  WORKER_CONCURRENCY: 3,
+  /** Max SLA policies per organization */
+  MAX_POLICIES_PER_ORG: 50,
+  /** Breach check batch size (conversations per run) */
+  BREACH_CHECK_BATCH_SIZE: 500,
+  /** Minimum threshold value (ms) — 10 seconds */
+  MIN_THRESHOLD_MS: 10_000,
+  /** Maximum threshold value (ms) — 7 days */
+  MAX_THRESHOLD_MS: 604_800_000,
+  /** Escalation cooldown (seconds) — prevent escalation storms */
+  ESCALATION_COOLDOWN_SECONDS: 300,
+  /** SLA tracking retention days */
+  TRACKING_RETENTION_DAYS: 365,
+  /** Max escalation levels per policy */
+  MAX_ESCALATION_LEVELS: 5,
+} as const;
+
+export const LEAD_ADS_CONFIG = {
+  /** Worker concurrency for lead ad processing */
+  WORKER_CONCURRENCY: 5,
+  /** Max retries for failed lead processing */
+  MAX_RETRY_COUNT: 3,
+  /** Retry base delay (seconds) for exponential backoff */
+  RETRY_BASE_DELAY_SECONDS: 10,
+  /** Meta Graph API version */
+  GRAPH_API_VERSION: 'v19.0',
+  /** Meta Graph API base URL */
+  GRAPH_API_BASE_URL: 'https://graph.facebook.com',
+  /** Timeout for fetching lead data from Meta (ms) */
+  LEAD_FETCH_TIMEOUT_MS: 15_000,
+  /** Deduplication window (hours) */
+  DEDUP_WINDOW_HOURS: 24,
+} as const;
+
+export const CHANNEL_CONFIG = {
+  /** Max channels per organization */
+  MAX_CHANNELS_PER_ORG: 20,
+  /** Default rate limit per minute for new channels */
+  DEFAULT_RATE_LIMIT_PER_MIN: 60,
+  /** Worker concurrency for channel message sending */
+  WORKER_CONCURRENCY: 5,
+  /** Channel health check interval (seconds) */
+  HEALTH_CHECK_INTERVAL_SECONDS: 300,
+  /** Consecutive failures before auto-suspending channel */
+  AUTO_SUSPEND_THRESHOLD: 3,
+  /** Provider API timeout (ms) */
+  PROVIDER_TIMEOUT_MS: 30_000,
+  /** Max retries for channel messages */
+  MAX_RETRY_COUNT: 3,
+  /** Retry base delay (seconds) for exponential backoff */
+  RETRY_BASE_DELAY_SECONDS: 5,
+  /** Maximum backoff delay cap (seconds) */
+  RETRY_MAX_DELAY_SECONDS: 300,
+  /** Rate limit window cleanup interval (hours) */
+  RATE_LIMIT_CLEANUP_INTERVAL_HOURS: 1,
+  /** Channel config encryption algorithm */
+  ENCRYPTION_ALGORITHM: 'aes-256-gcm',
+} as const;
+
+export const DEVELOPER_API_CONFIG = {
+  /** Default rate limit per minute for developer API */
+  RATE_LIMIT_PER_MINUTE: 60,
+  /** Max webhooks per developer org */
+  MAX_WEBHOOKS_PER_ORG: 10,
+  /** Default page size for API responses */
+  DEFAULT_PAGE_SIZE: 20,
+  /** Max page size for API responses */
+  MAX_PAGE_SIZE: 100,
+  /** Webhook events that developers can subscribe to */
+  AVAILABLE_WEBHOOK_EVENTS: [
+    'message.received',
+    'message.status',
+    'message.sent',
+    'message.delivered',
+    'message.read',
+    'message.failed',
+  ],
+} as const;
+
+export const ANALYTICS_CONFIG = {
+  /** How many days of data to retain in analytics tables */
+  RETENTION_DAYS: 365,
+  /** Hourly aggregation runs 5 minutes after each hour */
+  HOURLY_CRON: '5 * * * *',
+  /** Daily aggregation runs at 00:15 UTC */
+  DAILY_CRON: '15 0 * * *',
+  /** Cleanup runs once daily at 03:00 UTC */
+  CLEANUP_CRON: '0 3 * * *',
+  /** Max date range allowed for custom queries (days) */
+  MAX_QUERY_RANGE_DAYS: 90,
+  /** Backfill batch size (days per job) */
+  BACKFILL_BATCH_DAYS: 7,
 } as const;

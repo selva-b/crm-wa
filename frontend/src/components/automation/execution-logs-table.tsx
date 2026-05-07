@@ -1,8 +1,18 @@
 "use client";
 
-import { ScrollText } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ScrollText, ChevronDown, ChevronRight } from "lucide-react";
+import { useState, Fragment } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
+import {
+  Table,
+  TableHeader,
+  TableHeaderRow,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { ExecutionStatusBadge } from "./execution-status-badge";
 import { TriggerTypeLabel } from "./trigger-type-label";
 import type { AutomationExecutionLog } from "@/lib/types/automation";
@@ -37,26 +47,38 @@ export function ExecutionLogsTable({
   isLoading,
   onPageChange,
 }: ExecutionLogsTableProps) {
-  const currentPage = Math.floor(skip / take);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const currentPage = Math.floor(skip / take) + 1;
   const totalPages = Math.ceil(total / take);
 
   if (isLoading) {
     return (
-      <div className="space-y-0">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 px-4 py-3.5 border-b border-outline-variant/10"
-          >
-            <div className="flex-1 space-y-1.5">
-              <div className="h-3.5 w-40 rounded bg-surface-container animate-pulse" />
-              <div className="h-3 w-28 rounded bg-surface-container animate-pulse" />
-            </div>
-            <div className="h-5 w-16 rounded-full bg-surface-container animate-pulse" />
-            <div className="h-3.5 w-24 rounded bg-surface-container animate-pulse" />
-          </div>
-        ))}
-      </div>
+      <Table>
+        <TableHeader>
+          <TableHeaderRow>
+            <TableHead>Rule</TableHead>
+            <TableHead>Trigger</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Duration</TableHead>
+            <TableHead>Executed At</TableHead>
+            <TableHead align="center">Retries</TableHead>
+          </TableHeaderRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <TableRow key={i}>
+              <TableCell>
+                <div className="h-3.5 w-40 rounded bg-surface-container-high animate-pulse" />
+              </TableCell>
+              <TableCell><div className="h-5 w-24 rounded-full bg-surface-container-high animate-pulse" /></TableCell>
+              <TableCell><div className="h-5 w-20 rounded-full bg-surface-container-high animate-pulse" /></TableCell>
+              <TableCell><div className="h-3.5 w-12 rounded bg-surface-container-high animate-pulse" /></TableCell>
+              <TableCell><div className="h-3.5 w-32 rounded bg-surface-container-high animate-pulse" /></TableCell>
+              <TableCell align="center"><div className="h-3.5 w-6 rounded bg-surface-container-high animate-pulse mx-auto" /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     );
   }
 
@@ -72,85 +94,112 @@ export function ExecutionLogsTable({
 
   return (
     <div>
-      {/* Header */}
-      <div className="grid grid-cols-[1fr_120px_80px_80px_140px_80px] gap-2 px-4 py-2.5 text-[11px] font-medium text-on-surface-variant uppercase tracking-wide border-b border-outline-variant/15">
-        <span>Rule</span>
-        <span>Trigger</span>
-        <span>Status</span>
-        <span>Duration</span>
-        <span>Executed At</span>
-        <span>Retries</span>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableHeaderRow>
+            <TableHead>Rule</TableHead>
+            <TableHead>Trigger</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Duration</TableHead>
+            <TableHead>Executed At</TableHead>
+            <TableHead align="center">Retries</TableHead>
+          </TableHeaderRow>
+        </TableHeader>
+        <TableBody>
+          {logs.map((log) => {
+            const isExpanded = expandedId === log.id;
+            const hasDetail = !!(log.error || (log.actionResults && log.actionResults.length > 0));
 
-      {/* Rows */}
-      {logs.map((log) => (
-        <div
-          key={log.id}
-          className="grid grid-cols-[1fr_120px_80px_80px_140px_80px] gap-2 items-center px-4 py-3.5 border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors"
-        >
-          {/* Rule name */}
-          <div className="min-w-0">
-            <p className="text-[13px] font-medium text-on-surface truncate">
-              {log.rule.name}
-            </p>
-            {log.error && (
-              <p className="text-[11px] text-error/80 truncate">{log.error}</p>
-            )}
-          </div>
+            return (
+              <Fragment key={log.id}>
+                <TableRow
+                  onClick={() => hasDetail && setExpandedId(isExpanded ? null : log.id)}
+                  className={hasDetail ? "cursor-pointer" : undefined}
+                >
+                  {/* Rule name + expand chevron */}
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {hasDetail && (
+                        <span className="text-on-surface-variant/40 flex-shrink-0">
+                          {isExpanded
+                            ? <ChevronDown className="h-3.5 w-3.5" />
+                            : <ChevronRight className="h-3.5 w-3.5" />
+                          }
+                        </span>
+                      )}
+                      <p className="text-[13px] font-medium text-on-surface truncate">
+                        {log.rule.name}
+                      </p>
+                    </div>
+                  </TableCell>
 
-          {/* Trigger type */}
-          <div>
-            <TriggerTypeLabel triggerType={log.rule.triggerType} />
-          </div>
+                  {/* Trigger type */}
+                  <TableCell>
+                    <TriggerTypeLabel triggerType={log.rule.triggerType} />
+                  </TableCell>
 
-          {/* Status */}
-          <div>
-            <ExecutionStatusBadge status={log.status} />
-          </div>
+                  {/* Status */}
+                  <TableCell>
+                    <ExecutionStatusBadge status={log.status} />
+                  </TableCell>
 
-          {/* Duration */}
-          <span className="text-[12px] text-on-surface-variant tabular-nums">
-            {formatDuration(log.executionTimeMs)}
-          </span>
+                  {/* Duration */}
+                  <TableCell>
+                    <span className="text-[12px] text-on-surface-variant tabular-nums">
+                      {formatDuration(log.executionTimeMs)}
+                    </span>
+                  </TableCell>
 
-          {/* Executed at */}
-          <span className="text-[12px] text-on-surface-variant tabular-nums">
-            {log.startedAt ? formatDate(log.startedAt) : formatDate(log.createdAt)}
-          </span>
+                  {/* Executed at */}
+                  <TableCell>
+                    <span className="text-[12px] text-on-surface-variant tabular-nums">
+                      {log.startedAt ? formatDate(log.startedAt) : formatDate(log.createdAt)}
+                    </span>
+                  </TableCell>
 
-          {/* Retry count */}
-          <span className="text-[12px] text-on-surface-variant tabular-nums">
-            {log.retryCount}
-          </span>
-        </div>
-      ))}
+                  {/* Retry count */}
+                  <TableCell align="center">
+                    <span className="text-[12px] text-on-surface-variant tabular-nums">
+                      {log.retryCount}
+                    </span>
+                  </TableCell>
+                </TableRow>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3">
-          <p className="text-[12px] text-on-surface-variant/60">
-            {skip + 1}–{Math.min(skip + take, total)} of {total}
-          </p>
-          <div className="flex gap-1.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 0}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages - 1}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+                {/* Expanded detail row */}
+                {isExpanded && hasDetail && (
+                  <tr key={`${log.id}-detail`} className="bg-surface-container/30">
+                    <td colSpan={6} className="px-5 py-3">
+                      {log.error && (
+                        <div className="mb-2">
+                          <p className="text-[11px] font-medium text-error uppercase tracking-wide mb-1">Error</p>
+                          <p className="text-[12px] text-error/80 font-mono bg-error/5 rounded-lg px-3 py-2 whitespace-pre-wrap break-words">
+                            {log.error}
+                          </p>
+                        </div>
+                      )}
+                      {log.actionResults && log.actionResults.length > 0 && (
+                        <div>
+                          <p className="text-[11px] font-medium text-on-surface-variant uppercase tracking-wide mb-1">Action Results</p>
+                          <pre className="text-[11px] text-on-surface-variant font-mono bg-surface-container-high rounded-lg px-3 py-2 overflow-x-auto whitespace-pre-wrap break-words">
+                            {JSON.stringify(log.actionResults, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </TableBody>
+      </Table>
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        total={total}
+        onPageChange={(p) => onPageChange(p - 1)}
+      />
     </div>
   );
 }

@@ -39,8 +39,10 @@ export interface ListContactsOptions {
   skip?: number;
   leadStatus?: LeadStatus;
   ownerId?: string;
+  ownerIds?: string[];
   source?: ContactSource;
   tagIds?: string[];
+  productIds?: string[];
   search?: string;
   sortBy?: 'createdAt' | 'updatedAt' | 'name';
   sortOrder?: 'asc' | 'desc';
@@ -139,8 +141,7 @@ export class ContactRepository {
           now(),
           now()
         )
-        ON CONFLICT (org_id, phone_number, deleted_at)
-          WHERE deleted_at IS NULL
+        ON CONFLICT (org_id, phone_number) WHERE deleted_at IS NULL
         DO NOTHING
         RETURNING id
       `;
@@ -264,11 +265,18 @@ export class ContactRepository {
       mergedIntoId: null, // Exclude merged contacts from listings
       ...(options.leadStatus && { leadStatus: options.leadStatus }),
       ...(options.ownerId && { ownerId: options.ownerId }),
+      ...(options.ownerIds && { ownerId: { in: options.ownerIds } }),
       ...(options.source && { source: options.source }),
       ...(options.tagIds &&
         options.tagIds.length > 0 && {
           contactTags: {
             some: { tagId: { in: options.tagIds } },
+          },
+        }),
+      ...(options.productIds &&
+        options.productIds.length > 0 && {
+          contactProducts: {
+            some: { productId: { in: options.productIds } },
           },
         }),
       ...(options.search && {
@@ -311,6 +319,10 @@ export class ContactRepository {
           contactTags: {
             include: { tag: true },
             where: { tag: { deletedAt: null } },
+          },
+          contactProducts: {
+            include: { product: { select: { id: true, name: true, status: true } } },
+            where: { product: { deletedAt: null } },
           },
           _count: {
             select: { notes: { where: { deletedAt: null } } },

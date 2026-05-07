@@ -1,12 +1,23 @@
 "use client";
 
-import { Users } from "lucide-react";
+import { Users, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pagination } from "@/components/ui/pagination";
+import {
+  Table,
+  TableHeader,
+  TableHeaderRow,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { LeadStatusBadge } from "./lead-status-badge";
-import type { Contact } from "@/lib/types/contacts";
+import { LeadScoreBadge } from "./lead-score-badge";
+import type { Contact, ContactSource } from "@/lib/types/contacts";
 
 interface ContactsTableProps {
   contacts: Contact[];
@@ -18,6 +29,19 @@ interface ContactsTableProps {
   onPageChange: (page: number) => void;
   onCreateClick: () => void;
 }
+
+const SOURCE_LABELS: Record<ContactSource, string> = {
+  WHATSAPP: "WhatsApp",
+  INSTAGRAM: "Instagram",
+  FACEBOOK: "Facebook",
+  EMAIL: "Email",
+  MANUAL: "Manual",
+  IMPORT: "Import",
+  API: "API",
+  FACEBOOK_LEAD_AD: "FB Lead Ad",
+  INSTAGRAM_LEAD_AD: "IG Lead Ad",
+  WHATSAPP_LEAD_AD: "WA Lead Ad",
+};
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -42,7 +66,7 @@ export function ContactsTable({
   onPageChange,
   onCreateClick,
 }: ContactsTableProps) {
-  const currentPage = Math.floor(skip / take);
+  const currentPage = Math.floor(skip / take) + 1;
   const totalPages = Math.ceil(total / take);
 
   if (isLoading) {
@@ -51,7 +75,7 @@ export function ContactsTable({
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 px-4 py-3 border-b border-outline-variant/10"
+            className="flex items-center gap-4 px-5 py-3 border-b border-outline-variant/10"
           >
             <div className="h-9 w-9 rounded-full bg-surface-container animate-pulse" />
             <div className="flex-1 space-y-1.5">
@@ -82,100 +106,123 @@ export function ContactsTable({
 
   return (
     <div>
-      {/* Header */}
-      <div className="grid grid-cols-[1fr_100px_120px_140px_80px_90px] gap-2 px-4 py-2.5 text-[11px] font-medium text-on-surface-variant uppercase tracking-wide border-b border-outline-variant/15">
-        <span>Contact</span>
-        <span>Status</span>
-        <span>Owner</span>
-        <span>Tags</span>
-        <span>Source</span>
-        <span>Created</span>
-      </div>
-
-      {/* Rows */}
-      {contacts.map((contact) => (
-        <button
-          key={contact.id}
-          onClick={() => onRowClick(contact.id)}
-          className="w-full grid grid-cols-[1fr_100px_120px_140px_80px_90px] gap-2 items-center px-4 py-3 text-left border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors cursor-pointer"
-        >
-          {/* Name + Phone */}
-          <div className="flex items-center gap-3 min-w-0">
-            <Avatar
-              name={contact.name || contact.phoneNumber}
-              src={contact.avatarUrl}
-              size="sm"
-            />
-            <div className="min-w-0">
-              <p className="text-[13px] font-medium text-on-surface truncate">
-                {contact.name || "Unknown"}
-              </p>
-              <p className="text-[11px] text-on-surface-variant/60 truncate">
-                {contact.phoneNumber}
-              </p>
-            </div>
-          </div>
-
-          {/* Status */}
-          <div>
-            <LeadStatusBadge status={contact.leadStatus} />
-          </div>
-
-          {/* Owner */}
-          <p className="text-[12px] text-on-surface-variant truncate">
-            {contact.owner.firstName} {contact.owner.lastName}
-          </p>
-
-          {/* Tags */}
-          <div className="flex gap-1 overflow-hidden">
-            {contact.contactTags.slice(0, 2).map((ct) => (
-              <Badge key={ct.id} variant="muted">
-                {ct.tag.name}
-              </Badge>
-            ))}
-            {contact.contactTags.length > 2 && (
-              <span className="text-[11px] text-on-surface-variant/50">
-                +{contact.contactTags.length - 2}
-              </span>
-            )}
-          </div>
-
-          {/* Source */}
-          <Badge variant="default">{contact.source}</Badge>
-
-          {/* Created */}
-          <span className="text-[11px] text-on-surface-variant/60">
-            {timeAgo(contact.createdAt)}
-          </span>
-        </button>
-      ))}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3">
-          <p className="text-[12px] text-on-surface-variant/60">
-            {skip + 1}–{Math.min(skip + take, total)} of {total}
-          </p>
-          <div className="flex gap-1.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 0}
+      <Table>
+        <TableHeader>
+          <TableHeaderRow>
+            <TableHead>Contact</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Score</TableHead>
+            <TableHead>Owner</TableHead>
+            <TableHead>Tags</TableHead>
+            <TableHead>Products</TableHead>
+            <TableHead>Source</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead align="right"></TableHead>
+          </TableHeaderRow>
+        </TableHeader>
+        <TableBody>
+          {contacts.map((contact) => (
+            <TableRow
+              key={contact.id}
+              className="cursor-pointer"
+              onClick={() => onRowClick(contact.id)}
             >
-              Previous
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages - 1}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+              <TableCell>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar
+                    name={contact.name || contact.phoneNumber}
+                    src={contact.avatarUrl}
+                    size="sm"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-medium text-on-surface truncate">
+                      {contact.name || "Unknown"}
+                    </p>
+                    <p className="text-[11px] text-on-surface-variant/60 truncate">
+                      {contact.phoneNumber}
+                    </p>
+                  </div>
+                </div>
+              </TableCell>
+
+              <TableCell className="text-[12px] text-on-surface-variant truncate max-w-[180px]">
+                {contact.email || "—"}
+              </TableCell>
+
+              <TableCell>
+                <LeadStatusBadge status={contact.leadStatus} />
+              </TableCell>
+
+              <TableCell>
+                <LeadScoreBadge score={contact.leadScore} />
+              </TableCell>
+
+              <TableCell className="text-[12px] text-on-surface-variant truncate">
+                {contact.owner.firstName} {contact.owner.lastName}
+              </TableCell>
+
+              <TableCell>
+                <div className="flex gap-1 overflow-hidden">
+                  {contact.contactTags.slice(0, 2).map((ct) => (
+                    <Badge key={ct.id} variant="muted">
+                      {ct.tag.name}
+                    </Badge>
+                  ))}
+                  {contact.contactTags.length > 2 && (
+                    <span className="text-[11px] text-on-surface-variant/50">
+                      +{contact.contactTags.length - 2}
+                    </span>
+                  )}
+                </div>
+              </TableCell>
+
+              <TableCell>
+                <div className="flex gap-1 overflow-hidden">
+                  {(contact.contactProducts || []).slice(0, 2).map((cp) => (
+                    <Badge key={cp.product.id} variant="info">
+                      {cp.product.name}
+                    </Badge>
+                  ))}
+                  {(contact.contactProducts || []).length > 2 && (
+                    <span className="text-[11px] text-on-surface-variant/50">
+                      +{(contact.contactProducts || []).length - 2}
+                    </span>
+                  )}
+                </div>
+              </TableCell>
+
+              <TableCell>
+                <Badge variant="default">
+                  {SOURCE_LABELS[contact.source] ?? contact.source}
+                </Badge>
+              </TableCell>
+
+              <TableCell className="text-[11px] text-on-surface-variant/60">
+                {timeAgo(contact.createdAt)}
+              </TableCell>
+
+              <TableCell>
+                <Link
+                  href={`/contacts/${contact.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors inline-flex"
+                  title="View full profile"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        total={total}
+        onPageChange={(p) => onPageChange(p - 1)}
+      />
     </div>
   );
 }

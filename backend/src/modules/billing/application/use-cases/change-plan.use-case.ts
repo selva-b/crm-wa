@@ -118,6 +118,9 @@ export class ChangePlanUseCase {
       [UsageMetricType.ACTIVE_USERS]: newPlan.maxUsers,
       [UsageMetricType.WHATSAPP_SESSIONS]: newPlan.maxWhatsappSessions,
       [UsageMetricType.CAMPAIGN_EXECUTIONS]: newPlan.maxCampaignsPerMonth,
+      [UsageMetricType.API_CALLS]: newPlan.maxMessagesPerMonth,
+      [UsageMetricType.AI_CREDITS]: newPlan.aiCreditsPerMonth,
+      [UsageMetricType.MESSAGE_TEMPLATES]: newPlan.maxMessageTemplates,
     };
 
     await this.usageRepo.resetUsageForOrg(

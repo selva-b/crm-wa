@@ -28,7 +28,9 @@ export class TokenService {
     this.refreshExpiry = this.configService.get<StringValue>('jwt.refreshExpiry', '7d');
   }
 
-  async generateTokenPair(payload: JwtPayload): Promise<TokenPair> {
+  async generateTokenPair(payload: JwtPayload, rememberMe = false): Promise<TokenPair> {
+    const refreshExpiry: StringValue = rememberMe ? '30d' : '1d';
+
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         { sub: payload.sub, orgId: payload.orgId, role: payload.role, email: payload.email },
@@ -36,7 +38,7 @@ export class TokenService {
       ),
       this.jwtService.signAsync(
         { sub: payload.sub, orgId: payload.orgId, type: 'refresh' },
-        { secret: this.refreshSecret, expiresIn: this.refreshExpiry },
+        { secret: this.refreshSecret, expiresIn: refreshExpiry },
       ),
     ]);
 
@@ -50,6 +52,13 @@ export class TokenService {
   async verifyAccessToken(token: string): Promise<JwtPayload> {
     return this.jwtService.verifyAsync<JwtPayload>(token, {
       secret: this.accessSecret,
+    });
+  }
+
+  async verifySuperAdminToken(token: string): Promise<JwtPayload> {
+    const superAdminSecret = this.configService.getOrThrow<string>('jwt.superAdminSecret');
+    return this.jwtService.verifyAsync<JwtPayload>(token, {
+      secret: superAdminSecret,
     });
   }
 
@@ -81,8 +90,8 @@ export class TokenService {
     }
   }
 
-  getRefreshExpiryDate(): Date {
-    const seconds = this.parseExpiryToSeconds(this.refreshExpiry);
-    return new Date(Date.now() + seconds * 1000);
+  getRefreshExpiryDate(rememberMe = false): Date {
+    const expiry = rememberMe ? '30d' : '1d';
+    return new Date(Date.now() + this.parseExpiryToSeconds(expiry) * 1000);
   }
 }

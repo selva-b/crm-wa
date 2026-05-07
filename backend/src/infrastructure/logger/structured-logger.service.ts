@@ -23,7 +23,7 @@ export class StructuredLogger implements LoggerService {
     this.logger = winston.createLogger({
       level: process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug'),
       defaultMeta: {
-        service: 'crm-wa-backend',
+        service: 'wazelo-backend',
         pid: process.pid,
         hostname: process.env.HOSTNAME || 'unknown',
       },

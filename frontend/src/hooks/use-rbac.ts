@@ -27,6 +27,7 @@ export function useRolePermissions() {
   return useQuery({
     queryKey: ["rbac", "role-permissions"],
     queryFn: () => rbacApi.getRolePermissions(),
+    staleTime: 0,
   });
 }
 
@@ -38,7 +39,7 @@ export function useUpdateRolePermissions() {
     mutationFn: (data: UpdateRolePermissionsRequest) =>
       rbacApi.updateRolePermissions(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rbac", "role-permissions"] });
+      queryClient.refetchQueries({ queryKey: ["rbac", "role-permissions"] });
     },
   });
 }
@@ -55,7 +56,7 @@ export function useTogglePermission() {
       granted: boolean;
     }) => (granted ? rbacApi.assignPermission(data) : rbacApi.revokePermission(data)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rbac", "role-permissions"] });
+      queryClient.refetchQueries({ queryKey: ["rbac", "role-permissions"] });
     },
   });
 }

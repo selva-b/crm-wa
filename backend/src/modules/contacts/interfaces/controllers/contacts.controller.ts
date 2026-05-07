@@ -11,8 +11,9 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import {
@@ -45,6 +46,8 @@ import {
   RemoveTagUseCase,
   GetContactHistoryUseCase,
 } from '../../application/use-cases';
+import { ExportContactsUseCase } from '../../application/use-cases/export-contacts.use-case';
+import { ImportContactsUseCase } from '../../application/use-cases/import-contacts.use-case';
 import { ContactRepository } from '../../infrastructure/repositories/contact.repository';
 
 @Controller('contacts')
@@ -64,6 +67,8 @@ export class ContactsController {
     private readonly removeTagUseCase: RemoveTagUseCase,
     private readonly getContactHistoryUseCase: GetContactHistoryUseCase,
     private readonly contactRepository: ContactRepository,
+    private readonly exportContactsUseCase: ExportContactsUseCase,
+    private readonly importContactsUseCase: ImportContactsUseCase,
   ) {}
 
   // ───── Contact CRUD ─────
@@ -90,7 +95,28 @@ export class ContactsController {
     @CurrentUser() user: JwtPayload,
     @Query() query: ListContactsQueryDto,
   ) {
-    return this.listContactsUseCase.execute(user.orgId, query);
+    return this.listContactsUseCase.execute(user.orgId, user.sub, user.role, query);
+  }
+
+  @Get('export')
+  @Permissions(PERMISSIONS.CONTACTS_EXPORT)
+  async exportContacts(
+    @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
+  ) {
+    const csv = await this.exportContactsUseCase.execute(user.orgId);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="contacts-${new Date().toISOString().split('T')[0]}.csv"`);
+    return res.send(csv);
+  }
+
+  @Post('import')
+  @Permissions(PERMISSIONS.CONTACTS_CREATE)
+  async importContacts(
+    @CurrentUser() user: JwtPayload,
+    @Body('csv') csv: string,
+  ) {
+    return this.importContactsUseCase.execute(user.orgId, user.sub, csv);
   }
 
   @Get(':contactId')

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send } from "lucide-react";
+import { Send, ShoppingBag, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useContactNotes, useAddNote } from "@/hooks/use-contacts";
 import { Spinner } from "@/components/ui/spinner";
@@ -66,19 +66,37 @@ export function ContactNotes({ contactId }: ContactNotesProps) {
         </div>
       )}
 
-      {data?.notes.map((note) => (
-        <div
-          key={note.id}
-          className="rounded-xl bg-surface-container p-3 space-y-1"
-        >
-          <p className="text-[13px] text-on-surface leading-relaxed whitespace-pre-wrap">
-            {note.content}
-          </p>
-          <p className="text-[11px] text-on-surface-variant/60">
-            {timeAgo(note.createdAt)}
-          </p>
-        </div>
-      ))}
+      {data?.notes.map((note) => {
+        const isShopifyOrder = note.content.startsWith("Shopify order");
+        const isShopifyCart = note.content.startsWith("Shopify abandoned cart");
+        const isShopify = isShopifyOrder || isShopifyCart;
+
+        return (
+          <div
+            key={note.id}
+            className={`rounded-xl p-3 space-y-1 ${isShopify ? "bg-[#96bf48]/10 border border-[#96bf48]/20" : "bg-surface-container"}`}
+          >
+            {isShopify && (
+              <div className="flex items-center gap-1.5 mb-1">
+                {isShopifyCart ? (
+                  <ShoppingCart className="h-3 w-3 text-[#96bf48]" />
+                ) : (
+                  <ShoppingBag className="h-3 w-3 text-[#96bf48]" />
+                )}
+                <span className="text-[10px] font-semibold text-[#96bf48] uppercase tracking-wide">
+                  {isShopifyCart ? "Abandoned Cart" : "Shopify Order"}
+                </span>
+              </div>
+            )}
+            <p className="text-[13px] text-on-surface leading-relaxed whitespace-pre-wrap">
+              {note.content}
+            </p>
+            <p className="text-[11px] text-on-surface-variant/60">
+              {timeAgo(note.createdAt)}
+            </p>
+          </div>
+        );
+      })}
 
       {data && data.notes.length === 0 && (
         <p className="text-center text-[13px] text-on-surface-variant/50 py-4">

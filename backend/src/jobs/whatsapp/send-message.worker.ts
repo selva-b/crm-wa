@@ -176,6 +176,17 @@ export class SendMessageWorker implements OnModuleInit {
           message.contactPhone,
           message.body!,
         );
+      } else if (message.type === 'INTERACTIVE') {
+        const payload = message.interactivePayload as Record<string, unknown>;
+        if (!payload) {
+          await this.handleFailure(message, jobId, 'Interactive payload missing', false);
+          return;
+        }
+        result = await this.whatsappApi.sendInteractiveMessage(
+          sessionId,
+          message.contactPhone,
+          payload,
+        );
       } else {
         result = await this.whatsappApi.sendMediaMessage(
           sessionId,
@@ -207,6 +218,23 @@ export class SendMessageWorker implements OnModuleInit {
         contactPhone: message.contactPhone,
         whatsappMessageId: result.whatsappMessageId,
       });
+
+      // Enqueue SLA evaluation for outbound reply
+      if (message.conversationId) {
+        const conversation = await this.conversationRepo.findById(message.conversationId);
+        await this.queueService.publishOnce(
+          QUEUE_NAMES.SLA_EVALUATE,
+          {
+            type: 'outbound_reply',
+            orgId,
+            conversationId: message.conversationId,
+            sessionId,
+            assignedUserId: conversation?.assignedToId ?? null,
+            messageCreatedAt: new Date().toISOString(),
+          },
+          `sla:outbound:${messageId}`,
+        );
+      }
 
       this.logger.log(`Message ${messageId} sent successfully (waId=${result.whatsappMessageId})`);
     } catch (error) {

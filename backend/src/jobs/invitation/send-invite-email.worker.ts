@@ -11,6 +11,7 @@ interface InviteEmailJob {
   token: string;
   inviteUrl: string;
   orgId: string;
+  orgName?: string;
   invitationId: string;
 }
 
@@ -34,32 +35,18 @@ export class SendInviteEmailWorker implements OnModuleInit {
   }
 
   private async handleJob(data: InviteEmailJob): Promise<void> {
-    const emailContent = this.buildInviteEmail(data.to, data.role, data.inviteUrl);
+    const { subject, html } = this.emailService.buildInvitationEmail(
+      data.role,
+      data.inviteUrl,
+      data.orgName,
+    );
     await this.emailService.send({
       to: data.to,
-      subject: emailContent.subject,
-      html: emailContent.html,
+      subject,
+      html,
     });
     this.logger.log(
       `Invitation email sent to ${data.to} for org (invitation: ${data.invitationId})`,
     );
-  }
-
-  private buildInviteEmail(
-    email: string,
-    role: string,
-    inviteUrl: string,
-  ): { subject: string; html: string } {
-    return {
-      subject: "You've been invited to join CRM-WA",
-      html: `
-        <h2>You're Invited!</h2>
-        <p>You've been invited to join an organization on CRM-WA as a <strong>${role}</strong>.</p>
-        <p>Click the button below to accept your invitation and create your account:</p>
-        <p><a href="${inviteUrl}" style="padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Accept Invitation</a></p>
-        <p>This invitation expires in 48 hours.</p>
-        <p>If you didn't expect this invitation, you can safely ignore this email.</p>
-      `,
-    };
   }
 }

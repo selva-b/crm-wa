@@ -21,6 +21,7 @@ export interface CreateAutomationRuleInput {
   maxExecutionsPerContact?: number;
   cooldownSeconds?: number;
   createdById: string;
+  productId?: string;
 }
 
 export interface CreateAutomationActionInput {
@@ -74,6 +75,7 @@ export class AutomationRepository {
         maxExecutionsPerContact: input.maxExecutionsPerContact ?? 0,
         cooldownSeconds: input.cooldownSeconds ?? 0,
         createdById: input.createdById,
+        productId: input.productId ?? null,
         actions: {
           create: actions.map((a, idx) => ({
             orgId: input.orgId,
@@ -300,5 +302,15 @@ export class AutomationRepository {
       },
       orderBy: { completedAt: 'desc' },
     });
+  }
+
+  async findExecutionTriggerPayload(
+    executionId: string,
+  ): Promise<Record<string, unknown> | null> {
+    const log = await this.prisma.automationExecutionLog.findUnique({
+      where: { id: executionId },
+      select: { triggerPayload: true },
+    });
+    return (log?.triggerPayload as Record<string, unknown> | null) ?? null;
   }
 }

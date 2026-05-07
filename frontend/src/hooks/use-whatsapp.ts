@@ -22,8 +22,12 @@ export function useWhatsAppSession() {
         setSession(session);
         return session;
       } catch (err: unknown) {
-        const apiErr = err as { statusCode?: number };
-        if (apiErr.statusCode === 404) {
+        // Axios wraps the status in err.response.status; ApiError uses err.statusCode
+        const httpStatus =
+          (err as { response?: { status?: number } })?.response?.status ??
+          (err as { statusCode?: number })?.statusCode;
+        // 404 = no session exists, 403 = permissions not seeded yet — both mean "no session"
+        if (httpStatus === 404 || httpStatus === 403) {
           setSession(null);
           return null;
         }
@@ -47,7 +51,21 @@ export function useInitiateSession() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["whatsapp", "session"] });
     },
-    onError: () => setStatus("no_session"),
+    onError: (err: unknown) => {
+      // If backend says a reconnectable session exists, refetch session — it will show disconnected state
+      // with the "Reconnect" button instead of creating a duplicate
+      const body = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      if (body) {
+        try {
+          const parsed = JSON.parse(body);
+          if (parsed?.code === "SESSION_RECONNECTABLE") {
+            queryClient.invalidateQueries({ queryKey: ["whatsapp", "session"] });
+            return;
+          }
+        } catch { /* not JSON, fall through */ }
+      }
+      setStatus("no_session");
+    },
   });
 }
 
@@ -72,6 +90,21 @@ export function useRefreshQr() {
   });
 }
 
+// ─── Reconnect Existing Session (no QR needed if creds intact) ───
+export function useReconnectSession() {
+  const queryClient = useQueryClient();
+  const setStatus = useWhatsAppStore((s) => s.setStatus);
+
+  return useMutation({
+    mutationFn: (sessionId: string) => whatsappApi.reconnectSession(sessionId),
+    onMutate: () => setStatus("reconnecting"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["whatsapp", "session"] });
+    },
+    onError: () => setStatus("disconnected"),
+  });
+}
+
 // ─── Admin: List Sessions ────────────────────────────────
 export function useAdminSessions(params?: {
   status?: string;
@@ -93,6 +126,20 @@ export function useAdminForceDisconnect() {
   return useMutation({
     mutationFn: ({ userId, reason }: { userId: string; reason?: string }) =>
       whatsappApi.disconnect(reason, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["whatsapp", "admin", "sessions"],
+      });
+    },
+  });
+}
+
+// ─── Admin: Force Reconnect (by sessionId) ───────────────
+export function useAdminForceReconnect() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sessionId: string) => whatsappApi.reconnectSession(sessionId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["whatsapp", "admin", "sessions"],

@@ -53,9 +53,9 @@ export class OrgScopeInterceptor implements NestInterceptor {
 
     const userOrgId = user.orgId;
 
-    // Override orgId in request body
-    if (request.body && typeof request.body === 'object') {
-      if (request.body.orgId && request.body.orgId !== userOrgId) {
+    // Override orgId in request body (only if already present — don't inject into DTOs that don't expect it)
+    if (request.body && typeof request.body === 'object' && 'orgId' in request.body) {
+      if (request.body.orgId !== userOrgId) {
         this.logCrossTenantAttempt(request, user, request.body.orgId, 'body');
       }
       request.body.orgId = userOrgId;

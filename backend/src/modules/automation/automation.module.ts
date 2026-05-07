@@ -1,5 +1,9 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AuditModule } from '@/modules/audit/audit.module';
+import { BillingModule } from '@/modules/billing/billing.module';
+import { MessagesModule } from '@/modules/messages/messages.module';
+import { WhatsAppModule } from '@/modules/whatsapp/whatsapp.module';
+import { AiModule } from '@/modules/ai/ai.module';
 
 // Repository
 import { AutomationRepository } from './infrastructure/repositories/automation.repository';
@@ -21,12 +25,13 @@ import {
   ListExecutionLogsUseCase,
   EvaluateTriggerUseCase,
 } from './application/use-cases';
+import { GenerateAutomationRuleUseCase } from './application/use-cases/generate-automation-rule.use-case';
 
 // Controller
 import { AutomationController } from './interfaces/controllers/automation.controller';
 
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, BillingModule, AiModule, MessagesModule, WhatsAppModule],
   controllers: [AutomationController],
   providers: [
     // Repository
@@ -45,6 +50,7 @@ import { AutomationController } from './interfaces/controllers/automation.contro
     ListAutomationRulesUseCase,
     ListExecutionLogsUseCase,
     EvaluateTriggerUseCase,
+    GenerateAutomationRuleUseCase,
   ],
   exports: [
     AutomationRepository,

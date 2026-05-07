@@ -7,12 +7,14 @@ import { usePageTitle } from "@/hooks/use-page-title";
 import { useCampaigns } from "@/hooks/use-campaigns";
 import { useCampaignSocket } from "@/hooks/use-campaign-socket";
 import { useCampaignsStore } from "@/stores/campaigns-store";
-import { useWhatsAppSession } from "@/hooks/use-whatsapp";
+import { useWhatsAppSession, useAdminSessions } from "@/hooks/use-whatsapp";
+import { useAuthStore } from "@/stores/auth-store";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { CampaignsTable } from "@/components/campaigns/campaigns-table";
 import { CreateCampaignModal } from "@/components/campaigns/create-campaign-modal";
+import { useSubscription } from "@/hooks/use-billing";
 import type { CampaignStatus, ListCampaignsParams } from "@/lib/types/campaigns";
 
 const TAKE = 20;
@@ -30,21 +32,25 @@ const STATUS_TABS: { id: string; label: string }[] = [
 export default function CampaignsPage() {
   usePageTitle("Campaigns");
   useCampaignSocket();
+  const { data: subData } = useSubscription();
+  const campaignsEnabled = subData?.subscription?.plan?.campaignsEnabled ?? true;
 
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [statusTab, setStatusTab] = useState("ALL");
 
   const { searchQuery, page, setSearchQuery, setPage } = useCampaignsStore();
+  const userRole = useAuthStore((s) => s.user?.role);
   const { data: session } = useWhatsAppSession();
+  const { data: adminSessionsData } = useAdminSessions();
 
   const effectiveStatus: CampaignStatus | undefined =
     statusTab !== "ALL" ? (statusTab as CampaignStatus) : undefined;
 
   const params = useMemo<ListCampaignsParams>(
     () => ({
-      take: TAKE,
-      skip: page * TAKE,
+      page: page + 1,
+      limit: TAKE,
       status: effectiveStatus,
       sortBy: "createdAt",
       sortOrder: "desc",
@@ -69,18 +75,39 @@ export default function CampaignsPage() {
   }
 
   // Build sessions list for the create modal
-  const sessions = session
-    ? [
-        {
-          id: session.id,
-          name: session.phoneNumber || "WhatsApp Session",
-          status: session.status,
-        },
-      ]
-    : [];
+  // Admin/Manager: show all org sessions; Employee: show own session only
+  const sessions = useMemo(() => {
+    if (userRole === "ADMIN" || userRole === "MANAGER") {
+      const allSessions = adminSessionsData?.sessions ?? [];
+      return allSessions
+        .filter((s) => s.status === "CONNECTED")
+        .map((s) => ({
+          id: s.id,
+          name: `${s.phoneNumber || "Unknown"} (${(s as { user?: { firstName?: string; lastName?: string } }).user?.firstName ?? "User"})`,
+          status: s.status,
+        }));
+    }
+    // Employee: own session only
+    return session
+      ? [{ id: session.id, name: session.phoneNumber || "WhatsApp Session", status: session.status }]
+      : [];
+  }, [userRole, adminSessionsData, session]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-var(--header-height))]">
+      {/* Upgrade banner */}
+      {!campaignsEnabled && (
+        <div className="shrink-0 mx-6 mt-4 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+          <Megaphone className="h-4 w-4 shrink-0 text-amber-600" />
+          <span>
+            <strong>Campaigns</strong> are not included in your current plan.{" "}
+            <a href="/settings/billing" className="underline font-medium hover:text-amber-900">
+              Upgrade to Growth or higher
+            </a>{" "}
+            to unlock this feature.
+          </span>
+        </div>
+      )}
       {/* Header */}
       <div className="shrink-0 px-6 pt-5 pb-0 space-y-4">
         <div className="flex items-center justify-between">
@@ -120,7 +147,7 @@ export default function CampaignsPage() {
       {/* Table */}
       <div className="flex-1 overflow-y-auto">
         <CampaignsTable
-          campaigns={data?.campaigns ?? []}
+          campaigns={data?.data ?? []}
           total={data?.total ?? 0}
           take={TAKE}
           skip={page * TAKE}

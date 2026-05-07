@@ -22,6 +22,7 @@ import { EmailModule } from './infrastructure/email/email.module';
 import { WebSocketModule } from './infrastructure/websocket/websocket.module';
 import { WhatsAppApiModule } from './infrastructure/external/whatsapp/whatsapp-api.module';
 import { LoggerModule } from './infrastructure/logger/logger.module';
+import { StorageModule } from './infrastructure/storage/storage.module';
 
 // Domain modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -38,10 +39,32 @@ import { BillingModule } from './modules/billing/billing.module';
 import { ObservabilityModule } from './modules/observability/observability.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { TeamsModule } from './modules/teams/teams.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { SlaModule } from './modules/sla/sla.module';
+import { ChannelsModule } from './modules/channels/channels.module';
+import { LeadAdsModule } from './modules/lead-ads/lead-ads.module';
+import { LeadScoringModule } from './modules/lead-scoring/lead-scoring.module';
+import { SequencesModule } from './modules/sequences/sequences.module';
+import { WidgetModule } from './modules/widget/widget.module';
+import { GdprModule } from './modules/gdpr/gdpr.module';
+import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.module';
+import { CustomFieldsModule } from './modules/custom-fields/custom-fields.module';
+import { ApiKeysModule } from './modules/api-keys/api-keys.module';
+import { SearchModule } from './modules/search/search.module';
+import { CsatModule } from './modules/csat/csat.module';
+import { DealsModule } from './modules/deals/deals.module';
+import { ProductsModule } from './modules/products/products.module';
+import { AiModule } from './modules/ai/ai.module';
+import { ChatbotModule } from './modules/chatbot/chatbot.module';
+import { DeveloperApiModule } from './modules/developer-api/developer-api.module';
+import { SuperAdminModule } from './modules/super-admin/super-admin.module';
+import { ShopifyModule } from './modules/shopify/shopify.module';
 
 // Guards & Interceptors
 import { JwtAuthGuard } from './modules/auth/interfaces/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
+import { CsrfGuard } from './common/guards/csrf.guard';
 import { OrgScopeInterceptor } from './common/interceptors/org-scope.interceptor';
 import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
@@ -86,6 +109,7 @@ import { EventsModule } from './events/events.module';
     WebSocketModule,
     WhatsAppApiModule,
     LoggerModule,
+    StorageModule,
 
     // Domain modules
     AuthModule,
@@ -102,6 +126,27 @@ import { EventsModule } from './events/events.module';
     ObservabilityModule,
     NotificationsModule,
     SettingsModule,
+    TeamsModule,
+    AnalyticsModule,
+    SlaModule,
+    ChannelsModule,
+    LeadAdsModule,
+    LeadScoringModule,
+    SequencesModule,
+    WidgetModule,
+    GdprModule,
+    KnowledgeBaseModule,
+    CustomFieldsModule,
+    ApiKeysModule,
+    SearchModule,
+    CsatModule,
+    DealsModule,
+    ProductsModule,
+    AiModule,
+    ChatbotModule,
+    DeveloperApiModule,
+    SuperAdminModule,
+    ShopifyModule,
 
     // Background workers
     JobsModule,
@@ -124,6 +169,11 @@ import { EventsModule } from './events/events.module';
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
+    },
+    // Global CSRF guard — requires x-requested-with header on state-changing endpoints
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
     },
     // Global rate limit guard
     {

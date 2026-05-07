@@ -63,8 +63,8 @@ export default function CampaignDetailPage() {
       : undefined;
 
   const recipientParams: ListRecipientsParams = {
-    take: RECIPIENT_TAKE,
-    skip: recipientPage * RECIPIENT_TAKE,
+    page: recipientPage + 1,
+    limit: RECIPIENT_TAKE,
     status: recipientStatus,
   };
 
@@ -292,7 +292,7 @@ export default function CampaignDetailPage() {
 
             <div className="mt-2">
               <CampaignRecipientsTable
-                recipients={recipientsData?.recipients ?? []}
+                recipients={recipientsData?.data ?? []}
                 total={recipientsData?.total ?? 0}
                 take={RECIPIENT_TAKE}
                 skip={recipientPage * RECIPIENT_TAKE}

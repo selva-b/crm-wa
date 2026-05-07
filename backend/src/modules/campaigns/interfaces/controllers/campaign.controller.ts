@@ -10,12 +10,17 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Roles } from '@/common/decorators/roles.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
+import { FeatureFlagGuard, FEATURE_FLAG_KEY } from '@/modules/billing/interfaces/guards/feature-flag.guard';
+import { UsageLimitGuard, USAGE_LIMIT_KEY } from '@/modules/billing/interfaces/guards/usage-limit.guard';
+import { UsageMetricType } from '@prisma/client';
 import { CreateCampaignDto, AudienceFiltersDto } from '../../application/dto/create-campaign.dto';
 import { UpdateCampaignDto } from '../../application/dto/update-campaign.dto';
 import {
@@ -34,6 +39,7 @@ import { ListCampaignsUseCase } from '../../application/use-cases/list-campaigns
 import { GetCampaignAnalyticsUseCase } from '../../application/use-cases/get-campaign-analytics.use-case';
 import { PreviewAudienceUseCase } from '../../application/use-cases/preview-audience.use-case';
 import { CampaignRecipientRepository } from '../../infrastructure/repositories/campaign-recipient.repository';
+import { GenerateCampaignCopyUseCase, GenerateCampaignCopyDto } from '../../application/use-cases/generate-campaign-copy.use-case';
 
 @Controller('campaigns')
 export class CampaignController {
@@ -50,11 +56,14 @@ export class CampaignController {
     private readonly getCampaignAnalyticsUseCase: GetCampaignAnalyticsUseCase,
     private readonly previewAudienceUseCase: PreviewAudienceUseCase,
     private readonly recipientRepo: CampaignRecipientRepository,
+    private readonly generateCampaignCopyUseCase: GenerateCampaignCopyUseCase,
   ) {}
 
   @Post()
   @Roles('ADMIN', 'MANAGER')
   @Permissions(PERMISSIONS.CAMPAIGNS_CREATE)
+  @UseGuards(FeatureFlagGuard)
+  @SetMetadata(FEATURE_FLAG_KEY, 'campaigns')
   @HttpCode(HttpStatus.CREATED)
   async createCampaign(
     @Body() dto: CreateCampaignDto,
@@ -112,6 +121,9 @@ export class CampaignController {
   @Post(':id/execute')
   @Roles('ADMIN', 'MANAGER')
   @Permissions(PERMISSIONS.CAMPAIGNS_EXECUTE)
+  @UseGuards(FeatureFlagGuard, UsageLimitGuard)
+  @SetMetadata(FEATURE_FLAG_KEY, 'campaigns')
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.CAMPAIGN_EXECUTIONS)
   @HttpCode(HttpStatus.OK)
   async executeCampaign(
     @Param('id', ParseUUIDPipe) id: string,
@@ -130,6 +142,8 @@ export class CampaignController {
   @Post(':id/schedule')
   @Roles('ADMIN', 'MANAGER')
   @Permissions(PERMISSIONS.CAMPAIGNS_EXECUTE)
+  @UseGuards(FeatureFlagGuard)
+  @SetMetadata(FEATURE_FLAG_KEY, 'campaigns')
   @HttpCode(HttpStatus.OK)
   async scheduleCampaign(
     @Param('id', ParseUUIDPipe) id: string,
@@ -238,6 +252,20 @@ export class CampaignController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.getCampaignAnalyticsUseCase.execute(id, user.orgId);
+  }
+
+  @Post('generate-copy')
+  @Roles('ADMIN', 'MANAGER')
+  @Permissions(PERMISSIONS.CAMPAIGNS_CREATE)
+  @UseGuards(FeatureFlagGuard, UsageLimitGuard)
+  @SetMetadata(FEATURE_FLAG_KEY, 'campaigns')
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.AI_CREDITS)
+  @HttpCode(HttpStatus.OK)
+  async generateCopy(
+    @Body() dto: GenerateCampaignCopyDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.generateCampaignCopyUseCase.execute(user.orgId, dto);
   }
 
   @Post('preview-audience')

@@ -21,11 +21,13 @@ export function AssignOwnerModal({
 }: AssignOwnerModalProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [error, setError] = useState("");
   const assignContact = useAssignContact();
   const { data: members } = useOrgMembers();
 
   function handleAssign() {
-    if (!selectedId) return;
+    if (!selectedId) { setError("Please select a team member to assign."); return; }
+    setError("");
     assignContact.mutate(
       {
         contactId,
@@ -36,8 +38,10 @@ export function AssignOwnerModal({
         onSuccess: () => {
           setSelectedId(null);
           setReason("");
+          setError("");
           onClose();
         },
+        onError: (err) => setError((err as Error).message || "Failed to assign owner."),
       },
     );
   }
@@ -116,6 +120,12 @@ export function AssignOwnerModal({
             className="w-full rounded-xl bg-surface-container-low px-3 py-2 text-[13px] text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:ring-1 focus:ring-primary/40 resize-none"
           />
         </div>
+
+        {error && (
+          <p className="text-[12px] text-error bg-error/8 border border-error/15 px-3 py-2 rounded-lg mt-3">
+            {error}
+          </p>
+        )}
 
         <div className="flex gap-2 mt-4">
           <Button variant="secondary" onClick={onClose} className="flex-1">

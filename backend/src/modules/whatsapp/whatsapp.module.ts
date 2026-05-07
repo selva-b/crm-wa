@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { AuditModule } from '@/modules/audit/audit.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
+import { BillingModule } from '@/modules/billing/billing.module';
 
 // Domain services
 import { WhatsAppSessionService } from './domain/services/session.service';
@@ -16,6 +17,7 @@ import {
   ListSessionsUseCase,
   GetSessionUseCase,
   RefreshQrUseCase,
+  ReconnectSessionUseCase,
   HandleSessionEventUseCase,
   HandleIncomingMessageUseCase,
   HandleStatusUpdateUseCase,
@@ -25,7 +27,7 @@ import {
 import { WhatsAppSessionController } from './interfaces/controllers/whatsapp-session.controller';
 
 @Module({
-  imports: [AuditModule, forwardRef(() => MessagesModule)],
+  imports: [AuditModule, BillingModule, forwardRef(() => MessagesModule)],
   controllers: [WhatsAppSessionController],
   providers: [
     // Domain
@@ -41,6 +43,7 @@ import { WhatsAppSessionController } from './interfaces/controllers/whatsapp-ses
     ListSessionsUseCase,
     GetSessionUseCase,
     RefreshQrUseCase,
+    ReconnectSessionUseCase,
     HandleSessionEventUseCase,
     HandleIncomingMessageUseCase,
     HandleStatusUpdateUseCase,

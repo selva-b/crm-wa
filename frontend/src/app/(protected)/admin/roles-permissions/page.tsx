@@ -41,7 +41,7 @@ export default function RolesPermissionsPage() {
     if (rolePermissions) {
       for (const role of ALL_ROLES) {
         const rps: RolePermission[] = rolePermissions[role] ?? [];
-        map[role] = new Set(rps.map((rp) => rp.permissionId));
+        map[role] = new Set(rps.map((rp) => rp.permissionId ?? (rp as any).id));
       }
     }
     return map;
@@ -214,15 +214,15 @@ export default function RolesPermissionsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               {/* Sticky Header */}
-              <thead className="sticky top-0 z-10 bg-surface-container-lowest">
-                <tr className="border-b border-outline-variant/15">
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant min-w-[300px]">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant min-w-[300px]">
                     Permission
                   </th>
                   {ALL_ROLES.map((role) => (
                     <th
                       key={role}
-                      className="px-5 py-3 text-center text-[11px] font-medium uppercase tracking-wider text-on-surface-variant w-[140px]"
+                      className="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant w-[140px]"
                     >
                       <div className="flex items-center justify-center gap-1.5">
                         {role === "ADMIN" && (

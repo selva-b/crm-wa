@@ -10,6 +10,8 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
+  SetMetadata,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
@@ -17,6 +19,8 @@ import { Roles } from '@/common/decorators/roles.decorator';
 import { Permissions } from '@/common/decorators/permissions.decorator';
 import { CurrentUser, JwtPayload } from '@/common/decorators/current-user.decorator';
 import { PERMISSIONS } from '@/modules/rbac/domain/permissions.constants';
+import { UsageLimitGuard, USAGE_LIMIT_KEY } from '@/modules/billing/interfaces/guards/usage-limit.guard';
+import { UsageMetricType } from '@prisma/client';
 import {
   InitiateSessionDto,
   DisconnectSessionDto,
@@ -28,6 +32,7 @@ import {
   ListSessionsUseCase,
   GetSessionUseCase,
   RefreshQrUseCase,
+  ReconnectSessionUseCase,
 } from '../../application/use-cases';
 
 // Messaging endpoints moved to MessagesController (POST /messaging/messages) — EPIC 5
@@ -40,12 +45,15 @@ export class WhatsAppSessionController {
     private readonly listSessionsUseCase: ListSessionsUseCase,
     private readonly getSessionUseCase: GetSessionUseCase,
     private readonly refreshQrUseCase: RefreshQrUseCase,
+    private readonly reconnectSessionUseCase: ReconnectSessionUseCase,
   ) {}
 
   // ───── Session Management ─────
 
   @Post('sessions')
   @Permissions(PERMISSIONS.WHATSAPP_SESSION_OWN)
+  @UseGuards(UsageLimitGuard)
+  @SetMetadata(USAGE_LIMIT_KEY, UsageMetricType.WHATSAPP_SESSIONS)
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.CREATED)
   async initiateSession(
@@ -57,6 +65,25 @@ export class WhatsAppSessionController {
       user.orgId,
       user.sub,
       dto,
+      this.getIp(req),
+      this.getUa(req),
+    );
+  }
+
+  @Post('sessions/:sessionId/reconnect')
+  @Permissions(PERMISSIONS.WHATSAPP_SESSION_OWN)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @HttpCode(HttpStatus.OK)
+  async reconnectSession(
+    @CurrentUser() user: JwtPayload,
+    @Param('sessionId', ParseUUIDPipe) sessionId: string,
+    @Req() req: Request,
+  ) {
+    return this.reconnectSessionUseCase.execute(
+      user.orgId,
+      user.sub,
+      user.role,
+      sessionId,
       this.getIp(req),
       this.getUa(req),
     );

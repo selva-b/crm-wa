@@ -96,6 +96,29 @@ export const PERMISSIONS = {
   INTEGRATIONS_MANAGE: 'integrations:manage',
   WEBHOOKS_READ: 'webhooks:read',
   WEBHOOKS_MANAGE: 'webhooks:manage',
+
+  // ── Analytics ──
+  ANALYTICS_READ: 'analytics:read',
+  ANALYTICS_EXPORT: 'analytics:export',
+
+  // ── Lead Ads (Social Ads Integration) ──
+  LEAD_ADS_READ: 'lead_ads:read',
+  LEAD_ADS_MANAGE: 'lead_ads:manage',
+
+  // ── Channels (Multi-Channel Integration) ──
+  CHANNELS_READ: 'channels:read',
+  CHANNELS_CREATE: 'channels:create',
+  CHANNELS_UPDATE: 'channels:update',
+  CHANNELS_DELETE: 'channels:delete',
+  CHANNELS_MANAGE: 'channels:manage',
+
+  // ── SLA Tracking ──
+  SLA_READ: 'sla:read',
+  SLA_CREATE: 'sla:create',
+  SLA_UPDATE: 'sla:update',
+  SLA_DELETE: 'sla:delete',
+  SLA_BREACH_READ: 'sla:breach_read',
+  SLA_BREACH_ACKNOWLEDGE: 'sla:breach_acknowledge',
 } as const;
 
 export type PermissionString = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -196,6 +219,29 @@ export const ALL_PERMISSIONS: PermissionSeed[] = [
   { resource: 'integrations', action: 'manage', description: 'Create, update, delete, and test integrations' },
   { resource: 'webhooks', action: 'read', description: 'View webhooks and delivery logs' },
   { resource: 'webhooks', action: 'manage', description: 'Create, update, delete, and test webhooks' },
+
+  // Analytics
+  { resource: 'analytics', action: 'read', description: 'View analytics dashboards and reports' },
+  { resource: 'analytics', action: 'export', description: 'Export analytics data' },
+
+  // Lead Ads (Social Ads Integration)
+  { resource: 'lead_ads', action: 'read', description: 'View lead ads entries and analytics' },
+  { resource: 'lead_ads', action: 'manage', description: 'Configure lead ads integration and retry failed leads' },
+
+  // Channels (Multi-Channel Integration)
+  { resource: 'channels', action: 'read', description: 'View channels and their status' },
+  { resource: 'channels', action: 'create', description: 'Create new channels' },
+  { resource: 'channels', action: 'update', description: 'Update channel configuration' },
+  { resource: 'channels', action: 'delete', description: 'Delete channels (soft delete)' },
+  { resource: 'channels', action: 'manage', description: 'Suspend and reactivate channels' },
+
+  // SLA Tracking
+  { resource: 'sla', action: 'read', description: 'View SLA policies and tracking data' },
+  { resource: 'sla', action: 'create', description: 'Create SLA policies' },
+  { resource: 'sla', action: 'update', description: 'Update SLA policies' },
+  { resource: 'sla', action: 'delete', description: 'Delete SLA policies' },
+  { resource: 'sla', action: 'breach_read', description: 'View SLA breach logs' },
+  { resource: 'sla', action: 'breach_acknowledge', description: 'Acknowledge SLA breaches' },
 ];
 
 // ─────────────────────────────────────────────
@@ -269,6 +315,22 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionString[]> = {
     PERMISSIONS.FEATURE_FLAGS_READ,
     PERMISSIONS.INTEGRATIONS_READ,
     PERMISSIONS.WEBHOOKS_READ,
+
+    // Analytics — read (team-scoped in use-case logic)
+    PERMISSIONS.ANALYTICS_READ,
+
+    // SLA — read + breach management
+    PERMISSIONS.SLA_READ,
+    PERMISSIONS.SLA_BREACH_READ,
+    PERMISSIONS.SLA_BREACH_ACKNOWLEDGE,
+
+    // Channels — read, create, update
+    PERMISSIONS.CHANNELS_READ,
+    PERMISSIONS.CHANNELS_CREATE,
+    PERMISSIONS.CHANNELS_UPDATE,
+
+    // Lead Ads — read only
+    PERMISSIONS.LEAD_ADS_READ,
   ],
 
   EMPLOYEE: [
@@ -305,5 +367,18 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<string, PermissionString[]> = {
     // Settings — read only
     PERMISSIONS.SETTINGS_READ,
     PERMISSIONS.FEATURE_FLAGS_READ,
+
+    // Analytics — read (self-scoped in use-case logic)
+    PERMISSIONS.ANALYTICS_READ,
+
+    // SLA — read only
+    PERMISSIONS.SLA_READ,
+    PERMISSIONS.SLA_BREACH_READ,
+
+    // Channels — read only
+    PERMISSIONS.CHANNELS_READ,
+
+    // Lead Ads — read only
+    PERMISSIONS.LEAD_ADS_READ,
   ],
 };

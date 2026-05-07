@@ -8,6 +8,7 @@ import {
   IsObject,
   IsUUID,
 } from 'class-validator';
+
 import { MessageType } from '@prisma/client';
 
 export class CreateScheduledMessageDto {
@@ -47,4 +48,8 @@ export class CreateScheduledMessageDto {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsUUID('4')
+  productId?: string;
 }

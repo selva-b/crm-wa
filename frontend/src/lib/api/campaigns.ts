@@ -16,7 +16,7 @@ export const campaignsApi = {
   // ─── CRUD ───
 
   create: (data: CreateCampaignRequest) =>
-    apiClient.post<Campaign>("/campaigns", data).then((r) => r.data),
+    apiClient.post<{ campaign: Campaign; deduplicated: boolean }>("/campaigns", data).then((r) => r.data),
 
   list: (params?: ListCampaignsParams) =>
     apiClient

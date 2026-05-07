@@ -59,6 +59,7 @@ export class CreateAutomationRuleUseCase {
         maxExecutionsPerContact: dto.maxExecutionsPerContact,
         cooldownSeconds: dto.cooldownSeconds ?? AUTOMATION_CONFIG.DEFAULT_COOLDOWN_SECONDS,
         createdById: userId,
+        productId: dto.productId,
       },
       dto.actions.map((a, idx) => ({
         actionType: a.actionType,

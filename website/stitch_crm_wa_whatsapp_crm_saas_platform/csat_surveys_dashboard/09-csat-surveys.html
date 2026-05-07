@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CSAT Surveys - CRM-WA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#b299ff",
+                        "primary-fixed-dim": "#ed871e",
+                        "primary-container": "#dd7a0c",
+                        "surface-container-high": "#1c1f2a",
+                        "outline-variant": "#434855",
+                        "surface-container-lowest": "#000000",
+                        "surface-container-highest": "#212532",
+                        "on-secondary-container": "#b8bfd1",
+                        "on-primary-fixed": "#240f00",
+                        "error-container": "#85230a",
+                        "error-dim": "#c44f34",
+                        "tertiary-fixed": "#a589f8",
+                        "inverse-surface": "#faf8ff",
+                        "tertiary-container": "#a589f8",
+                        "on-tertiary-fixed": "#000000",
+                        "surface-tint": "#ffb77d",
+                        "secondary-fixed": "#dce2f5",
+                        "secondary-fixed-dim": "#cdd4e6",
+                        "on-tertiary": "#31067e",
+                        "tertiary-fixed-dim": "#987cea",
+                        "on-secondary-fixed-variant": "#545c6b",
+                        "surface-bright": "#282c38",
+                        "background": "#0c0e14",
+                        "on-primary": "#643400",
+                        "on-surface": "#e2e5f6",
+                        "surface-dim": "#0c0e14",
+                        "secondary": "#c0c6d8",
+                        "on-tertiary-fixed-variant": "#2e007c",
+                        "primary-dim": "#fe932c",
+                        "primary": "#ffb77d",
+                        "error": "#f97758",
+                        "primary-fixed": "#fe932c",
+                        "on-primary-fixed-variant": "#572c00",
+                        "secondary-dim": "#b2b9ca",
+                        "secondary-container": "#343c4a",
+                        "on-surface-variant": "#a7aaba",
+                        "on-error": "#450900",
+                        "on-error-container": "#ff9b82",
+                        "on-background": "#e2e5f6",
+                        "on-secondary": "#39404f",
+                        "surface": "#0c0e14",
+                        "on-tertiary-container": "#230062",
+                        "on-secondary-fixed": "#383f4e",
+                        "inverse-on-surface": "#53555c",
+                        "surface-container": "#161923",
+                        "tertiary-dim": "#a88cfb",
+                        "inverse-primary": "#914d00",
+                        "surface-variant": "#212532",
+                        "outline": "#717584",
+                        "on-primary-container": "#230e00",
+                        "surface-container-low": "#10131b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f1117; color: #e8eaed; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .score-5 { color: #34d399; }
+        .score-4 { color: #d97706; }
+        .score-3 { color: #fbbf24; }
+        .score-low { color: #f87171; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0c0e14; }
+        ::-webkit-scrollbar-thumb { background: #2d3044; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[240px] border-r border-[#2d3044] bg-[#0d0f1a] flex flex-col z-50">
+<div class="p-6 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div>
+<h2 class="text-lg font-bold text-amber-600 leading-none">Midnight Ember</h2>
+<p class="text-[10px] text-[#9ca3b4] uppercase tracking-widest mt-1">CRM Management</p>
+</div>
+</div>
+<nav class="flex-1 mt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-medium text-sm">Contacts</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-medium text-sm">Leads</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-amber-600 bg-[#1a1d2e] border-r-2 border-amber-600 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">thumbs_up_down</span>
+<span class="font-medium text-sm">CSAT</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+<span class="font-medium text-sm">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] hover:text-[#e8eaed] transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+</nav>
+<div class="px-4 py-6">
+<button class="w-full py-2 bg-primary-container text-on-primary-container rounded font-semibold text-sm hover:opacity-90 transition-opacity">
+                New Survey
+            </button>
+</div>
+<div class="border-t border-[#2d3044] py-4">
+<a class="flex items-center gap-3 px-4 py-3 text-[#9ca3b4] hover:bg-[#1a1d2e] transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-medium text-sm">Help Center</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="ml-[240px] flex-1 flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar -->
+<header class="h-16 px-6 bg-[#0f1117] border-b border-[#2d3044] flex justify-between items-center w-full z-40">
+<div class="flex items-center gap-4">
+<h1 class="text-xl font-semibold text-[#e8eaed] font-['Inter']">CSAT Surveys</h1>
+<div class="h-6 w-[1px] bg-[#2d3044] mx-2"></div>
+<div class="relative group">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-[#9ca3b4]">
+<span class="material-symbols-outlined text-lg">search</span>
+</span>
+<input class="bg-[#1a1d2e] border-none text-sm rounded-full pl-10 pr-4 py-1.5 w-64 focus:ring-1 focus:ring-amber-600 text-[#e8eaed] placeholder-[#9ca3b4]" placeholder="Search surveys..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-5">
+<button class="text-[#9ca3b4] hover:text-amber-600 transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-[#9ca3b4] hover:text-amber-600 transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-[#2d3044]">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="professional headshot of a smiling business manager in a dark suit with soft studio lighting and a neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGFUvuB_dB18_08bx4CgXUIZLW_VIxQW4oB8ia9_gQf2h4Kpzw1cF8iQkmEUfXQ3mz-GHT3-b29NEZVz5qvfJSJ93VXlUjtwh03-m9_3_w0Cntma8T_RXFD0tCM0C31Oc2SynnRnIYQc2f3myxcNe5EkE09Y--YEJLaAJKgJBKva0XYfsd8fhzkevm3opIW7Fyc4RZ34-nsggEUoSlzdSwvllfYFsOSsIG2pw33evK_KAmjT0yyX1ZmYmK4ESxrHaB7gbmfHtMlA"/>
+</div>
+</div>
+</header>
+<!-- Scrollable Area -->
+<main class="flex-1 overflow-y-auto p-8 space-y-8 bg-[#0c0e14]">
+<!-- Top Stats Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-[#1a1d2e] p-6 rounded-xl border border-[#2d3044] relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-sm text-[#9ca3b4] font-medium">Avg CSAT Score</p>
+<h3 class="text-3xl font-bold mt-2 text-[#34d399]">4.2<span class="text-lg text-[#9ca3b4] font-normal">/5</span></h3>
+</div>
+<div class="p-2 bg-[#34d399]/10 rounded-lg">
+<span class="material-symbols-outlined text-[#34d399]" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<span class="text-[10px] px-2 py-0.5 bg-green-500/20 text-[#34d399] rounded-full">+4% vs last mo</span>
+</div>
+</div>
+<div class="bg-[#1a1d2e] p-6 rounded-xl border border-[#2d3044]">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-sm text-[#9ca3b4] font-medium">Surveys Sent</p>
+<h3 class="text-3xl font-bold mt-2 text-[#e8eaed]">342</h3>
+</div>
+<div class="p-2 bg-amber-600/10 rounded-lg">
+<span class="material-symbols-outlined text-amber-600">send</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<span class="text-[10px] px-2 py-0.5 bg-[#2d3044] text-[#9ca3b4] rounded-full">89 pending response</span>
+</div>
+</div>
+<div class="bg-[#1a1d2e] p-6 rounded-xl border border-[#2d3044]">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-sm text-[#9ca3b4] font-medium">Response Rate</p>
+<h3 class="text-3xl font-bold mt-2 text-primary">68%</h3>
+</div>
+<div class="p-2 bg-primary/10 rounded-lg">
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+</div>
+<div class="mt-4 w-full bg-[#2d3044] h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[68%]"></div>
+</div>
+</div>
+</div>
+<!-- Score Distribution -->
+<section class="bg-[#1a1d2e] p-6 rounded-xl border border-[#2d3044]">
+<h3 class="text-base font-semibold mb-6">Score Distribution</h3>
+<div class="space-y-4">
+<!-- Row 5 -->
+<div class="flex items-center gap-4">
+<div class="w-16 text-sm text-[#9ca3b4] flex items-center gap-1">5 <span class="material-symbols-outlined text-[14px]">star</span></div>
+<div class="flex-1 h-3 bg-[#2d3044] rounded-full overflow-hidden">
+<div class="bg-amber-600 h-full w-[55%] rounded-full"></div>
+</div>
+<div class="w-12 text-sm text-right text-[#e8eaed]">55%</div>
+</div>
+<!-- Row 4 -->
+<div class="flex items-center gap-4">
+<div class="w-16 text-sm text-[#9ca3b4] flex items-center gap-1">4 <span class="material-symbols-outlined text-[14px]">star</span></div>
+<div class="flex-1 h-3 bg-[#2d3044] rounded-full overflow-hidden">
+<div class="bg-amber-600 h-full w-[28%] rounded-full"></div>
+</div>
+<div class="w-12 text-sm text-right text-[#e8eaed]">28%</div>
+</div>
+<!-- Row 3 -->
+<div class="flex items-center gap-4">
+<div class="w-16 text-sm text-[#9ca3b4] flex items-center gap-1">3 <span class="material-symbols-outlined text-[14px]">star</span></div>
+<div class="flex-1 h-3 bg-[#2d3044] rounded-full overflow-hidden">
+<div class="bg-amber-600 h-full w-[10%] rounded-full"></div>
+</div>
+<div class="w-12 text-sm text-right text-[#e8eaed]">10%</div>
+</div>
+<!-- Row 2 -->
+<div class="flex items-center gap-4">
+<div class="w-16 text-sm text-[#9ca3b4] flex items-center gap-1">2 <span class="material-symbols-outlined text-[14px]">star</span></div>
+<div class="flex-1 h-3 bg-[#2d3044] rounded-full overflow-hidden">
+<div class="bg-amber-600 h-full w-[4%] rounded-full"></div>
+</div>
+<div class="w-12 text-sm text-right text-[#e8eaed]">4%</div>
+</div>
+<!-- Row 1 -->
+<div class="flex items-center gap-4">
+<div class="w-16 text-sm text-[#9ca3b4] flex items-center gap-1">1 <span class="material-symbols-outlined text-[14px]">star</span></div>
+<div class="flex-1 h-3 bg-[#2d3044] rounded-full overflow-hidden">
+<div class="bg-amber-600 h-full w-[3%] rounded-full"></div>
+</div>
+<div class="w-12 text-sm text-right text-[#e8eaed]">3%</div>
+</div>
+</div>
+</section>
+<!-- Filter Bar -->
+<div class="flex flex-wrap items-center justify-between gap-4 bg-[#1a1d2e] p-4 rounded-xl border border-[#2d3044]">
+<div class="flex items-center gap-3">
+<div class="relative">
+<select class="bg-[#0f1117] border border-[#2d3044] rounded-lg text-sm px-4 py-2 pr-10 text-[#e8eaed] appearance-none focus:ring-1 focus:ring-amber-600">
+<option>Last 30 Days</option>
+<option>Last 7 Days</option>
+<option>Last 3 Months</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2 text-[#9ca3b4] pointer-events-none">calendar_month</span>
+</div>
+<div class="relative">
+<select class="bg-[#0f1117] border border-[#2d3044] rounded-lg text-sm px-4 py-2 pr-10 text-[#e8eaed] appearance-none focus:ring-1 focus:ring-amber-600">
+<option>All Agents</option>
+<option>Sarah Miller</option>
+<option>James Wilson</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2 text-[#9ca3b4] pointer-events-none">group</span>
+</div>
+<div class="relative">
+<select class="bg-[#0f1117] border border-[#2d3044] rounded-lg text-sm px-4 py-2 pr-10 text-[#e8eaed] appearance-none focus:ring-1 focus:ring-amber-600">
+<option>Any Score</option>
+<option>5 Stars</option>
+<option>1-3 Stars</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2 text-[#9ca3b4] pointer-events-none">filter_list</span>
+</div>
+</div>
+<button class="flex items-center gap-2 text-sm text-[#9ca3b4] hover:text-amber-600 transition-colors">
+<span class="material-symbols-outlined text-lg">download</span>
+                    Export CSV
+                </button>
+</div>
+<!-- Responses Table -->
+<div class="bg-[#1a1d2e] rounded-xl border border-[#2d3044] overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-[#2d3044] bg-[#0d0f1a]">
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[#9ca3b4]">Contact Name</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[#9ca3b4]">Conversation</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[#9ca3b4]">Score</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[#9ca3b4]">Comment</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[#9ca3b4]">Agent</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[#9ca3b4]">Date</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#2d3044]">
+<!-- Row 1 -->
+<tr class="hover:bg-[#212532] transition-colors">
+<td class="px-6 py-4 text-sm font-medium">Alex Rivera</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">#CV-8821</td>
+<td class="px-6 py-4">
+<div class="flex gap-0.5 score-5">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm max-w-xs truncate">Excellent support, issue resolved in minutes!</td>
+<td class="px-6 py-4 text-sm">Sarah Miller</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">Oct 12, 2023</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-[#212532] transition-colors">
+<td class="px-6 py-4 text-sm font-medium">Julian Vance</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">#CV-8754</td>
+<td class="px-6 py-4">
+<div class="flex gap-0.5 score-4">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm max-w-xs truncate">Great service, though wait time was a bit long.</td>
+<td class="px-6 py-4 text-sm">James Wilson</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">Oct 12, 2023</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-[#212532] transition-colors">
+<td class="px-6 py-4 text-sm font-medium">Maria Garcia</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">#CV-8712</td>
+<td class="px-6 py-4">
+<div class="flex gap-0.5 score-5">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm max-w-xs truncate">Very professional and helpful representative.</td>
+<td class="px-6 py-4 text-sm">Sarah Miller</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">Oct 11, 2023</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-[#212532] transition-colors">
+<td class="px-6 py-4 text-sm font-medium">Tom Brooks</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">#CV-8699</td>
+<td class="px-6 py-4">
+<div class="flex gap-0.5 score-3">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm max-w-xs truncate">Average experience, nothing special.</td>
+<td class="px-6 py-4 text-sm">Emily Chen</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">Oct 11, 2023</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-[#212532] transition-colors">
+<td class="px-6 py-4 text-sm font-medium">Sarah Jenkins</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">#CV-8655</td>
+<td class="px-6 py-4">
+<div class="flex gap-0.5 score-low">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm max-w-xs truncate">Still haven't received the refund confirmation.</td>
+<td class="px-6 py-4 text-sm">James Wilson</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">Oct 10, 2023</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-[#212532] transition-colors">
+<td class="px-6 py-4 text-sm font-medium">Liam Neeson</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">#CV-8640</td>
+<td class="px-6 py-4">
+<div class="flex gap-0.5 score-5">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm max-w-xs truncate">The agent had a very specific set of skills that helped me.</td>
+<td class="px-6 py-4 text-sm">Emily Chen</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">Oct 10, 2023</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-[#212532] transition-colors">
+<td class="px-6 py-4 text-sm font-medium">Bethany Low</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">#CV-8622</td>
+<td class="px-6 py-4">
+<div class="flex gap-0.5 score-4">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm max-w-xs truncate">Helpful but the system was a bit slow today.</td>
+<td class="px-6 py-4 text-sm">Sarah Miller</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">Oct 09, 2023</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-[#212532] transition-colors">
+<td class="px-6 py-4 text-sm font-medium">Oscar Wilde</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">#CV-8591</td>
+<td class="px-6 py-4">
+<div class="flex gap-0.5 score-low">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+<span class="material-symbols-outlined text-lg">star</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm max-w-xs truncate">Disappointed with the lack of wit in the automated responses.</td>
+<td class="px-6 py-4 text-sm">James Wilson</td>
+<td class="px-6 py-4 text-sm text-[#9ca3b4]">Oct 09, 2023</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-4 border-t border-[#2d3044] flex items-center justify-between">
+<p class="text-sm text-[#9ca3b4]">Showing 8 of 342 responses</p>
+<div class="flex gap-2">
+<button class="p-1 border border-[#2d3044] rounded hover:bg-[#2d3044] transition-colors text-[#9ca3b4]">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="p-1 border border-[#2d3044] rounded hover:bg-[#2d3044] transition-colors text-[#9ca3b4]">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

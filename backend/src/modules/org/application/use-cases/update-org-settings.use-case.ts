@@ -52,6 +52,21 @@ export class UpdateOrgSettingsUseCase {
       changes.branding = { from: org.branding, to: dto.branding };
     }
 
+    if (dto.industry !== undefined && dto.industry !== org.industry) {
+      updateData.industry = dto.industry;
+      changes.industry = { from: org.industry, to: dto.industry };
+    }
+
+    if (dto.description !== undefined && dto.description !== org.description) {
+      updateData.description = dto.description;
+      changes.description = { from: org.description, to: dto.description };
+    }
+
+    if (dto.website !== undefined && dto.website !== org.website) {
+      updateData.website = dto.website;
+      changes.website = { from: org.website, to: dto.website };
+    }
+
     // No changes detected
     if (Object.keys(updateData).length === 0) {
       return org;

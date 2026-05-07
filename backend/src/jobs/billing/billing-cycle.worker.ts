@@ -6,6 +6,7 @@ import { UsageRepository } from '@/modules/billing/infrastructure/repositories/u
 import { PlanRepository } from '@/modules/billing/infrastructure/repositories/plan.repository';
 import { PaymentRepository } from '@/modules/billing/infrastructure/repositories/payment.repository';
 import { AuditService } from '@/modules/audit/domain/services/audit.service';
+import { StripePaymentService } from '@/modules/billing/domain/services/stripe-payment.service';
 import { EVENT_NAMES } from '@/common/constants';
 import {
   AuditAction,
@@ -23,6 +24,7 @@ export class BillingCycleWorker {
     private readonly usageRepo: UsageRepository,
     private readonly planRepo: PlanRepository,
     private readonly paymentRepo: PaymentRepository,
+    private readonly stripePayment: StripePaymentService,
     private readonly auditService: AuditService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -160,18 +162,47 @@ export class BillingCycleWorker {
       idempotencyKey: `renewal-${subscription.id}-${newPeriodStart.toISOString().slice(0, 10)}`,
     });
 
-    // TODO: Process payment through Stripe/Razorpay
-    // For now, simulate success for free plans, mark as pending for paid
-    // The payment webhook handler will complete the renewal
-    await this.paymentRepo.transitionPaymentStatus(
-      payment.id,
-      'PENDING',
-      'PROCESSING',
+    // Process payment through Stripe
+    await this.paymentRepo.transitionPaymentStatus(payment.id, 'PENDING', 'PROCESSING');
+
+    const result = await this.stripePayment.chargePayment(
+      subscription.priceInCents,
+      subscription.currency,
+      subscription.externalCustomerId || '',
+      subscription.externalCustomerId || '', // Stripe uses default payment method from customer
+      payment.idempotencyKey || payment.id,
+      `Wazelo CRM subscription renewal: ${plan?.name || subscription.id}`,
     );
 
-    this.logger.log(
-      `Payment ${payment.id} created for subscription ${subscription.id} renewal`,
-    );
+    if (result.success) {
+      await this.paymentRepo.transitionPaymentStatus(payment.id, 'PROCESSING', 'SUCCEEDED');
+      await this.completeRenewal(subscription, newPeriodStart, newPeriodEnd, plan);
+
+      this.eventEmitter.emit(EVENT_NAMES.PAYMENT_SUCCEEDED, {
+        paymentId: payment.id,
+        orgId: subscription.orgId,
+        subscriptionId: subscription.id,
+        amountInCents: subscription.priceInCents,
+      });
+
+      this.logger.log(`Payment ${payment.id} succeeded for subscription ${subscription.id} renewal`);
+    } else {
+      await this.paymentRepo.transitionPaymentStatus(payment.id, 'PROCESSING', 'FAILED');
+
+      // Schedule retry
+      const nextRetryAt = new Date(Date.now() + 3600_000); // 1 hour
+      await this.paymentRepo.schedulePaymentRetry(payment.id, nextRetryAt);
+
+      this.eventEmitter.emit(EVENT_NAMES.PAYMENT_FAILED, {
+        paymentId: payment.id,
+        orgId: subscription.orgId,
+        subscriptionId: subscription.id,
+        reason: result.error || 'Payment processing failed',
+        retryCount: 0,
+      });
+
+      this.logger.warn(`Payment ${payment.id} failed for subscription ${subscription.id}: ${result.error}`);
+    }
   }
 
   private async completeRenewal(
@@ -197,6 +228,9 @@ export class BillingCycleWorker {
       [UsageMetricType.ACTIVE_USERS]: plan.maxUsers,
       [UsageMetricType.WHATSAPP_SESSIONS]: plan.maxWhatsappSessions,
       [UsageMetricType.CAMPAIGN_EXECUTIONS]: plan.maxCampaignsPerMonth,
+      [UsageMetricType.API_CALLS]: plan.maxMessagesPerMonth,
+      [UsageMetricType.AI_CREDITS]: plan.aiCreditsPerMonth,
+      [UsageMetricType.MESSAGE_TEMPLATES]: plan.maxMessageTemplates,
     };
 
     await this.usageRepo.resetUsageForOrg(
@@ -376,6 +410,9 @@ export class BillingCycleWorker {
       [UsageMetricType.ACTIVE_USERS]: newPlan.maxUsers,
       [UsageMetricType.WHATSAPP_SESSIONS]: newPlan.maxWhatsappSessions,
       [UsageMetricType.CAMPAIGN_EXECUTIONS]: newPlan.maxCampaignsPerMonth,
+      [UsageMetricType.API_CALLS]: newPlan.maxMessagesPerMonth,
+      [UsageMetricType.AI_CREDITS]: newPlan.aiCreditsPerMonth,
+      [UsageMetricType.MESSAGE_TEMPLATES]: newPlan.maxMessageTemplates,
     };
 
     await this.usageRepo.resetUsageForOrg(

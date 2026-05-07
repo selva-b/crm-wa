@@ -77,6 +77,56 @@ export class WhatsAppApiService {
     };
   }
 
+  async sendInteractiveMessage(
+    sessionId: string,
+    recipientPhone: string,
+    interactivePayload: Record<string, unknown>,
+  ): Promise<WhatsAppSendResult> {
+    const sock = this.connectionManager.getConnection(sessionId);
+    if (!sock) {
+      throw new Error(`No active connection for session ${sessionId}`);
+    }
+
+    const jid = this.phoneToJid(recipientPhone);
+    const interactiveType = interactivePayload.type as string;
+    let content: Record<string, unknown>;
+
+    if (interactiveType === 'button') {
+      // WhatsApp button message (up to 3 buttons)
+      const buttons = (interactivePayload.buttons as Array<{ id: string; title: string }>).map(
+        (btn, i) => ({
+          buttonId: btn.id || `btn-${i}`,
+          buttonText: { displayText: btn.title },
+          type: 1,
+        }),
+      );
+      content = {
+        text: interactivePayload.body as string,
+        footer: interactivePayload.footer as string | undefined,
+        buttons,
+        headerType: 1,
+      };
+    } else if (interactiveType === 'list') {
+      // WhatsApp list message (sections with rows)
+      content = {
+        text: interactivePayload.body as string,
+        footer: interactivePayload.footer as string | undefined,
+        title: interactivePayload.header as string | undefined,
+        buttonText: interactivePayload.buttonText as string || 'Choose',
+        sections: interactivePayload.sections as Array<unknown>,
+      };
+    } else {
+      throw new Error(`Unsupported interactive type: ${interactiveType}`);
+    }
+
+    const result = await sock.sendMessage(jid, content as any);
+
+    return {
+      whatsappMessageId: result?.key?.id || `local-${Date.now()}`,
+      timestamp: Date.now(),
+    };
+  }
+
   isSessionConnected(sessionId: string): boolean {
     return this.connectionManager.isConnected(sessionId);
   }

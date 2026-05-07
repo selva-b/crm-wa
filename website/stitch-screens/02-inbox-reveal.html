@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Wazelo CRM - Luxury Product Reveal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@700;800;900&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#96ccff",
+                        "secondary-fixed-dim": "#f7ba8a",
+                        "primary": "#ffb77d",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container-high": "#2a2a2a",
+                        "on-primary": "#4d2600",
+                        "on-secondary": "#4c2703",
+                        "on-primary-container": "#432100",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "inverse-primary": "#904d00",
+                        "secondary-fixed": "#ffdcc3",
+                        "on-tertiary-container": "#002c48",
+                        "outline": "#a38c7c",
+                        "on-secondary-fixed": "#2f1500",
+                        "surface-variant": "#353534",
+                        "on-tertiary-fixed-variant": "#004a75",
+                        "on-background": "#e5e2e1",
+                        "secondary": "#f7ba8a",
+                        "on-secondary-container": "#e4a97a",
+                        "secondary-container": "#673d17",
+                        "on-secondary-fixed-variant": "#673d17",
+                        "surface-dim": "#131313",
+                        "primary-container": "#d97707",
+                        "surface-container-highest": "#353534",
+                        "on-tertiary-fixed": "#001d32",
+                        "on-surface-variant": "#dbc2b0",
+                        "inverse-surface": "#e5e2e1",
+                        "surface": "#131313",
+                        "primary-fixed-dim": "#ffb77d",
+                        "primary-fixed": "#ffdcc3",
+                        "error-container": "#93000a",
+                        "on-primary-fixed": "#2f1500",
+                        "background": "#131313",
+                        "surface-bright": "#3a3939",
+                        "on-tertiary": "#003353",
+                        "surface-container": "#201f1f",
+                        "tertiary-fixed": "#cee5ff",
+                        "on-surface": "#e5e2e1",
+                        "inverse-on-surface": "#313030",
+                        "surface-tint": "#ffb77d",
+                        "on-error": "#690005",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed-dim": "#96ccff",
+                        "outline-variant": "#554336",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#0e0e0e",
+                        "tertiary-container": "#0297e8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Epilogue", "sans-serif"],
+                        "body": ["Manrope", "sans-serif"],
+                        "label": ["Manrope", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .text-fluid-h2 {
+            font-size: clamp(40px, 5vw, 72px);
+            line-height: 0.9;
+        }
+        .text-fluid-watermark {
+            font-size: 15vw;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body overflow-x-hidden antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313]/70 backdrop-blur-3xl shadow-[0_20px_50px_rgba(217,119,6,0.05)]">
+<div class="bg-gradient-to-b from-[#1c1b1b] to-transparent">
+<div class="flex justify-between items-center px-12 py-6 max-w-[1920px] mx-auto scale-95 duration-200 ease-in-out">
+<div class="text-2xl font-black tracking-tighter text-amber-600 font-['Epilogue'] uppercase tracking-[-0.04em]">
+                    WAZELO
+                </div>
+<div class="hidden md:flex space-x-8">
+<a class="text-zinc-400 font-medium hover:text-zinc-200 transition-colors font-['Epilogue'] font-black uppercase tracking-[-0.04em] hover:bg-amber-600/10 hover:text-amber-500 transition-all duration-300" href="#">Platform</a>
+<a class="text-amber-500 font-bold border-b-2 border-amber-600 pb-1 font-['Epilogue'] font-black uppercase tracking-[-0.04em] hover:bg-amber-600/10 hover:text-amber-500 transition-all duration-300" href="#">Gallery</a>
+<a class="text-zinc-400 font-medium hover:text-zinc-200 transition-colors font-['Epilogue'] font-black uppercase tracking-[-0.04em] hover:bg-amber-600/10 hover:text-amber-500 transition-all duration-300" href="#">Innovation</a>
+<a class="text-zinc-400 font-medium hover:text-zinc-200 transition-colors font-['Epilogue'] font-black uppercase tracking-[-0.04em] hover:bg-amber-600/10 hover:text-amber-500 transition-all duration-300" href="#">Enterprise</a>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary font-body font-semibold px-6 py-3 rounded-md hover:opacity-90 transition-opacity uppercase tracking-wider text-sm hidden md:block">
+                    Request Access
+                </button>
+<button class="md:hidden text-primary">
+<span class="material-symbols-outlined text-3xl">menu</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Luxury Product Reveal Section -->
+<section class="relative w-full h-[1024px] min-h-[800px] flex items-center bg-surface-container-lowest overflow-hidden">
+<!-- Abstract Background Image & Gradients -->
+<div class="absolute inset-0 z-0 bg-cover bg-center opacity-20 mix-blend-luminosity" data-alt="Abstract dark modern office interior with subtle geometric lines and deep shadows, very moody and cinematic lighting, architectural minimalism" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCtsmSCFV7KUKD4JJP26T9GAOsKp_8LxX77YIS6YG1BfqSzaIEC901s2RaC84neCvlZ3BMayU0e0L8VmdsOIhdpTHqNDHdfkUhhDs3GjbIgccdm1ucRPueOTrgl_cf8tzG2xb_fIK_EzI1ITh6qW1NF1LVhGkxaX3iJCRFHrs_rpCtDVMO5mZU66Xf3LV_AeeevoHhAqKwKxdDQS_4nfzQ5T8FjxrpGH_k3FvYjIUZrLZ5pIGKiEnrPAkUaKyE9o0CcSNu2mj6nx_w');">
+</div>
+<div class="absolute inset-0 z-0 bg-gradient-to-r from-surface-container-lowest via-surface-container-lowest/80 to-transparent"></div>
+<div class="absolute inset-0 z-0 bg-gradient-to-b from-transparent via-surface-container-lowest/50 to-surface-container-lowest"></div>
+<!-- Moody Left-Side Amber Gradient Overlay -->
+<div class="absolute top-0 left-0 w-1/2 h-full z-0 bg-gradient-to-r from-primary-container/10 to-transparent opacity-50 blur-3xl pointer-events-none"></div>
+<!-- Giant Watermark -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none select-none text-fluid-watermark font-headline font-black text-on-surface opacity-[0.02] tracking-tighter w-full text-center whitespace-nowrap">
+            INBOX
+        </div>
+<div class="relative z-10 w-full max-w-[1920px] mx-auto px-8 md:px-16 lg:px-24 flex flex-col-reverse lg:flex-row items-end lg:items-center justify-between h-full pt-32 pb-16 lg:py-0">
+<!-- BOTTOM-LEFT: Content -->
+<div class="w-full lg:w-5/12 flex flex-col justify-end lg:justify-center items-start space-y-8 mt-12 lg:mt-0 relative z-20">
+<div class="flex items-center space-x-3">
+<span class="w-8 h-[2px] bg-primary"></span>
+<span class="font-body text-primary text-sm font-bold tracking-[0.2em] uppercase">Shared Inbox</span>
+</div>
+<h2 class="font-headline text-on-surface font-black uppercase text-fluid-h2 tracking-[-0.04em]">
+                    YOUR WHOLE TEAM.<br/>
+<span class="text-on-surface-variant">ONE INBOX.</span>
+</h2>
+<p class="font-body text-on-surface-variant text-lg lg:text-xl max-w-md leading-relaxed">
+                    Unify client communications in a single, secure environment. Engineered for high-volume, high-stakes relationship management.
+                </p>
+<div class="pt-4 flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+<!-- Secondary Ghost Button -->
+<button class="group relative px-8 py-4 bg-surface-bright border border-outline-variant/15 text-on-surface font-body font-semibold tracking-wide uppercase text-sm hover:bg-surface-container-high transition-all duration-300 rounded-md overflow-hidden flex items-center space-x-2">
+<span class="relative z-10">View Specifications</span>
+<span class="material-symbols-outlined relative z-10 text-lg group-hover:translate-x-1 transition-transform">arrow_right_alt</span>
+<div class="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+</button>
+<span class="font-body text-outline text-xs tracking-widest uppercase">
+                        Wazelo CRM · Inbox
+                    </span>
+</div>
+</div>
+<!-- CENTER-RIGHT: Floating Mockup -->
+<div class="w-full lg:w-7/12 relative flex justify-center lg:justify-end items-center mb-8 lg:mb-0">
+<!-- Amber Glow radiating behind -->
+<div class="absolute top-1/2 left-1/2 lg:left-[60%] -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-primary/20 blur-[100px] rounded-full z-0 pointer-events-none"></div>
+<!-- Browser Mockup Container -->
+<div class="relative z-10 w-full max-w-[900px] aspect-[16/10] bg-surface-container rounded-xl border border-outline-variant/20 shadow-[0_30px_100px_-15px_rgba(217,119,6,0.15)] overflow-hidden flex flex-col transform lg:translate-x-12 xl:translate-x-24 rotate-[-1deg] hover:rotate-0 transition-transform duration-700 ease-out">
+<!-- macOS Style Top Bar -->
+<div class="h-10 bg-surface-container-lowest flex items-center px-4 space-x-2 border-b border-outline-variant/10">
+<div class="w-3 h-3 rounded-full bg-surface-variant border border-outline-variant/30"></div>
+<div class="w-3 h-3 rounded-full bg-surface-variant border border-outline-variant/30"></div>
+<div class="w-3 h-3 rounded-full bg-surface-variant border border-outline-variant/30"></div>
+<div class="flex-1 flex justify-center">
+<div class="w-1/2 max-w-sm h-5 bg-surface-container-high rounded-md flex items-center justify-center border border-outline-variant/10">
+<span class="material-symbols-outlined text-[12px] text-outline mr-2">lock</span>
+<span class="font-body text-[10px] text-outline tracking-wider">crm.wazelo.io/inbox</span>
+</div>
+</div>
+</div>
+<!-- App UI Content -->
+<div class="flex-1 flex bg-surface-dim overflow-hidden">
+<!-- Sidebar (Channels/Filters) -->
+<div class="w-16 border-r border-outline-variant/10 bg-surface-container-low flex flex-col items-center py-4 space-y-6">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-headline font-bold">W</div>
+<div class="flex flex-col space-y-4 mt-8">
+<button class="w-10 h-10 rounded-lg bg-surface-bright flex items-center justify-center text-primary relative">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="w-10 h-10 rounded-lg hover:bg-surface-bright flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">group</span>
+</button>
+<button class="w-10 h-10 rounded-lg hover:bg-surface-bright flex items-center justify-center text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">bar_chart</span>
+</button>
+</div>
+</div>
+<!-- Chat List -->
+<div class="w-64 border-r border-outline-variant/10 bg-surface flex flex-col">
+<div class="p-4 border-b border-outline-variant/10 flex justify-between items-center">
+<h3 class="font-headline text-on-surface font-bold text-sm tracking-wide">SHARED INBOX</h3>
+<span class="material-symbols-outlined text-outline text-sm">edit_square</span>
+</div>
+<div class="p-3">
+<div class="bg-surface-container-high rounded-md p-2 flex items-center text-on-surface-variant border border-outline-variant/10">
+<span class="material-symbols-outlined text-sm mr-2">search</span>
+<span class="font-body text-xs">Search clients...</span>
+</div>
+</div>
+<div class="flex-1 overflow-hidden flex flex-col space-y-1 px-2 pb-2">
+<!-- Chat Item Active -->
+<div class="bg-surface-bright p-3 rounded-lg border border-outline-variant/20 flex space-x-3 items-center cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-gradient-to-br from-tertiary-container to-surface-variant flex-shrink-0 flex items-center justify-center text-on-tertiary-container font-body font-bold text-xs">AC</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<span class="font-body text-on-surface font-semibold text-sm truncate">Aurelius Capital</span>
+<span class="font-body text-primary text-[10px]">10:42 AM</span>
+</div>
+<p class="font-body text-on-surface-variant text-xs truncate">The portfolio update looks excellent...</p>
+</div>
+<div class="w-4 h-4 bg-primary rounded-full flex items-center justify-center text-on-primary font-body text-[9px] font-bold">3</div>
+</div>
+<!-- Chat Item Inactive -->
+<div class="p-3 rounded-lg hover:bg-surface-container-high flex space-x-3 items-center cursor-pointer transition-colors">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex-shrink-0 flex items-center justify-center text-on-surface font-body font-bold text-xs">VG</div>
+<div class="flex-1 min-w-0">
+<div class="flex justify-between items-baseline mb-1">
+<span class="font-body text-on-surface-variant font-medium text-sm truncate">Vanguard Group</span>
+<span class="font-body text-outline text-[10px]">Yesterday</span>
+</div>
+<p class="font-body text-outline text-xs truncate">Please review the attached contract.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Chat View -->
+<div class="flex-1 flex flex-col bg-surface-dim relative">
+<!-- Chat Header -->
+<div class="h-16 border-b border-outline-variant/10 flex justify-between items-center px-6 bg-surface-container-lowest/50 backdrop-blur-md absolute top-0 w-full z-10">
+<div class="flex items-center space-x-3">
+<div class="w-8 h-8 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container font-body font-bold text-xs">AC</div>
+<div>
+<h4 class="font-headline text-on-surface font-bold text-sm">Aurelius Capital</h4>
+<span class="font-body text-primary text-[10px] tracking-wide uppercase">WhatsApp Business</span>
+</div>
+</div>
+<div class="flex space-x-4 text-outline">
+<span class="material-symbols-outlined text-lg cursor-pointer hover:text-on-surface transition-colors">call</span>
+<span class="material-symbols-outlined text-lg cursor-pointer hover:text-on-surface transition-colors">info</span>
+</div>
+</div>
+<!-- Chat Messages Area -->
+<div class="flex-1 overflow-hidden pt-20 pb-4 px-6 flex flex-col space-y-6 relative">
+<!-- Background watermark in chat -->
+<div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+<span class="material-symbols-outlined text-9xl">forum</span>
+</div>
+<div class="flex justify-center">
+<span class="font-body text-outline text-[10px] uppercase tracking-widest bg-surface-container-low px-3 py-1 rounded-full border border-outline-variant/10">Today</span>
+</div>
+<!-- Received Message -->
+<div class="flex items-end space-x-2">
+<div class="w-6 h-6 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container font-body font-bold text-[9px] mb-1">AC</div>
+<div class="bg-surface-container-high text-on-surface font-body text-sm p-3 rounded-2xl rounded-bl-sm max-w-[80%] border border-outline-variant/10 shadow-sm">
+                                        Good morning. The portfolio update looks excellent. Can we schedule a brief call to discuss the Q3 projections?
+                                        <div class="text-[9px] text-outline mt-1 text-right">10:40 AM</div>
+</div>
+</div>
+<!-- Sent Message (Team) -->
+<div class="flex items-end space-x-2 self-end flex-row-reverse space-x-reverse">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface font-body font-bold text-[9px] mb-1">ME</div>
+<div class="bg-gradient-to-br from-primary-container to-inverse-primary text-on-primary-container font-body text-sm p-3 rounded-2xl rounded-br-sm max-w-[80%] shadow-md">
+                                        Absolutely. I've shared the detailed breakdown in the client portal. How does tomorrow at 10 AM EST work for you?
+                                        <div class="text-[9px] text-primary/70 mt-1 text-right flex items-center justify-end space-x-1">
+<span>10:42 AM</span>
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">done_all</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Message Input -->
+<div class="p-4 bg-surface-container border-t border-outline-variant/10">
+<div class="bg-surface-dim rounded-full flex items-center px-4 py-2 border border-outline-variant/20 focus-within:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-on-surface mr-3 text-xl">attach_file</span>
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-on-surface font-body text-sm placeholder-outline" placeholder="Reply to Aurelius Capital..." readonly="" type="text"/>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary cursor-pointer hover:bg-primary-container transition-colors ml-2">
+<span class="material-symbols-outlined text-sm">send</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-12 border-t border-zinc-900 bg-[#0e0e0e]">
+<div class="flex flex-col md:flex-row justify-between items-center px-12 tonal-shift max-w-[1920px] mx-auto">
+<div class="font-['Epilogue'] font-bold text-zinc-200 mb-6 md:mb-0">
+                WAZELO CRM. FORGED IN OBSIDIAN.
+            </div>
+<div class="flex flex-wrap justify-center md:justify-end gap-6 md:gap-8">
+<a class="font-['Manrope'] text-xs tracking-widest uppercase text-amber-500 hover:text-amber-400 transition-colors" href="#">The Manifesto</a>
+<a class="font-['Manrope'] text-xs tracking-widest uppercase text-zinc-600 hover:text-amber-400 transition-colors" href="#">Technical Specs</a>
+<a class="font-['Manrope'] text-xs tracking-widest uppercase text-zinc-600 hover:text-amber-400 transition-colors" href="#">Privacy</a>
+<a class="font-['Manrope'] text-xs tracking-widest uppercase text-zinc-600 hover:text-amber-400 transition-colors" href="#">Contact</a>
+</div>
+</div>
+</footer>
+</body></html>

@@ -47,6 +47,14 @@ export class ListContactsQueryDto {
   tagIds?: string[];
 
   @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.split(',') : value,
+  )
+  productIds?: string[];
+
+  @IsOptional()
   @IsString()
   search?: string;
 

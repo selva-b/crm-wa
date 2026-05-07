@@ -146,6 +146,20 @@ export class IncomingMessageWorker implements OnModuleInit {
       conversationId: conversation.id,
     });
 
+    // 9. Enqueue SLA evaluation for inbound message
+    await this.queueService.publishOnce(
+      QUEUE_NAMES.SLA_EVALUATE,
+      {
+        type: 'inbound_message',
+        orgId,
+        conversationId: conversation.id,
+        sessionId,
+        assignedUserId: conversation.assignedToId ?? null,
+        messageCreatedAt: new Date().toISOString(),
+      },
+      `sla:inbound:${message.id}`,
+    );
+
     // 10. Emit conversation update
     this.eventEmitter.emit(EVENT_NAMES.CONVERSATION_UPDATED, {
       conversationId: conversation.id,

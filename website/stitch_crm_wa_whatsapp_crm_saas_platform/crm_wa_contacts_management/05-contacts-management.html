@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CRM-WA | Contacts</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary": "#31067e",
+            "secondary": "#c0c6d8",
+            "surface-container-highest": "#212532",
+            "on-tertiary-fixed-variant": "#2e007c",
+            "on-secondary-fixed-variant": "#545c6b",
+            "on-tertiary-fixed": "#000000",
+            "on-error-container": "#ff9b82",
+            "tertiary-fixed-dim": "#987cea",
+            "outline-variant": "#434855",
+            "surface-dim": "#0c0e14",
+            "primary-container": "#dd7a0c",
+            "tertiary-container": "#a589f8",
+            "on-secondary-fixed": "#383f4e",
+            "surface-container-low": "#10131b",
+            "surface-bright": "#282c38",
+            "surface-tint": "#ffb77d",
+            "secondary-dim": "#b2b9ca",
+            "on-primary": "#643400",
+            "on-surface-variant": "#a7aaba",
+            "on-surface": "#e2e5f6",
+            "surface-container": "#161923",
+            "secondary-fixed": "#dce2f5",
+            "secondary-fixed-dim": "#cdd4e6",
+            "inverse-surface": "#faf8ff",
+            "error-dim": "#c44f34",
+            "surface": "#0c0e14",
+            "on-secondary-container": "#b8bfd1",
+            "inverse-primary": "#914d00",
+            "on-secondary": "#39404f",
+            "on-surface": "#e2e5f6",
+            "secondary-container": "#343c4a",
+            "primary": "#ffb77d",
+            "primary-dim": "#fe932c",
+            "inverse-on-surface": "#53555c",
+            "on-background": "#e2e5f6",
+            "tertiary-fixed": "#a589f8",
+            "primary-fixed-dim": "#ed871e",
+            "background": "#0c0e14",
+            "error-container": "#85230a",
+            "on-primary-fixed": "#240f00",
+            "surface-container-high": "#1c1f2a",
+            "tertiary-dim": "#a88cfb",
+            "surface-variant": "#212532",
+            "on-error": "#450900",
+            "surface-container-lowest": "#000000"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Inter"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body { font-family: 'Inter', sans-serif; background-color: #0c0e14; color: #e2e5f6; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .status-badge-new { background-color: #60a5fa20; color: #60a5fa; border: 1px solid #60a5fa30; }
+    .status-badge-contacted { background-color: #f59e0b20; color: #f59e0b; border: 1px solid #f59e0b30; }
+    .status-badge-interested { background-color: #a78bfa20; color: #a78bfa; border: 1px solid #a78bfa30; }
+    .status-badge-converted { background-color: #34d39920; color: #34d399; border: 1px solid #34d39930; }
+  </style>
+</head>
+<body class="antialiased overflow-hidden">
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 h-full w-[240px] bg-[#0d0f1a] border-r border-[#2d3044] flex flex-col py-4 z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</div>
+<div>
+<h1 class="text-amber-500 font-black text-lg leading-none">CRM-WA</h1>
+<p class="text-[10px] text-on-surface-variant tracking-widest uppercase mt-1">Enterprise Edition</p>
+</div>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9ca3b4] hover:text-white hover:bg-[#1a1d2e] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<!-- Active Tab: Contacts -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#1a1d2e] text-amber-500 border-r-4 border-amber-600 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person_book" style="font-variation-settings: 'FILL' 1;">person_book</span>
+<span class="font-semibold">Contacts</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9ca3b4] hover:text-white hover:bg-[#1a1d2e] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="font-medium">Leads</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9ca3b4] hover:text-white hover:bg-[#1a1d2e] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+<span class="font-medium">Tasks</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9ca3b4] hover:text-white hover:bg-[#1a1d2e] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-medium">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9ca3b4] hover:text-white hover:bg-[#1a1d2e] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-medium">Settings</span>
+</a>
+</nav>
+<div class="px-3 pt-4 border-t border-[#2d3044]">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#9ca3b4] hover:text-white hover:bg-[#1a1d2e] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-medium">Help Center</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar Shell -->
+<header class="fixed top-0 right-0 left-[240px] h-16 bg-[#0f1117] border-b border-[#2d3044] flex items-center justify-between px-8 z-40">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="Search contacts, notes, or leads..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<button class="p-2 text-on-surface-variant hover:bg-[#2d3044] rounded-full transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-[#0f1117]"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-[#2d3044] rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+<div class="h-8 w-px bg-[#2d3044]"></div>
+<button class="bg-primary-container hover:bg-primary transition-colors text-on-primary-container px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold shadow-lg shadow-amber-900/20">
+<span class="material-symbols-outlined text-lg">person_add</span>
+        Add Contact
+      </button>
+<div class="flex items-center gap-3 pl-4">
+<img alt="User profile" class="w-9 h-9 rounded-full border border-outline-variant object-cover" data-alt="professional portrait of a high-level executive woman with a friendly expression in a dark modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAumWckBomWHAOUxRf8zwbpsRt_G6NK63Wh3vZ2XYXtK2sgCFaWwhOKllPVMt-7g1e5qIyW0XpOZCOcQSibHhQvRS9ixWvgPKcnpLz6mbRCSQR6Dl1IP3bzD6eXw3LuPt2CXRahW_zAGZYv0418dLB8JTNG4fzOufTD70QskoR-NZz2zBHVvV9UcyyWny8NrJl3_57FLsxznI3lfIqEBxh-xEMpoPp_n9NnptiXJRfMXsU7P6AbJsVGZLE86t_dJqJ3K_0pym8u4w"/>
+</div>
+</div>
+</header>
+<!-- Main Content Layout -->
+<main class="fixed inset-0 top-16 left-[240px] right-[380px] bg-background overflow-y-auto custom-scrollbar">
+<div class="p-8">
+<!-- Welcome/Stats Header -->
+<div class="flex items-end justify-between mb-8">
+<div>
+<h2 class="text-2xl font-bold text-on-surface">Contacts Directory</h2>
+<p class="text-on-surface-variant text-sm mt-1">Manage your enterprise relationships and communication history.</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high text-on-surface text-sm border border-outline-variant hover:bg-surface-elevated transition-colors">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+            Filter
+          </button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high text-on-surface text-sm border border-outline-variant hover:bg-surface-elevated transition-colors">
+<span class="material-symbols-outlined text-sm">swap_vert</span>
+            Sort: Recent
+          </button>
+</div>
+</div>
+<!-- Status Tabs -->
+<div class="flex items-center border-b border-outline-variant mb-6 gap-8">
+<button class="pb-3 border-b-2 border-primary text-primary font-semibold text-sm">All (1,248)</button>
+<button class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-medium text-sm">New (124)</button>
+<button class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-medium text-sm">Contacted (45)</button>
+<button class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-medium text-sm">Interested (82)</button>
+<button class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-medium text-sm">Converted (312)</button>
+<button class="pb-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-medium text-sm">Closed (685)</button>
+</div>
+<!-- Table Container -->
+<div class="bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high border-b border-outline-variant">
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Contact</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Phone</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Status</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Source</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Assigned Agent</th>
+<th class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Activity</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1: Active Selection -->
+<tr class="hover:bg-surface-container-highest transition-colors cursor-pointer bg-surface-variant/30">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="Priya Sharma" class="w-10 h-10 rounded-full border border-primary-dim/30" data-alt="vibrant headshot of a smiling young professional woman with dark hair and glasses in a brightly lit creative studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYGSL4H7I2DrQ1ALEQpZ435_PRQLBL4I9Nbf0wABKxzzAaBXZGxZGp7kXkFpPTHRFbO47NaN1FABZS-pu5SPd0bhK_4Rh2hBjB_TS2icLQi3jnNqZtCQTdy03FasBVrFLTJ0-m1YjUaX9f-mlva4SkwTGRhpqZusbSQL0c1B3tnUQ79wWsJfijM9gazF2pdTGKhPNaoyOQ09gKdYdsqp5aCi7KGohmpqxtnnTp_8HfwDW4lCx0D25DV2SFh6gNyH1FZ8RG3QkAPQ"/>
+<div>
+<div class="text-sm font-bold text-on-surface">Priya Sharma</div>
+<div class="text-xs text-on-surface-variant">Creative Director</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface">+91 98765 43210</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase status-badge-interested">Interested</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm text-[#25D366]">chat</span>
+                  WhatsApp
+                </div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Agent" class="w-6 h-6 rounded-full" data-alt="clean professional avatar of a man with short hair and a suit" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDo_KUXjbYDqJaDv96U0CjlIxvD30Jq3krJB2J4H8bxxuRQZX-FL_LvzXU_Z5Pvg5cZx5c5psNO1RwfY0njlv1Xgq7bWxVBvEGdgXiOiqHsZdtSNchSzqdcAOgQm2rWFvY6ZX99B4DrO4-Q_IulsxTdPrArifNzXzjcAUoVqQw8BLB1znV0LAqlh_Uh0kb6P4khrTKejGtDZXYBy6spyRsItosTHC6vV-Fqb76Q0ASnKb-Ikd1TG8RtZf4fz5pREKylg1PqsUHiqg"/>
+<span class="text-xs text-on-surface">Alex Rivera</span>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">2 mins ago</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-highest transition-colors cursor-pointer">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="Marcus Chen" class="w-10 h-10 rounded-full border border-outline-variant" data-alt="smiling young asian man in a denim jacket against a neutral studio background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkXTZct0TDcUp1CpMMY2oUZHeTcIjV7fW1mvl9K_obLi95bzzDGnr33SKyT8JPTUfuXJe2h6jkPN21zdstr9FmmQcuQqXGGFS8MgY6RIML7Q8N-i5J7eBLcBb7RsbBN3lYTpQJ7QXN8LQKgS1psecCqrDxs478luU1tePhxA5eiL-IXRjfBEXfzmP0WTDJvoolLM2G5aP3TKrRCW_WdW8JGy40vHLs_pg3io2_8RKIqDnsuMj40A3sf5h7P1dpAxPeJJmyOzX1Qg"/>
+<div>
+<div class="text-sm font-bold text-on-surface">Marcus Chen</div>
+<div class="text-xs text-on-surface-variant">Product Lead</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface">+65 8899 7766</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase status-badge-new">New</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm text-[#1877F2]">social_leaderboard</span>
+                  Facebook
+                </div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Agent" class="w-6 h-6 rounded-full" data-alt="headshot of a smiling blonde woman with professional lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSwWOmrxWSNWEybMwRZtGuxLJuArQm5w0f9dCNLr6qGfjINULnyLE6qO57Aurvl7nfMpT-BLTk4T1vU49quOcqeuZ0vcM9Ew1NyCoPQC9kBVMG2t8GLOQBQcoS8Z_zi6vVP-3jeTaUTcWhFoV94tP8vfVbKDoW16aa6yiASy9dIYyd_rqVoD9zP_Y4SGFXipnl2THoIKDJX_AaaWh0HjwB-JKLtA6W3-jkTK9QLdKScuf2H3oAIF-r-ROtOnM43aZeopgtML8EVg"/>
+<span class="text-xs text-on-surface">Sarah Connor</span>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">14 mins ago</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-highest transition-colors cursor-pointer">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="Jessica Wade" class="w-10 h-10 rounded-full border border-outline-variant" data-alt="professional woman in her 30s with long brown hair, outdoor sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBZFK0sUSPUCK5sZ_fbufYAqfs0N83MXh2ePT96yyQqyiDPHcD1Kk5FIX2Wr0Eg045C3xHpBFUu9auIlUaF7zKY7pmItxGuJRcqHZbYI3NnfkhabElG8UQv9cxaM1GZHC-nzamIrcs2ovoTurum__ut05fsuK01yJHTMRDQFYZIyLFw94rvLKc2SdZjwhUjIF4SJMtErIM0crSC_cAHVjyL1Aj-S5t33hUzT502c6RIBrqhwwPpEvUdTVghAs0KrPfVqMvkNrwhA"/>
+<div>
+<div class="text-sm font-bold text-on-surface">Jessica Wade</div>
+<div class="text-xs text-on-surface-variant">HR Manager</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface">+1 415 555 0122</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase status-badge-converted">Converted</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm text-[#E4405F]">camera_alt</span>
+                  Instagram
+                </div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Agent" class="w-6 h-6 rounded-full" data-alt="male agent with glasses and professional attire" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEtoXJv6a9c75RVuo4gLhvwZF_3fJED7C-VX-d960_BqlFJIdZczujz4_iQL44Fjksm6Mt0fPEJ5R1E1XPLGf7PQluGR64KloeIey25G7xse3Grw4Ht6ZQ4fbDIo6MuCQWy8sKsx6kV8EuFxVPRnppX6Sq3Ik3CkBS-AxscRjAEswXyoq4VcMJdU2TOiUNkJ6JdoQRtnVupIDARkdYoNWkKKFEdKOhakUGRFi9pw-EL7wOsoUFa-YLf5ROrLl_QFUgFPHk0Wy8tw"/>
+<span class="text-xs text-on-surface">David Smith</span>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">1 hour ago</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-highest transition-colors cursor-pointer">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img alt="Arjun Rao" class="w-10 h-10 rounded-full border border-outline-variant" data-alt="middle aged indian man with beard wearing a casual polo shirt" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEaV81WAjR4KUD9jtCF5s7Gp7b-eaCQO_VvsG87XQSlFp7AjUz4DYAn87Sxq_zkI0ZAA2MDflmBzjWWQMQJfIGg7DsLsw3mRwiwMUdBcvJKy5vbRkBQqQvICCP8KxEmixM1tL_ZmTNnqRHJL1mGDMPglTZwOEWIOEx7d2ivAA3IloF9F1YrPH18LGOBIePCHreTtHZTVbfQfHI99WVsG-eDJsHEns_nNyFUroCIPKzoLiVzXI4MaMfPlIN9d3W3qLXr2Rsi-ultg"/>
+<div>
+<div class="text-sm font-bold text-on-surface">Arjun Rao</div>
+<div class="text-xs text-on-surface-variant">Venture Partner</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface">+91 91234 56789</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase status-badge-contacted">Contacted</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm text-[#25D366]">chat</span>
+                  WhatsApp
+                </div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Agent" class="w-6 h-6 rounded-full" data-alt="alex rivera agent avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTudTh6Ri5lh3oGBUYM9HsJzNWO_PMqQkg_AJ-YyXJlcf6fPj0nSwMzJw930aN-Hb49qeZ9dM3n1eEF8cg6tR6yaeoYwg-vlqEIukAJ0WNKkJStTndnvPFK2lUlW9KUreMrINkLA0BMzOepPKQhs0CckE-WS1vDbf4nIF5xzhM9MMQMVcsxLt-dBQy3rLeiXhItkI7-DZqnxdTPYQ-TtR7qgQX8eM4lakgDEnNDBUgytWyRpC8xh8AkVZv55pnntbQdDPyDeFtlg"/>
+<span class="text-xs text-on-surface">Alex Rivera</span>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">4 hours ago</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-4 bg-surface-container-high border-t border-outline-variant flex items-center justify-between">
+<p class="text-xs text-on-surface-variant">Showing 1-10 of 1,248 contacts</p>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 flex items-center justify-center rounded bg-secondary-container text-on-surface-variant hover:bg-surface-elevated transition-colors">
+<span class="material-symbols-outlined text-lg">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded bg-primary-container text-on-primary-container font-bold text-xs">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-elevated text-xs">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-elevated text-xs">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded bg-secondary-container text-on-surface-variant hover:bg-surface-elevated transition-colors">
+<span class="material-symbols-outlined text-lg">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Right Drawer Panel -->
+<aside class="fixed top-16 right-0 bottom-0 w-[380px] bg-[#0d0f1a] border-l border-[#2d3044] overflow-y-auto z-40 custom-scrollbar">
+<div class="relative h-48 w-full bg-gradient-to-br from-[#1a1d2e] to-[#2d3044]">
+<img alt="Priya Sharma Header" class="w-full h-full object-cover opacity-40 blur-sm" data-alt="vibrant bokeh lights in deep amber and navy tones creating a sophisticated atmospheric background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJd0K_MGZtIeO6L5Ins4xt_hbOB5k6BWuUY4RfTpruqV6r6LlQuMBnHpsmAS4EVO1GMNSlX6HfEoXPNlZBHc63eKTXGqIJZ8kFKr-JbNgbj6b_4eHV8Vu30rVDZQlbCIRC_pA7on38eIsq6cfzR6-xCetsakWaw615JCddboTIcTtew0jQqw8ZQ8TxE1YYXHeouCz5nODWq8j7QieWBNlVPJRFcDvnivrslNRK747VixSCtxEsIWt7hYE1-Lq3btYTBMtCSCFHoA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#0d0f1a] to-transparent"></div>
+<button class="absolute top-4 right-4 bg-surface-container/50 p-2 rounded-full backdrop-blur-md text-white hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="px-6 -mt-16 relative">
+<div class="relative inline-block">
+<img alt="Priya Sharma" class="w-24 h-24 rounded-2xl border-4 border-[#0d0f1a] object-cover shadow-2xl" data-alt="vibrant headshot of a smiling young professional woman with dark hair and glasses in a brightly lit creative studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAb1gxoXQpqnEC2fD3XXW8JY685CL0hFW0CdKS3H0DiW4UpaWBulygUfh1VFA4qHQXss6tRfk6MPSFkXZZRvD7BAE7Rw7NuQ7e7KgPKaK8zjF1a5nG8VbKzFLOQ2Rb4ds_Hwym47ezrSwBDm75-BV3yY7LNVY8yJuB4gLbi8_byN1gMoVMT23JchyDyNavH5YKLTnvNqreLeAsPb4YODBP3mdveKZTnIihj_NBVQTz0skgG-skzy2VSydKZj2-Zn7njl2hxy12tXA"/>
+<div class="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-2 border-[#0d0f1a] rounded-full"></div>
+</div>
+<div class="mt-4">
+<h3 class="text-xl font-bold text-on-surface">Priya Sharma</h3>
+<p class="text-sm text-on-surface-variant font-medium">Creative Director @ PixieFlow Design</p>
+</div>
+<div class="flex gap-3 mt-6">
+<button class="flex-1 bg-primary text-on-primary-container py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-amber-400 transition-colors">
+<span class="material-symbols-outlined text-lg">chat</span>
+          Message
+        </button>
+<button class="flex-1 bg-surface-container-highest border border-outline-variant text-on-surface py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-surface-elevated transition-colors">
+<span class="material-symbols-outlined text-lg">edit</span>
+          Edit
+        </button>
+</div>
+<div class="mt-8 space-y-6">
+<!-- Basic Info Section -->
+<section>
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-primary mb-3">Basic Information</h4>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-lg">call</span>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase">Phone</p>
+<p class="text-sm text-on-surface font-medium">+91 98765 43210</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-lg">mail</span>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase">Email</p>
+<p class="text-sm text-on-surface font-medium">priya.s@pixieflow.com</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-lg">link</span>
+</div>
+<div>
+<p class="text-[10px] text-on-surface-variant uppercase">Source</p>
+<p class="text-sm text-on-surface font-medium">WhatsApp Business</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Engagement Stats -->
+<section>
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-primary mb-3">Engagement Stats</h4>
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container p-3 rounded-lg border border-outline-variant">
+<p class="text-[10px] text-on-surface-variant uppercase">Total Chats</p>
+<p class="text-lg font-bold text-on-surface">142</p>
+</div>
+<div class="bg-surface-container p-3 rounded-lg border border-outline-variant">
+<p class="text-[10px] text-on-surface-variant uppercase">Deals Won</p>
+<p class="text-lg font-bold text-on-surface">03</p>
+</div>
+</div>
+</section>
+<!-- Tags -->
+<section>
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-primary mb-3">Tags</h4>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-[#1a1d2e] border border-outline-variant rounded text-[11px] text-on-surface">VIP Client</span>
+<span class="px-2 py-1 bg-[#1a1d2e] border border-outline-variant rounded text-[11px] text-on-surface">Design Studio</span>
+<span class="px-2 py-1 bg-[#1a1d2e] border border-outline-variant rounded text-[11px] text-on-surface">Urgent</span>
+<button class="px-2 py-1 border border-dashed border-outline-variant rounded text-[11px] text-on-surface-variant hover:border-primary hover:text-primary transition-colors">+ Add Tag</button>
+</div>
+</section>
+<!-- Recent Notes -->
+<section class="pb-8">
+<div class="flex items-center justify-between mb-3">
+<h4 class="text-[10px] font-bold uppercase tracking-widest text-primary">Recent Notes</h4>
+<button class="text-[10px] text-primary hover:underline font-bold">VIEW ALL</button>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container p-3 rounded-lg border border-outline-variant relative">
+<p class="text-xs text-on-surface italic leading-relaxed">"Interested in upgrading to the Enterprise Tier by Q4. Requested a demo for the team of 15."</p>
+<div class="mt-2 pt-2 border-t border-outline-variant flex justify-between items-center">
+<span class="text-[9px] text-on-surface-variant font-medium">By Alex Rivera • Oct 24</span>
+<button class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-sm">more_horiz</span></button>
+</div>
+</div>
+<div class="bg-surface-container p-2 rounded-lg border border-dashed border-outline-variant text-center">
+<button class="text-[11px] text-on-surface-variant hover:text-primary font-medium flex items-center justify-center gap-1 w-full py-1">
+<span class="material-symbols-outlined text-sm">add</span> Add new note
+              </button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</aside>
+</body></html>

@@ -7,7 +7,6 @@ import type {
   ResetPasswordRequest,
   VerifyEmailRequest,
   ResendVerificationRequest,
-  RefreshTokenRequest,
   RefreshTokenResponse,
   SessionInfo,
   MessageResponse,
@@ -40,13 +39,15 @@ export const authApi = {
       .post<MessageResponse>("/auth/reset-password", data)
       .then((r) => r.data),
 
-  refreshToken: (data: RefreshTokenRequest) =>
+  // No body needed — refresh token is sent automatically via httpOnly cookie
+  refreshToken: () =>
     apiClient
-      .post<RefreshTokenResponse>("/auth/refresh", data)
+      .post<RefreshTokenResponse>("/auth/refresh")
       .then((r) => r.data),
 
-  logout: (data: RefreshTokenRequest) =>
-    apiClient.post<MessageResponse>("/auth/logout", data).then((r) => r.data),
+  // No body needed — refresh token cookie cleared by backend on logout
+  logout: () =>
+    apiClient.post<MessageResponse>("/auth/logout").then((r) => r.data),
 
   getSessions: () =>
     apiClient.get<SessionInfo[]>("/auth/sessions").then((r) => r.data),

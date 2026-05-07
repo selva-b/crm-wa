@@ -5,6 +5,7 @@ import { settingsApi } from "@/lib/api/settings";
 import type {
   UpdateOrgSettingsRequest,
   UpdateWhatsAppConfigRequest,
+  WorkingHoursConfig,
   UpdateFeatureFlagsRequest,
   CreateWebhookRequest,
   UpdateWebhookRequest,
@@ -17,7 +18,9 @@ import type {
 export const settingsKeys = {
   all: ["settings"] as const,
   org: () => ["settings", "org"] as const,
+  aiMemory: () => ["settings", "ai-memory"] as const,
   whatsapp: () => ["settings", "whatsapp"] as const,
+  workingHours: () => ["settings", "working-hours"] as const,
   features: () => ["settings", "features"] as const,
   webhooks: () => ["settings", "webhooks"] as const,
   webhook: (id: string) => ["settings", "webhooks", id] as const,
@@ -40,6 +43,22 @@ export function useWhatsAppConfig() {
   return useQuery({
     queryKey: settingsKeys.whatsapp(),
     queryFn: () => settingsApi.getWhatsAppConfig(),
+  });
+}
+
+export function useWorkingHours() {
+  return useQuery({
+    queryKey: settingsKeys.workingHours(),
+    queryFn: () => settingsApi.getWorkingHours(),
+    retry: false,
+  });
+}
+
+export function useUpdateWorkingHours() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: WorkingHoursConfig) => settingsApi.updateWorkingHours(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: settingsKeys.workingHours() }),
   });
 }
 
@@ -206,5 +225,45 @@ export function useTestIntegration() {
         queryKey: settingsKeys.integrations(),
       });
     },
+  });
+}
+
+export function useAiMemory() {
+  return useQuery({
+    queryKey: settingsKeys.aiMemory(),
+    queryFn: () => settingsApi.getAiMemory(),
+  });
+}
+
+export function useRebuildAiMemory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => settingsApi.rebuildAiMemory(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: settingsKeys.aiMemory() }),
+  });
+}
+
+export function useUpdateAiMemory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { customContext?: string }) =>
+      settingsApi.updateAiMemory(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: settingsKeys.aiMemory() }),
+  });
+}
+
+export function useUploadAiMemoryDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => settingsApi.uploadAiMemoryDocument(file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: settingsKeys.aiMemory() }),
+  });
+}
+
+export function useDeleteAiMemoryDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => settingsApi.deleteAiMemoryDocument(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: settingsKeys.aiMemory() }),
   });
 }

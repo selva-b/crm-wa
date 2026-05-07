@@ -1,16 +1,19 @@
 import {
   Controller,
   Post,
+  Patch,
   Body,
   HttpCode,
   HttpStatus,
   Req,
+  Res,
   Get,
   Param,
   Delete,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { Public, CurrentUser, JwtPayload, Roles } from '@/common/decorators';
 import {
   RegisterDto,
@@ -19,7 +22,7 @@ import {
   ResendVerificationDto,
   ForgotPasswordDto,
   ResetPasswordDto,
-  RefreshTokenDto,
+  ChangePasswordDto,
 } from '../../application/dto';
 import {
   RegisterUseCase,
@@ -31,6 +34,7 @@ import {
   RefreshTokenUseCase,
   LogoutUseCase,
   SessionManagementUseCase,
+  ChangePasswordUseCase,
 } from '../../application/use-cases';
 
 @Controller('auth')
@@ -45,6 +49,7 @@ export class AuthController {
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly sessionManagementUseCase: SessionManagementUseCase,
+    private readonly changePasswordUseCase: ChangePasswordUseCase,
   ) {}
 
   // ───────────────────────────────────────────
@@ -93,12 +98,21 @@ export class AuthController {
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto, @Req() req: Request) {
-    return this.loginUseCase.execute(
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.loginUseCase.execute(
       dto,
       this.getIp(req),
       this.getUa(req),
     );
+    // Set refresh token as httpOnly cookie — never exposed to JavaScript
+    this.setRefreshCookie(res, result.refreshToken, dto.rememberMe ?? false);
+    // Strip refreshToken from JSON body
+    const { refreshToken: _, ...jsonBody } = result;
+    return jsonBody;
   }
 
   @Public()
@@ -128,14 +142,26 @@ export class AuthController {
 
   @Public()
   @Post('refresh')
-  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   @HttpCode(HttpStatus.OK)
-  async refreshToken(@Body() dto: RefreshTokenDto, @Req() req: Request) {
-    return this.refreshTokenUseCase.execute(
-      dto.refreshToken,
+  async refreshToken(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = (req as any).cookies?.[this.REFRESH_COOKIE];
+    if (!refreshToken) {
+      throw new UnauthorizedException('No refresh token');
+    }
+    const result = await this.refreshTokenUseCase.execute(
+      refreshToken,
       this.getIp(req),
       this.getUa(req),
     );
+    // Rotate the refresh token cookie
+    this.setRefreshCookie(res, result.refreshToken);
+    // Return only accessToken + expiresIn — never expose refreshToken
+    const { refreshToken: _, ...jsonBody } = result;
+    return jsonBody;
   }
 
   // ───────────────────────────────────────────
@@ -145,12 +171,14 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(
-    @Body() dto: RefreshTokenDto,
     @CurrentUser() user: JwtPayload,
     @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ) {
+    const refreshToken = (req as any).cookies?.[this.REFRESH_COOKIE] ?? '';
+    this.clearRefreshCookie(res);
     return this.logoutUseCase.execute(
-      dto.refreshToken,
+      refreshToken,
       user.sub,
       user.orgId,
       this.getIp(req),
@@ -217,9 +245,57 @@ export class AuthController {
     );
   }
 
+  @Patch('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    await this.changePasswordUseCase.execute(
+      user.sub,
+      dto.oldPassword,
+      dto.newPassword,
+    );
+    return { message: 'Password changed successfully' };
+  }
+
   // ───────────────────────────────────────────
   // HELPERS
   // ───────────────────────────────────────────
+
+  /**
+   * Cookie name — use __Host- prefix in production (requires Secure + path=/ + no Domain).
+   * In local dev (HTTP), the prefix would be rejected by browsers, so use plain name.
+   */
+  private get REFRESH_COOKIE(): string {
+    return process.env.NODE_ENV === 'production'
+      ? '__Host-refresh_token'
+      : 'refresh_token';
+  }
+
+  private setRefreshCookie(res: Response, token: string, rememberMe = false): void {
+    const isProd = process.env.NODE_ENV === 'production';
+    const maxAge = rememberMe
+      ? 30 * 24 * 60 * 60 * 1000  // 30 days
+      : 1  * 24 * 60 * 60 * 1000; // 1 day
+    res.cookie(this.REFRESH_COOKIE, token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+      maxAge,
+    });
+  }
+
+  private clearRefreshCookie(res: Response): void {
+    const isProd = process.env.NODE_ENV === 'production';
+    res.clearCookie(this.REFRESH_COOKIE, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      path: '/',
+    });
+  }
 
   private getIp(req: Request): string {
     const forwarded = req.headers['x-forwarded-for'];

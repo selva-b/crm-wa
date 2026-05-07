@@ -1,14 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { QueueService } from '@/infrastructure/queue/queue.service';
 import { CampaignRepository } from '@/modules/campaigns/infrastructure/repositories/campaign.repository';
-import { AuditService } from '@/modules/audit/domain/services/audit.service';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   QUEUE_NAMES,
-  EVENT_NAMES,
   CAMPAIGN_CONFIG,
 } from '@/common/constants';
-import { AuditAction, CampaignStatus } from '@prisma/client';
 
 /**
  * CampaignSchedulerWorker
@@ -27,8 +23,6 @@ export class CampaignSchedulerWorker implements OnModuleInit {
   constructor(
     private readonly queueService: QueueService,
     private readonly campaignRepo: CampaignRepository,
-    private readonly auditService: AuditService,
-    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -38,12 +32,7 @@ export class CampaignSchedulerWorker implements OnModuleInit {
       async () => this.checkScheduledCampaigns(),
     );
 
-    // Schedule periodic check using pg-boss cron
-    const boss = this.queueService.getBoss();
-    const cronExpression = `*/${CAMPAIGN_CONFIG.SCHEDULE_CHECK_INTERVAL_SECONDS} * * * *`;
-
-    // pg-boss schedule() uses cron syntax (minimum resolution: 1 minute)
-    // For sub-minute intervals, use a self-re-queuing pattern
+    // Kick off the self-re-queuing periodic check loop
     await this.scheduleNextCheck();
 
     this.logger.log(
@@ -75,57 +64,20 @@ export class CampaignSchedulerWorker implements OnModuleInit {
 
       for (const campaign of campaigns) {
         try {
-          // Atomically transition SCHEDULED → RUNNING
-          const transitioned = await this.campaignRepo.transitionStatus(
-            campaign.id,
-            CampaignStatus.SCHEDULED,
-            CampaignStatus.RUNNING,
-            { startedAt: new Date() },
-          );
-
-          if (!transitioned) {
-            // Already transitioned by the delayed job
-            this.logger.log(`Campaign ${campaign.id} already transitioned from SCHEDULED`);
-            continue;
-          }
-
-          // Record event
-          await this.campaignRepo.recordEvent({
-            campaignId: campaign.id,
-            orgId: campaign.orgId,
-            previousStatus: CampaignStatus.SCHEDULED,
-            newStatus: CampaignStatus.RUNNING,
-            metadata: { triggeredBy: 'scheduler-check' },
-          });
-
-          // Publish execution job
+          // Publish execution job — let the executor handle status transition
+          // Using publishOnce to prevent duplicate execution
           await this.queueService.publishOnce(
             QUEUE_NAMES.CAMPAIGN_EXECUTE,
             {
               campaignId: campaign.id,
               orgId: campaign.orgId,
               sessionId: campaign.sessionId,
+              scheduled: true,
             },
             `campaign-exec-${campaign.id}`,
           );
 
-          // Emit event
-          this.eventEmitter.emit(EVENT_NAMES.CAMPAIGN_STARTED, {
-            campaignId: campaign.id,
-            orgId: campaign.orgId,
-            totalRecipients: 0,
-          });
-
-          // Audit log
-          await this.auditService.log({
-            orgId: campaign.orgId,
-            action: AuditAction.CAMPAIGN_STARTED,
-            targetType: 'Campaign',
-            targetId: campaign.id,
-            metadata: { triggeredBy: 'scheduler' },
-          });
-
-          this.logger.log(`Campaign ${campaign.id} triggered by scheduler`);
+          this.logger.log(`Campaign ${campaign.id} triggered by scheduler safety net`);
         } catch (error) {
           this.logger.error(
             `Failed to trigger campaign ${campaign.id}:`,

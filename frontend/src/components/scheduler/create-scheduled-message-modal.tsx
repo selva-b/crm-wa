@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateScheduledMessage } from "@/hooks/use-scheduler";
+import { ProductSelectField } from "@/components/ui/product-select-field";
 import {
   createScheduledMessageSchema,
   type CreateScheduledMessageFormData,
@@ -33,6 +35,7 @@ export function CreateScheduledMessageModal({
   sessions,
 }: CreateScheduledMessageModalProps) {
   const createMessage = useCreateScheduledMessage();
+  const [productId, setProductId] = useState("");
 
   const {
     register,
@@ -51,9 +54,10 @@ export function CreateScheduledMessageModal({
   const messageType = watch("messageType") as MessageType;
 
   function onSubmit(data: CreateScheduledMessageFormData) {
-    createMessage.mutate(data, {
+    createMessage.mutate({ ...data, productId: productId || undefined }, {
       onSuccess: () => {
         reset();
+        setProductId("");
         onClose();
       },
     });
@@ -61,6 +65,7 @@ export function CreateScheduledMessageModal({
 
   function handleClose() {
     reset();
+    setProductId("");
     onClose();
   }
 
@@ -193,6 +198,13 @@ export function CreateScheduledMessageModal({
               {...register("scheduledAt")}
             />
           </div>
+
+          {/* Product */}
+          <ProductSelectField
+            value={productId}
+            onChange={setProductId}
+            onBeforeRedirect={onClose}
+          />
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">

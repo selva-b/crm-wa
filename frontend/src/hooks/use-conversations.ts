@@ -56,12 +56,87 @@ export function useSendMessage() {
   });
 }
 
+export function useDeleteConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsApi.delete(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}
+
 export function useMarkAsRead() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (conversationId: string) =>
       conversationsApi.markAsRead(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}
+
+export function useCloseConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsApi.close(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}
+
+export function useArchiveConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsApi.archive(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}
+
+export function useReopenConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationsApi.reopen(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: conversationKeys.all,
+      });
+    },
+  });
+}
+
+export function useAssignConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      conversationId,
+      assignedToId,
+    }: {
+      conversationId: string;
+      assignedToId: string | null;
+    }) => conversationsApi.assign(conversationId, assignedToId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: conversationKeys.all,

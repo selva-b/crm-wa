@@ -294,6 +294,11 @@ export class ManageIntegrationsUseCase {
           throw new BadRequestException('Razorpay requires: keyId, keySecret');
         }
         break;
+      case 'SHOPIFY':
+        if (!credentials.shopDomain || !credentials.accessToken || !credentials.webhookSecret) {
+          throw new BadRequestException('Shopify requires: shopDomain, accessToken, webhookSecret');
+        }
+        break;
     }
   }
 
@@ -329,6 +334,22 @@ export class ManageIntegrationsUseCase {
         // full connectivity test depends on the SDK being available at runtime.
         this.logger.log(`Provider ${provider} credentials format validated`);
         break;
+      case 'SHOPIFY': {
+        // Verify Shopify credentials by calling the shop endpoint
+        const shopDomain = credentials.shopDomain as string;
+        const accessToken = credentials.accessToken as string;
+        const url = `https://${shopDomain}/admin/api/2024-01/shop.json`;
+        const res = await fetch(url, {
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!res.ok) {
+          throw new Error(`Shopify API returned ${res.status}: invalid credentials or shop domain`);
+        }
+        break;
+      }
       default:
         this.logger.log(`No specific test for provider ${provider}`);
     }

@@ -60,7 +60,12 @@ export class UsageTrackingService {
       return this.buildResult(orgId, metricType, currentValue, limitValue, plan.softLimitPercent);
     }
 
-    // For period-based metrics (messages, campaigns), check usage records
+    if (metricType === UsageMetricType.MESSAGE_TEMPLATES) {
+      const currentValue = await this.usageRepo.getTemplateCount(orgId);
+      return this.buildResult(orgId, metricType, currentValue, limitValue, plan.softLimitPercent);
+    }
+
+    // For period-based metrics (messages, campaigns, api calls, ai credits), check usage records
     const usage = await this.usageRepo.getUsage(
       orgId,
       metricType,
@@ -137,13 +142,16 @@ export class UsageTrackingService {
   /**
    * Check if a feature is enabled for the org's current plan.
    */
-  async isFeatureEnabled(orgId: string, feature: 'campaigns' | 'automation'): Promise<boolean> {
+  async isFeatureEnabled(orgId: string, feature: 'campaigns' | 'automation' | 'api' | 'ai' | 'shopify'): Promise<boolean> {
     const subscription = await this.subscriptionRepo.findByOrgWithPlan(orgId);
     if (!subscription) return false;
 
     const plan = subscription.plan;
     if (feature === 'campaigns') return plan.campaignsEnabled;
     if (feature === 'automation') return plan.automationEnabled;
+    if (feature === 'api') return (plan as any).apiEnabled ?? false;
+    if (feature === 'ai') return (plan as any).aiEnabled ?? false;
+    if (feature === 'shopify') return (plan as any).shopifyEnabled ?? false;
     return false;
   }
 
@@ -157,6 +165,12 @@ export class UsageTrackingService {
         return plan.maxWhatsappSessions;
       case UsageMetricType.CAMPAIGN_EXECUTIONS:
         return plan.maxCampaignsPerMonth;
+      case UsageMetricType.API_CALLS:
+        return plan.maxApiCallsPerMonth ?? 0;
+      case UsageMetricType.AI_CREDITS:
+        return plan.aiCreditsPerMonth ?? 0;
+      case UsageMetricType.MESSAGE_TEMPLATES:
+        return plan.maxMessageTemplates ?? 0;
       default:
         return 0;
     }

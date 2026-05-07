@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CRM-WA | Chatbot Builder</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-dim": "#fe932c",
+                        "primary-fixed": "#fe932c",
+                        "surface-container-low": "#10131b",
+                        "tertiary-container": "#a589f8",
+                        "background": "#0c0e14",
+                        "surface-variant": "#212532",
+                        "secondary-dim": "#b2b9ca",
+                        "outline-variant": "#434855",
+                        "primary": "#ffb77d",
+                        "error-dim": "#c44f34",
+                        "inverse-on-surface": "#53555c",
+                        "surface-container": "#161923",
+                        "on-background": "#e2e5f6",
+                        "surface-bright": "#282c38",
+                        "outline": "#717584",
+                        "secondary-container": "#343c4a",
+                        "on-tertiary-fixed": "#000000",
+                        "on-secondary": "#39404f",
+                        "on-primary": "#643400",
+                        "secondary-fixed-dim": "#cdd4e6",
+                        "on-secondary-fixed": "#383f4e",
+                        "on-tertiary-container": "#230062",
+                        "tertiary-fixed-dim": "#987cea",
+                        "surface-container-high": "#1c1f2a",
+                        "surface": "#0c0e14",
+                        "on-secondary-container": "#b8bfd1",
+                        "error-container": "#85230a",
+                        "on-primary-fixed-variant": "#572c00",
+                        "tertiary-fixed": "#a589f8",
+                        "tertiary": "#b299ff",
+                        "on-tertiary-fixed-variant": "#2e007c",
+                        "on-secondary-fixed-variant": "#545c6b",
+                        "on-tertiary": "#31067e",
+                        "on-error": "#450900",
+                        "surface-container-lowest": "#000000",
+                        "on-surface-variant": "#a7aaba",
+                        "surface-container-highest": "#212532",
+                        "tertiary-dim": "#a88cfb",
+                        "secondary": "#c0c6d8",
+                        "secondary-fixed": "#dce2f5",
+                        "inverse-surface": "#faf8ff",
+                        "surface-tint": "#ffb77d",
+                        "surface-dim": "#0c0e14",
+                        "on-primary-container": "#230e00",
+                        "primary-container": "#dd7a0c",
+                        "inverse-primary": "#914d00",
+                        "on-surface": "#e2e5f6",
+                        "on-primary-fixed": "#240f00",
+                        "error": "#f97758",
+                        "primary-fixed-dim": "#ed871e",
+                        "on-error-container": "#ff9b82"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #0c0e14; color: #e2e5f6; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .canvas-grid {
+            background-image: radial-gradient(#2d3044 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .flow-node { position: relative; z-index: 10; }
+        .connection-line {
+            position: absolute;
+            z-index: 0;
+            stroke: #434855;
+            stroke-width: 2;
+            fill: none;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+<!-- SideNavBar (As defined in JSON) -->
+<aside class="flex flex-col h-full py-4 bg-[#0d0f1a] text-sm font-medium w-[240px] border-r border-[#2d3044] fixed left-0 top-0 z-50">
+<div class="px-6 mb-8">
+<h1 class="text-amber-600 font-black text-2xl tracking-tighter">CRM-WA</h1>
+<p class="text-[10px] uppercase tracking-widest text-outline">Chatbot Builder</p>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="px-3 flex items-center space-x-3 py-3 text-[#9ca3b4] hover:text-[#e8eaed] hover:bg-[#1a1d2e] transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</div>
+<div class="px-3 flex items-center space-x-3 py-3 text-[#9ca3b4] hover:text-[#e8eaed] hover:bg-[#1a1d2e] transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Leads</span>
+</div>
+<div class="px-3 flex items-center space-x-3 py-3 bg-[#1a1d2e] text-amber-500 border-r-4 border-amber-600 transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span>Chatbot</span>
+</div>
+<div class="px-3 flex items-center space-x-3 py-3 text-[#9ca3b4] hover:text-[#e8eaed] hover:bg-[#1a1d2e] transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+<span>Campaigns</span>
+</div>
+<div class="px-3 flex items-center space-x-3 py-3 text-[#9ca3b4] hover:text-[#e8eaed] hover:bg-[#1a1d2e] transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</div>
+</nav>
+<div class="px-6 pt-4 border-t border-[#2d3044]">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-xs">person</span>
+</div>
+<div class="overflow-hidden">
+<p class="text-xs font-bold truncate">Admin User</p>
+<p class="text-[10px] text-outline">Pro Plan</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<main class="flex flex-1 ml-[240px]">
+<!-- Flows List Panel -->
+<section class="w-[300px] bg-surface-container-low border-r border-outline-variant flex flex-col">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center">
+<h2 class="font-semibold text-on-surface">Chatbot Flows</h2>
+<button class="p-1.5 rounded-lg bg-primary-container text-on-primary-container transition-all active:scale-95">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-3">
+<!-- Flow Item 1: Active -->
+<div class="p-4 rounded-xl bg-surface-container-high border border-primary-dim shadow-lg shadow-primary/5 cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-sm font-semibold text-on-surface">Welcome Bot</span>
+<div class="w-8 h-4 bg-primary-container rounded-full relative">
+<div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-2 mb-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-secondary-container text-on-secondary-container">Keywords</span>
+<span class="text-[10px] text-outline">2h ago</span>
+</div>
+<div class="flex items-center text-xs text-primary-dim font-medium">
+<span class="material-symbols-outlined text-sm mr-1">bolt</span> Active
+                    </div>
+</div>
+<!-- Flow Item 2 -->
+<div class="p-4 rounded-xl bg-surface-container border border-outline-variant hover:border-outline transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-sm font-semibold text-on-surface">Lead Qualification</span>
+<div class="w-8 h-4 bg-primary-container rounded-full relative">
+<div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-2 mb-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-secondary-container text-on-secondary-container">New Contact</span>
+<span class="text-[10px] text-outline">1d ago</span>
+</div>
+<div class="flex items-center text-xs text-primary-dim font-medium">
+<span class="material-symbols-outlined text-sm mr-1">bolt</span> Active
+                    </div>
+</div>
+<!-- Flow Item 3: Inactive -->
+<div class="p-4 rounded-xl bg-surface-container border border-outline-variant hover:border-outline transition-colors cursor-pointer opacity-70">
+<div class="flex justify-between items-start mb-2">
+<span class="text-sm font-semibold text-on-surface">Support FAQ</span>
+<div class="w-8 h-4 bg-surface-variant rounded-full relative">
+<div class="absolute left-0.5 top-0.5 w-3 h-3 bg-outline rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-2 mb-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-secondary-container text-on-secondary-container">Keywords</span>
+<span class="text-[10px] text-outline">3d ago</span>
+</div>
+<div class="flex items-center text-xs text-outline font-medium">
+<span class="material-symbols-outlined text-sm mr-1">block</span> Inactive
+                    </div>
+</div>
+<!-- Flow Item 4 -->
+<div class="p-4 rounded-xl bg-surface-container border border-outline-variant hover:border-outline transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="text-sm font-semibold text-on-surface">After Hours</span>
+<div class="w-8 h-4 bg-primary-container rounded-full relative">
+<div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-2 mb-3">
+<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-secondary-container text-on-secondary-container">Time-based</span>
+<span class="text-[10px] text-outline">5h ago</span>
+</div>
+<div class="flex items-center text-xs text-primary-dim font-medium">
+<span class="material-symbols-outlined text-sm mr-1">bolt</span> Active
+                    </div>
+</div>
+</div>
+</section>
+<!-- Main Canvas Area -->
+<section class="flex-1 flex flex-col relative bg-[#0f1117] overflow-hidden">
+<!-- Canvas Toolbar -->
+<header class="h-16 px-6 bg-surface-container-low border-b border-outline-variant flex items-center justify-between z-20">
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-surface-variant rounded-lg px-3 py-1.5 border border-outline-variant">
+<input class="bg-transparent border-none focus:ring-0 text-sm font-semibold text-on-surface w-40 p-0" type="text" value="Welcome Bot"/>
+<span class="material-symbols-outlined text-outline text-sm">edit</span>
+</div>
+<div class="h-6 w-[1px] bg-outline-variant"></div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-medium text-outline">Status:</span>
+<div class="flex items-center gap-1.5 px-2 py-1 rounded bg-success/10 border border-success/20">
+<div class="w-2 h-2 rounded-full bg-[#34d399] animate-pulse"></div>
+<span class="text-[10px] font-bold text-[#34d399] uppercase tracking-wider">Active</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 rounded-lg border border-outline-variant text-sm font-semibold text-on-surface hover:bg-surface-variant transition-colors">Test Bot</button>
+<button class="px-6 py-2 rounded-lg bg-primary-container text-on-primary-container text-sm font-bold shadow-lg shadow-primary/20 transition-all active:scale-95">Save Flow</button>
+</div>
+</header>
+<!-- Interactive Canvas -->
+<div class="flex-1 relative canvas-grid overflow-auto p-20 flex justify-center">
+<!-- Diagram Container -->
+<div class="relative w-full max-w-4xl">
+<!-- SVG Connections (Conceptual Visual) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" style="min-height: 800px;">
+<!-- Start to Condition -->
+<path class="connection-line" d="M 450 80 L 450 140"></path>
+<!-- Condition to Yes -->
+<path class="connection-line" d="M 450 220 L 450 280"></path>
+<!-- Condition to No -->
+<path class="connection-line" d="M 500 180 L 700 180 L 700 280"></path>
+<!-- Yes to Options -->
+<path class="connection-line" d="M 450 380 L 450 440"></path>
+</svg>
+<!-- Node 1: Start Trigger -->
+<div class="flow-node mx-auto w-64 p-4 rounded-xl bg-surface-container border-2 border-info shadow-xl mb-16 text-center">
+<div class="flex items-center justify-center gap-2 text-info mb-2">
+<span class="material-symbols-outlined text-lg" data-icon="login">login</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Trigger</span>
+</div>
+<h4 class="text-sm font-bold text-on-surface">Message Received</h4>
+<div class="mt-2 text-[11px] text-outline">Customer sends a direct message</div>
+</div>
+<!-- Node 2: Condition -->
+<div class="flow-node mx-auto w-48 h-48 flex items-center justify-center mb-16 relative">
+<!-- Diamond shape background -->
+<div class="absolute inset-0 bg-surface-container-high border-2 border-tertiary rotate-45 rounded-xl shadow-2xl"></div>
+<div class="relative text-center z-10 px-6">
+<div class="text-tertiary mb-1">
+<span class="material-symbols-outlined text-xl" data-icon="alt_route">alt_route</span>
+</div>
+<h4 class="text-xs font-bold text-on-surface">Contains keyword?</h4>
+<div class="mt-1 text-[10px] text-outline">"hello", "hi", "hey"</div>
+</div>
+<!-- Branch Labels -->
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-6 text-[10px] font-black text-success uppercase">Yes</div>
+<div class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 text-[10px] font-black text-error uppercase">No</div>
+</div>
+<div class="flex justify-center gap-32">
+<!-- Left Branch (Yes) -->
+<div class="flex flex-col items-center">
+<!-- Node 3: Message -->
+<div class="flow-node w-64 p-5 rounded-xl bg-[#1a1d2e] border border-outline-variant shadow-2xl mb-16">
+<div class="flex items-center gap-2 text-primary-dim mb-3">
+<span class="material-symbols-outlined text-lg" data-icon="chat_bubble">chat_bubble</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Message</span>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/30 italic text-sm text-on-surface">
+                                    "Hello! How can I help you today?"
+                                </div>
+</div>
+<!-- Node 4: Options -->
+<div class="flow-node w-64 p-5 rounded-xl bg-[#1a1d2e] border border-outline-variant shadow-2xl">
+<div class="flex items-center gap-2 text-tertiary mb-3">
+<span class="material-symbols-outlined text-lg" data-icon="radio_button_checked">radio_button_checked</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Options</span>
+</div>
+<div class="space-y-2">
+<div class="w-full py-2 px-3 bg-surface-container-high rounded border border-primary-dim/30 text-xs font-medium text-primary text-center">Sales inquiry</div>
+<div class="w-full py-2 px-3 bg-surface-container-high rounded border border-primary-dim/30 text-xs font-medium text-primary text-center">Support</div>
+<div class="w-full py-2 px-3 bg-surface-container-high rounded border border-primary-dim/30 text-xs font-medium text-primary text-center">Other</div>
+</div>
+</div>
+</div>
+<!-- Right Branch (No) -->
+<div class="flex flex-col items-center pt-8">
+<!-- Node 5: Message (Fallback) -->
+<div class="flow-node w-64 p-5 rounded-xl bg-[#1a1d2e] border border-outline-variant shadow-2xl">
+<div class="flex items-center gap-2 text-error-dim mb-3">
+<span class="material-symbols-outlined text-lg" data-icon="error">error</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Fallback</span>
+</div>
+<div class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/30 italic text-sm text-on-surface">
+                                    "I didn't quite understand that. Could you rephrase?"
+                                </div>
+<div class="mt-4 flex justify-center">
+<div class="w-8 h-8 rounded-full bg-outline-variant/20 border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-outline">stop_circle</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating FAB -->
+<button class="fixed bottom-10 right-10 w-14 h-14 rounded-full bg-primary-container text-on-primary-container shadow-2xl shadow-primary/40 flex items-center justify-center transition-transform hover:scale-110 active:scale-95 z-40">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<!-- Canvas Controls -->
+<div class="fixed bottom-10 left-[560px] flex items-center bg-surface-container border border-outline-variant rounded-xl p-1.5 shadow-2xl z-40">
+<button class="p-2 hover:bg-surface-variant rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<div class="px-3 text-xs font-bold text-outline">100%</div>
+<button class="p-2 hover:bg-surface-variant rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">zoom_out</span>
+</button>
+<div class="h-4 w-[1px] bg-outline-variant mx-1"></div>
+<button class="p-2 hover:bg-surface-variant rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">recenter</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+</body></html>

@@ -33,6 +33,16 @@ export class AudienceFiltersDto {
   @IsArray()
   @IsEnum(ContactSource, { each: true })
   sources?: ContactSource[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  productIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  teamIds?: string[];
 }
 
 export class CreateCampaignDto {
@@ -55,7 +65,7 @@ export class CreateCampaignDto {
   messageBody?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   mediaUrl?: string;
 
   @IsOptional()
@@ -87,4 +97,8 @@ export class CreateCampaignDto {
   @IsString()
   @MaxLength(255)
   idempotencyKey?: string;
+
+  @IsOptional()
+  @IsUUID('4')
+  productId?: string;
 }

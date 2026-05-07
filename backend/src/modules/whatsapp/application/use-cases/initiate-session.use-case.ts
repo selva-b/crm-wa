@@ -40,7 +40,7 @@ export class InitiateSessionUseCase {
       }
     }
 
-    // Check for existing active session — only one per user
+    // Check for existing session — only one per user
     const activeSession = await this.sessionRepo.findActiveByUserId(userId, orgId);
     if (activeSession) {
       if (activeSession.status === 'CONNECTING') {
@@ -48,6 +48,15 @@ export class InitiateSessionUseCase {
         await this.connectionManager.destroyConnection(activeSession.id);
         await this.sessionRepo.disconnectSession(activeSession.id);
         this.logger.log(`Invalidated stale CONNECTING session ${activeSession.id}`);
+      } else if (activeSession.status === 'DISCONNECTED' && activeSession.encryptedCreds) {
+        // Session exists with creds — reconnect instead of creating a duplicate
+        throw new ConflictException(
+          JSON.stringify({
+            code: 'SESSION_RECONNECTABLE',
+            sessionId: activeSession.id,
+            message: 'A disconnected session with valid credentials exists. Use reconnect instead.',
+          }),
+        );
       } else {
         throw new ConflictException(
           'User already has an active WhatsApp session. Disconnect first.',

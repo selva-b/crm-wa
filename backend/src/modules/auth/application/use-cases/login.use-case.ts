@@ -111,20 +111,22 @@ export class LoginUseCase {
     await this.userRepository.resetFailedAttempts(user.id);
     await this.userRepository.updateLastLogin(user.id);
 
+    const rememberMe = dto.rememberMe ?? false;
+
     // Generate token pair
     const tokenPair: TokenPair = await this.tokenService.generateTokenPair({
       sub: user.id,
       orgId: user.orgId,
       role: user.role,
       email: user.email,
-    });
+    }, rememberMe);
 
     // Create session
     await this.sessionRepository.create({
       userId: user.id,
       orgId: user.orgId,
       refreshToken: tokenPair.refreshToken,
-      expiresAt: this.tokenService.getRefreshExpiryDate(),
+      expiresAt: this.tokenService.getRefreshExpiryDate(rememberMe),
       userAgent,
       ipAddress,
     });

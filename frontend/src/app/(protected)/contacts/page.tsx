@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, Users, GitMerge } from "lucide-react";
+import { Plus, Users, GitMerge, Upload, Download } from "lucide-react";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { useContacts } from "@/hooks/use-contacts";
+import { useContacts, useImportContacts, useExportContacts } from "@/hooks/use-contacts";
 import { useContactsStore } from "@/stores/contacts-store";
 import { SearchInput } from "@/components/ui/search-input";
 import { Tabs } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import { ContactsTable } from "@/components/contacts/contacts-table";
 import { ContactDetailDrawer } from "@/components/contacts/contact-detail-drawer";
 import { CreateContactModal } from "@/components/contacts/create-contact-modal";
 import { MergeContactsModal } from "@/components/contacts/merge-contacts-modal";
+import { ImportContactsModal } from "@/components/contacts/import-contacts-modal";
 import type { LeadStatus, ListContactsParams } from "@/lib/types/contacts";
 
 const TAKE = 20;
@@ -31,7 +32,10 @@ export default function ContactsPage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [showMerge, setShowMerge] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [statusTab, setStatusTab] = useState("ALL");
+
+  const exportContacts = useExportContacts();
 
   const {
     selectedContactId,
@@ -41,6 +45,7 @@ export default function ContactsPage() {
     filterOwnerId,
     filterSource,
     filterTagIds,
+    filterProductIds,
     page,
     setSearchQuery,
     openContactDetail,
@@ -61,6 +66,7 @@ export default function ContactsPage() {
       ownerId: filterOwnerId ?? undefined,
       source: filterSource ?? undefined,
       tagIds: filterTagIds.length > 0 ? filterTagIds : undefined,
+      productIds: filterProductIds.length > 0 ? filterProductIds : undefined,
       sortBy: "createdAt",
       sortOrder: "desc",
     }),
@@ -71,6 +77,7 @@ export default function ContactsPage() {
       filterOwnerId,
       filterSource,
       filterTagIds,
+      filterProductIds,
     ],
   );
 
@@ -110,6 +117,23 @@ export default function ContactsPage() {
               placeholder="Search contacts..."
               className="w-64"
             />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => exportContacts.mutate()}
+              loading={exportContacts.isPending}
+              title="Export CSV"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowImport(true)}
+              title="Import CSV"
+            >
+              <Upload className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -165,6 +189,10 @@ export default function ContactsPage() {
       <MergeContactsModal
         open={showMerge}
         onClose={() => setShowMerge(false)}
+      />
+      <ImportContactsModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
       />
     </div>
   );

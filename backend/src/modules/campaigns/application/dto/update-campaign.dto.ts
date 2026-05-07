@@ -33,7 +33,7 @@ export class UpdateCampaignDto {
   messageBody?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   mediaUrl?: string;
 
   @IsOptional()

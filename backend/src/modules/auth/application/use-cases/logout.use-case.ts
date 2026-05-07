@@ -25,8 +25,10 @@ export class LogoutUseCase {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<LogoutResult> {
-    // Revoke the session associated with this refresh token
-    await this.sessionRepository.revokeSessionByToken(refreshToken);
+    // Revoke the session associated with this refresh token (guard against missing cookie)
+    if (refreshToken) {
+      await this.sessionRepository.revokeSessionByToken(refreshToken);
+    }
 
     // Audit log
     await this.auditService.log({

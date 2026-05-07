@@ -85,16 +85,102 @@ export function useInboxSocket() {
       );
     };
 
+    // ─── Channel message events (EPIC 16) ─────
+    const onChannelMessageReceived = () => {
+      queryClient.invalidateQueries({ queryKey: conversationKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+    };
+
+    const onChannelMessageDelivered = (payload: { messageId: string }) => {
+      queryClient.setQueriesData<MessagesListResponse>(
+        { queryKey: ["messages"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((msg: MessageResponse) =>
+              msg.id === payload.messageId
+                ? { ...msg, status: "DELIVERED" as const }
+                : msg,
+            ),
+          };
+        },
+      );
+    };
+
+    const onChannelMessageRead = (payload: { messageId: string }) => {
+      queryClient.setQueriesData<MessagesListResponse>(
+        { queryKey: ["messages"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((msg: MessageResponse) =>
+              msg.id === payload.messageId
+                ? { ...msg, status: "READ" as const }
+                : msg,
+            ),
+          };
+        },
+      );
+    };
+
+    const onChannelMessageFailed = (payload: { messageId: string; error?: string }) => {
+      queryClient.setQueriesData<MessagesListResponse>(
+        { queryKey: ["messages"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((msg: MessageResponse) =>
+              msg.id === payload.messageId
+                ? { ...msg, status: "FAILED" as const, failedReason: payload.error ?? null }
+                : msg,
+            ),
+          };
+        },
+      );
+    };
+
+    // ─── Conversation assigned ─────
+    const onConversationAssigned = (payload: { conversationId: string; assignedToId: string | null }) => {
+      queryClient.setQueriesData<ConversationListResponse>(
+        { queryKey: conversationKeys.all },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((conv: ConversationResponse) =>
+              conv.id === payload.conversationId
+                ? { ...conv, assignedToId: payload.assignedToId }
+                : conv,
+            ),
+          };
+        },
+      );
+    };
+
     socket.on("whatsapp:message:received", onMessageReceived);
     socket.on("whatsapp:message:queued", onMessageReceived); // Same handling
     socket.on("whatsapp:message:status", onMessageStatus);
     socket.on("conversation:updated", onConversationUpdated);
+    // EPIC 16 — Channel message events
+    socket.on("channel:message:received", onChannelMessageReceived);
+    socket.on("channel:message:delivered", onChannelMessageDelivered);
+    socket.on("channel:message:read", onChannelMessageRead);
+    socket.on("channel:message:failed", onChannelMessageFailed);
+    socket.on("conversation:assigned", onConversationAssigned);
 
     return () => {
       socket.off("whatsapp:message:received", onMessageReceived);
       socket.off("whatsapp:message:queued", onMessageReceived);
       socket.off("whatsapp:message:status", onMessageStatus);
       socket.off("conversation:updated", onConversationUpdated);
+      socket.off("channel:message:received", onChannelMessageReceived);
+      socket.off("channel:message:delivered", onChannelMessageDelivered);
+      socket.off("channel:message:read", onChannelMessageRead);
+      socket.off("channel:message:failed", onChannelMessageFailed);
+      socket.off("conversation:assigned", onConversationAssigned);
     };
   }, [accessToken, queryClient]);
 }

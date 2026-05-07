@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import type { HealthStatus, QueueHealth, AlertRule, AlertEvent, ErrorGroup } from "@/lib/types/observability";
+import { PAGE_SIZE } from "@/lib/constants";
 
 type ObsTab = "overview" | "queues" | "alerts" | "errors";
 
@@ -202,14 +203,14 @@ function OverviewSection() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-outline-variant/15">
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Metric
                     </th>
-                    <th className="px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Value
                     </th>
-                    <th className="px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Recorded At
                     </th>
                   </tr>
@@ -365,8 +366,8 @@ function AlertsSection() {
   const { data: rules, isLoading: rulesLoading } = useAlertRules();
   const [historyPage, setHistoryPage] = useState(1);
   const { data: history, isLoading: historyLoading } = useAlertHistory({
-    take: 10,
-    skip: (historyPage - 1) * 10,
+    limit: PAGE_SIZE,
+    offset: (historyPage - 1) * PAGE_SIZE,
   });
 
   if (rulesLoading) {
@@ -400,20 +401,20 @@ function AlertsSection() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-outline-variant/15">
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Name
                     </th>
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Metric
                     </th>
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Condition
                     </th>
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Status
                     </th>
-                    <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                       Last Triggered
                     </th>
                   </tr>
@@ -478,17 +479,17 @@ function AlertsSection() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-outline-variant/15">
-                      <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                    <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                      <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                         Time
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                      <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                         Metric
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                      <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                         Value / Threshold
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                      <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                         Message
                       </th>
                     </tr>
@@ -523,16 +524,17 @@ function AlertsSection() {
                 </table>
               </div>
 
-              {history.total > 10 && (
+              {history.total > PAGE_SIZE && (
                 <div className="flex items-center justify-between px-5 py-3 border-t border-outline-variant/15">
                   <span className="text-[12px] text-on-surface-variant">
-                    Page {historyPage} of {Math.ceil(history.total / 10)}
+                    Page {historyPage} of {Math.ceil(history.total / PAGE_SIZE)}
+                    <span className="text-on-surface-variant/50 ml-1">
+                      ({history.total} total)
+                    </span>
                   </span>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() =>
-                        setHistoryPage((p) => Math.max(1, p - 1))
-                      }
+                      onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                       disabled={historyPage <= 1}
                       className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
@@ -541,12 +543,10 @@ function AlertsSection() {
                     <button
                       onClick={() =>
                         setHistoryPage((p) =>
-                          Math.min(Math.ceil(history.total / 10), p + 1),
+                          Math.min(Math.ceil(history.total / PAGE_SIZE), p + 1),
                         )
                       }
-                      disabled={
-                        historyPage >= Math.ceil(history.total / 10)
-                      }
+                      disabled={historyPage >= Math.ceil(history.total / PAGE_SIZE)}
                       className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                     >
                       <ChevronRight className="h-4 w-4" />
@@ -565,7 +565,7 @@ function AlertsSection() {
 // ─── Errors Section ─────────────────────────────
 
 function ErrorsSection() {
-  const { data: errors, isLoading } = useErrors({ take: 20 });
+  const { data: errors, isLoading } = useErrors({ windowMinutes: 60 });
 
   if (isLoading) {
     return <SectionLoader />;
@@ -594,20 +594,20 @@ function ErrorsSection() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-outline-variant/15">
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                <tr className="bg-surface-container/40 border-b border-outline-variant/15">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Error
                   </th>
-                  <th className="px-5 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Count
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Context
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     First Seen
                   </th>
-                  <th className="px-5 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-on-surface-variant">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                     Last Seen
                   </th>
                 </tr>
