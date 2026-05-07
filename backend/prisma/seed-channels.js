@@ -146,7 +146,6 @@ async function main() {
   const convos = await prisma.conversation.findMany({
     where: {
       contactIdentifier: null,
-      contactPhone: { not: null },
     },
     select: { id: true, contactPhone: true },
   });

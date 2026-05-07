@@ -1,5 +1,5 @@
 -- AlterTable: add AI scoring fields to deals
-ALTER TABLE "deals"
-  ADD COLUMN IF NOT EXISTS "ai_score" INTEGER,
-  ADD COLUMN IF NOT EXISTS "ai_score_reason" VARCHAR(500),
-  ADD COLUMN IF NOT EXISTS "ai_scored_at" TIMESTAMPTZ;
+-- ALTER TABLE "deals"
+--   ADD COLUMN IF NOT EXISTS "ai_score" INTEGER,
+--   ADD COLUMN IF NOT EXISTS "ai_score_reason" VARCHAR(500),
+--   ADD COLUMN IF NOT EXISTS "ai_scored_at" TIMESTAMPTZ;

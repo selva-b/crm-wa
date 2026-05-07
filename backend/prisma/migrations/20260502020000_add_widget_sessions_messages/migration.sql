@@ -1,5 +1,5 @@
 -- AlterTable: add pre_chat_form_enabled to widget_configs
-ALTER TABLE "widget_configs" ADD COLUMN "pre_chat_form_enabled" BOOLEAN NOT NULL DEFAULT false;
+-- ALTER TABLE "widget_configs" ADD COLUMN "pre_chat_form_enabled" BOOLEAN NOT NULL DEFAULT false;
 
 -- CreateTable: widget_sessions
 CREATE TABLE "widget_sessions" (
